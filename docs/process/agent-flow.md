@@ -8,7 +8,7 @@ The design follows a flow the maintainer already runs in another project, called
 
 | Path | What it holds |
 |---|---|
-| `.claude/agents/` | Five subagents: `developer`, `designer`, `tester`, `reviewer`, `documenter`. Each is short and sends the agent to `rules/README.md` and its role file. Each has a fixed set of tools: none of them has the Trello tools or can start another agent, and the Reviewer cannot edit files |
+| `.claude/agents/` | Five subagents: `developer`, `designer`, `tester`, `reviewer`, `documenter`. Each is short and sends the agent to `rules/README.md` and its role file. Each has a fixed set of tools: none of them has the Trello tools or can start another agent, and the Reviewer has no editing tools |
 | `.claude/skills/` | The commands the owner types: `/lead`, `/release`, `/next`, `/review`, `/design`. Only a person can start them |
 | `rules/README.md` | What every agent reads first: the result line, the verdict format, the card comments, where the work happens |
 | `rules/roles/` | One file per role: what it does, what it may touch, how it reports |
@@ -16,7 +16,7 @@ The design follows a flow the maintainer already runs in another project, called
 
 `/lead` and `/release` run in the main session, because they talk to the owner, move cards and call the subagents. `/review` and `/design` run the Reviewer or the Designer alone, as a forked subagent. `/next` only reads the board.
 
-Every card is worked on in its own worktree, `.worktrees/<branch>`, so the main checkout stays on `main` and two cards never share a working tree. The rules are always read from the main checkout.
+Every card is worked on in its own worktree, `.worktrees/<branch>`, so the main checkout stays as it is and two cards never share a working tree. The rules are always read from the main checkout.
 
 ## The idea
 
@@ -55,7 +55,7 @@ Every step ends with a comment on the card:
 **<Role>**: <what was done> → <what happens next>
 ```
 
-Concrete: files, pull request numbers, numbers from the check. No secrets, no personal data, nothing from the maintainer's real calendar or Jira.
+Concrete: files, pull request numbers, numbers from the check. No secrets, no personal data, nothing from the maintainer's real calendar or Jira. Paths in card comments, verdicts and pull requests are relative to the repository root, never absolute.
 
 ## Statuses
 
@@ -96,10 +96,10 @@ All agents act through one GitHub account, so none of them can approve a pull re
 ```
 APPROVE: <short reason> (on <short sha>)
 REJECTED: <short reason> (on <short sha>)
-- <finding with file:line>
+- <finding with file:line, severity and the fix>
 ```
 
-Only the Tester and the Reviewer post verdicts. A verdict belongs to the commit it names. A later commit that changes product code or tests needs a new one. A later commit that only changes docs does not.
+Only the Tester and the Reviewer post verdicts. A verdict belongs to the commit it names. A later commit that changes product code, tests, `rules/`, `.claude/` or `CLAUDE.md` needs a new one. A later commit that only changes `docs/` or the root `README.md` does not.
 
 ## Definition of done
 
@@ -132,9 +132,9 @@ Someone who clones this repository has no access to the maintainer's Trello boar
 
 ## Lessons
 
-`rules/lessons.md` is written by the Leader after a bad outcome: two or more failed rounds, a decision the owner corrected, a blocked merge, a cancelled task. Each entry says what happened, the root cause and the proposed change, with a status: `proposed`, then `accepted` or `declined`. Nothing in a rule or an agent changes without the owner's yes. Accepted lessons are binding.
+`rules/lessons.md` does not exist yet. It arrives with card 3, and the Leader reads it at the start once it does. From then on the Leader writes an entry after a bad outcome: two or more failed rounds, a decision the owner corrected, a blocked merge, a cancelled task. Each entry says what happened, the root cause and the proposed change, with a status: `proposed`, then `accepted` or `declined`. Nothing in a rule or an agent changes without the owner's yes. Accepted lessons are binding.
 
-The file starts with lessons carried over from the reference flow.
+The file will start with lessons carried over from the reference flow.
 
 ## Who may change the agents and the rules
 
