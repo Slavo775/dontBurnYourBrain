@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Don't Burn Your Brain: design prototype</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="design.css">
+</head>
+<body>
+<header class="top">
+  <div class="kicker">Design prototype · product spec, draft 13 · 15 Nov 2026</div>
+  <h1>Don't Burn Your Brain: the drawn screens</h1>
+  <p class="lede">Every screen of the app as it was drawn for the spec. The compact panel, Jira review and the Workspaces settings are live. How each screen behaves is written down in <code>docs/spec/design.md</code>.</p>
+</header>
+<main>
+<section class="tab on" id="design">
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"><defs>
+    <symbol id="i-pause" viewBox="0 0 20 20"><path stroke-width="2.4" d="M7 5v10M13 5v10"/></symbol>
+    <symbol id="i-play" viewBox="0 0 20 20"><path d="M7 4.5v11l9-5.5z"/></symbol>
+    <symbol id="i-cup" viewBox="0 0 20 20"><path d="M4 8h10v4a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M14 9h1.5a2 2 0 0 1 0 4H14"/><path d="M7 3v2M10.5 3v2"/></symbol>
+    <symbol id="i-swap" viewBox="0 0 20 20"><path d="M4 7h12l-3-3M16 13H4l3 3"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 20 20"><path d="M12 4h4v4M8 16H4v-4M16 4l-5 5M4 16l5-5"/></symbol>
+    <symbol id="i-collapse" viewBox="0 0 20 20"><path d="M16 8h-4V4M4 12h4v4M12 8l4.5-4.5M8 12l-4.5 4.5"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 20 20"><path d="M8 5l5 5-5 5"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5"/><path d="M10 6.5V10l2.5 1.5"/></symbol>
+    <symbol id="i-term" viewBox="0 0 20 20"><rect x="3" y="4.5" width="14" height="11" rx="2"/><path d="M6.5 8.5l2 1.5-2 1.5M10.5 11.5h3"/></symbol>
+    <symbol id="i-day" viewBox="0 0 20 20"><path d="M5 5.5h10M5 10h7M5 14.5h10"/></symbol>
+    <symbol id="i-check" viewBox="0 0 20 20"><path d="M4.5 10.5l3.5 3.5 7.5-8"/></symbol>
+    <symbol id="i-bars" viewBox="0 0 20 20"><path d="M5 16V9M10 16V4M15 16v-5"/></symbol>
+    <symbol id="i-set" viewBox="0 0 20 20"><path d="M4 7h5M13 7h3M4 13h3M11 13h5"/><circle cx="11" cy="7" r="2"/><circle cx="9" cy="13" r="2"/></symbol>
+    <symbol id="i-search" viewBox="0 0 20 20"><circle cx="9" cy="9" r="5"/><path d="M13 13l3.5 3.5"/></symbol>
+    <symbol id="i-down" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 20 20"><rect x="4" y="4" width="5" height="5" rx="1.2"/><rect x="11" y="4" width="5" height="5" rx="1.2"/><rect x="4" y="11" width="5" height="5" rx="1.2"/><rect x="11" y="11" width="5" height="5" rx="1.2"/></symbol>
+    <symbol id="i-key" viewBox="0 0 20 20"><rect x="2.5" y="5.5" width="15" height="9" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M7 12h6"/></symbol>
+    <symbol id="i-away" viewBox="0 0 20 20"><path d="M8.5 4.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/><path d="M12 7l3 3-3 3M15 10H8.5"/></symbol>
+  </defs></svg>
+
+  <div class="d-intro">
+    <h2>How it could look</h2>
+    <p>Every surface has one job and the rest sits one step deeper. Acme, Globex, Personal and the issue keys are sample data: you define your own workspaces, as the Workspaces section further down shows.</p>
+    <div class="d-flow">
+      <div class="d-node"><b>Menu bar</b>Always visible. Whose time is running and how much is left.</div>
+      <div class="d-via">click<svg class="ic"><use href="#i-chev"/></svg></div>
+      <div class="d-node"><b>Compact panel</b>The running block and four actions.</div>
+      <div class="d-via">⌘E<svg class="ic"><use href="#i-chev"/></svg></div>
+      <div class="d-node"><b>Expanded panel</b>Sessions, the plan for today, totals.</div>
+      <div class="d-via">⌘O<svg class="ic"><use href="#i-chev"/></svg></div>
+      <div class="d-node"><b>Window</b>Day plan, history and Jira review. Settings have their own window.</div>
+    </div>
+  </div>
+
+  <div class="d-step">
+    <div>
+      <h3>Menu bar and compact panel</h3>
+      <p class="d-lead">One click on the menu bar item opens this panel. Both panels are live: try Pause, Break, +15 and Switch, or start a block on the right.</p>
+    </div>
+    <div class="stage"><div class="stage-in">
+      <figure class="m-fig" data-ws="a">
+        <div class="m-pill mk"><i class="m-dot"></i><svg class="ic"><use href="#i-cup"/></svg><span data-p="pill">Acme 1:24</span></div>
+        <div class="mk m-panel" data-proto="work">
+          <div class="m-view" data-p="run">
+            <div class="m-head">
+              <i class="m-dot"></i>
+              <div class="m-grow"><b class="m-ws" data-p="ws">Acme</b><small data-p="issue">ACM-412 Checkout redirect</small></div>
+              <button class="m-icon" data-a="expand" aria-label="Expand the panel"><svg class="ic"><use href="#i-expand"/></svg></button>
+            </div>
+            <div class="m-clock">
+              <div class="m-digits"><span data-p="dhm">1:24</span><span class="ss" data-p="dss">:10</span></div>
+              <div class="m-sub" data-p="sub">left of 2:00, break in 19 min</div>
+              <div class="m-track"><i class="fill" data-p="fill" style="width:30%"></i><span class="nt" data-p="notches"><i style="left:20.83%;width:4.17%"></i><i style="left:45.83%;width:4.17%"></i><i style="left:70.83%;width:4.17%"></i></span></div>
+            </div>
+            <div class="m-quick">
+              <button class="m-q" data-a="pause"><svg class="ic"><use data-p="pauseI" href="#i-pause"/></svg><span data-p="pauseL">Pause</span></button>
+              <button class="m-q" data-a="break"><svg class="ic"><use href="#i-cup"/></svg><span data-p="breakL">Break</span></button>
+              <button class="m-q" data-a="plus"><span class="m-q-big">+15</span><span>min</span></button>
+              <button class="m-q" data-a="switch"><svg class="ic"><use href="#i-swap"/></svg><span>Switch</span></button>
+            </div>
+            <div class="m-alert">
+              <div class="m-grow"><b>acme-web needs you</b><small>Claude (work) in iTerm2</small></div>
+              <button class="m-btn go" data-a="focus">Focus</button>
+            </div>
+            <div class="m-foot">
+              <span>Next: Sprint sync at 11:30</span>
+              <button class="m-link" data-a="expand">3 sessions<svg class="ic"><use href="#i-chev"/></svg></button>
+            </div>
+          </div>
+          <div class="m-view" data-p="pick" hidden>
+            <div class="m-head">
+              <div class="m-grow"><b class="m-ws" data-p="picktitle">Nothing running</b><small>Free until 11:30</small></div>
+              <button class="m-btn" data-a="back" data-p="back" hidden>Back</button>
+            </div>
+            <div class="m-starts">
+              <button class="m-start" data-a="start" data-ws="a" data-name="Acme" data-min="120" data-issue="ACM-412 Checkout redirect"><i class="m-dot"></i><span class="m-grow"><b>Acme</b><span class="m-len">2 h</span><small>ACM-412 Checkout redirect</small></span><span class="m-key">1</span></button>
+              <button class="m-start" data-a="start" data-ws="b" data-name="Globex" data-min="60" data-issue="GLX-88 CMS image pipeline"><i class="m-dot"></i><span class="m-grow"><b>Globex</b><span class="m-len">1 h</span><small>GLX-88 CMS image pipeline</small></span><span class="m-key">2</span></button>
+              <button class="m-start" data-a="start" data-ws="c" data-name="Personal" data-min="25" data-issue="insight-flow N19"><i class="m-dot"></i><span class="m-grow"><b>Personal</b><span class="m-len">25 min</span><small>insight-flow N19</small></span><span class="m-key">3</span></button>
+              <button class="m-start ghost" data-a="custom"><span class="m-grow"><b>Custom block</b></span><span class="m-key">⌘N</span></button>
+            </div>
+            <div class="m-foot"><span>Today: 0:10 tracked</span></div>
+          </div>
+          <script type="application/json" data-p="t">{"pause":"Pause","resume":"Resume","breakBtn":"Break","endBreak":"End break","leftOf":"left of","breakIn":"break in %d min","pausedSub":"Paused","breakSub":"On a break, then back to %s","paused":"paused","nothing":"Nothing running","switchTo":"Switch to","added":"15 minutes added to the block","started":"Block started for %s","focused":"Focus brings iTerm2 forward on the acme-web tab","expand":"This opens the expanded panel, drawn in the next section","custom":"This opens a short form: workspace, length, issue","done":"Block finished. A sound plays and a notification appears."}</script>
+        </div>
+        <div class="m-toast" data-p="toast" aria-live="polite"></div>
+      </figure>
+
+      <figure class="m-fig is-idle" data-ws="a">
+        <div class="m-pill mk"><i class="m-dot"></i><svg class="ic"><use href="#i-cup"/></svg><span data-p="pill">0:15</span></div>
+        <div class="mk m-panel" data-proto="idle">
+          <div class="m-view" data-p="run" hidden>
+            <div class="m-head">
+              <i class="m-dot"></i>
+              <div class="m-grow"><b class="m-ws" data-p="ws">Acme</b><small data-p="issue">ACM-412 Checkout redirect</small></div>
+              <button class="m-icon" data-a="expand" aria-label="Expand the panel"><svg class="ic"><use href="#i-expand"/></svg></button>
+            </div>
+            <div class="m-clock">
+              <div class="m-digits"><span data-p="dhm">1:24</span><span class="ss" data-p="dss">:10</span></div>
+              <div class="m-sub" data-p="sub">left of 2:00, break in 19 min</div>
+              <div class="m-track"><i class="fill" data-p="fill" style="width:30%"></i><span class="nt" data-p="notches"><i style="left:20.83%;width:4.17%"></i><i style="left:45.83%;width:4.17%"></i><i style="left:70.83%;width:4.17%"></i></span></div>
+            </div>
+            <div class="m-quick">
+              <button class="m-q" data-a="pause"><svg class="ic"><use data-p="pauseI" href="#i-pause"/></svg><span data-p="pauseL">Pause</span></button>
+              <button class="m-q" data-a="break"><svg class="ic"><use href="#i-cup"/></svg><span data-p="breakL">Break</span></button>
+              <button class="m-q" data-a="plus"><span class="m-q-big">+15</span><span>min</span></button>
+              <button class="m-q" data-a="switch"><svg class="ic"><use href="#i-swap"/></svg><span>Switch</span></button>
+            </div>
+            <div class="m-alert">
+              <div class="m-grow"><b>acme-web needs you</b><small>Claude (work) in iTerm2</small></div>
+              <button class="m-btn go" data-a="focus">Focus</button>
+            </div>
+            <div class="m-foot">
+              <span>Next: Sprint sync at 11:30</span>
+              <button class="m-link" data-a="expand">3 sessions<svg class="ic"><use href="#i-chev"/></svg></button>
+            </div>
+          </div>
+          <div class="m-view" data-p="pick">
+            <div class="m-head">
+              <div class="m-grow"><b class="m-ws" data-p="picktitle">Nothing running</b><small>Free until 11:30</small></div>
+              <button class="m-btn" data-a="back" data-p="back" hidden>Back</button>
+            </div>
+            <div class="m-starts">
+              <button class="m-start" data-a="start" data-ws="a" data-name="Acme" data-min="120" data-issue="ACM-412 Checkout redirect"><i class="m-dot"></i><span class="m-grow"><b>Acme</b><span class="m-len">2 h</span><small>ACM-412 Checkout redirect</small></span><span class="m-key">1</span></button>
+              <button class="m-start" data-a="start" data-ws="b" data-name="Globex" data-min="60" data-issue="GLX-88 CMS image pipeline"><i class="m-dot"></i><span class="m-grow"><b>Globex</b><span class="m-len">1 h</span><small>GLX-88 CMS image pipeline</small></span><span class="m-key">2</span></button>
+              <button class="m-start" data-a="start" data-ws="c" data-name="Personal" data-min="25" data-issue="insight-flow N19"><i class="m-dot"></i><span class="m-grow"><b>Personal</b><span class="m-len">25 min</span><small>insight-flow N19</small></span><span class="m-key">3</span></button>
+              <button class="m-start ghost" data-a="custom"><span class="m-grow"><b>Custom block</b></span><span class="m-key">⌘N</span></button>
+            </div>
+            <div class="m-foot"><span>Today: 0:10 tracked</span></div>
+          </div>
+          <script type="application/json" data-p="t">{"pause":"Pause","resume":"Resume","breakBtn":"Break","endBreak":"End break","leftOf":"left of","breakIn":"break in %d min","pausedSub":"Paused","breakSub":"On a break, then back to %s","paused":"paused","nothing":"Nothing running","switchTo":"Switch to","added":"15 minutes added to the block","started":"Block started for %s","focused":"Focus brings iTerm2 forward on the acme-web tab","expand":"This opens the expanded panel, drawn in the next section","custom":"This opens a short form: workspace, length, issue","done":"Block finished. A sound plays and a notification appears."}</script>
+        </div>
+        <div class="m-toast" data-p="toast" aria-live="polite"></div>
+      </figure>
+
+    </div></div>
+    <div class="d-notes">
+      <p><b>One number.</b> Time left is the largest thing in the panel. Seconds are small on purpose.</p>
+      <p><b>The block as a strip.</b> Pale gaps are the breaks, so you see where you are in the rhythm and when the next break comes.</p>
+      <p><b>Four actions in fixed places.</b> Pause, break, add time, switch workspace.</p>
+      <p><b>Only what needs you.</b> The amber strip appears when an agent waits. Working and idle sessions stay one step away.</p>
+    </div>
+    <h4>The menu bar item in its five states</h4>
+    <div class="d-states">
+      <div class="d-state"><div class="m-bar mk flat"><i class="ph"></i><span class="it"><i class="m-dot"></i>Acme 1:24</span></div><p><b>Block running.</b> Workspace color, hours and minutes left. Seconds show only in the last five minutes.</p></div>
+      <div class="d-state"><div class="m-bar mk flat"><i class="ph"></i><span class="it"><svg class="ic"><use href="#i-cup"/></svg>4:12</span></div><p><b>On a break.</b> A cup and the break time left.</p></div>
+      <div class="d-state"><div class="m-bar mk flat"><i class="ph"></i><span class="it"><i class="m-dot off"></i>0:15</span></div><p><b>Nothing running.</b> An outline dot. After 15 minutes it shows how long you have been untracked.</p></div>
+      <div class="d-state"><div class="m-bar mk flat"><i class="ph"></i><span class="it"><i class="m-dot"></i>Acme 1:24<span class="m-badge">1</span></span></div><p><b>Agent waiting.</b> An amber badge. The panel opens with that session on top.</p></div>
+      <div class="d-state"><div class="m-bar mk flat"><i class="ph"></i><span class="it"><svg class="ic"><use href="#i-away"/></svg>Off</span></div><p><b>Day off.</b> Out of office leaves nothing planned for today, or you took the day off. Untracked time is not counted.</p></div>
+    </div>
+  </div>
+
+  <div class="d-step">
+    <div>
+      <h3>Expanded panel: wide on the Mac, pages on the phone</h3>
+      <p class="d-lead">Decided: option A on the Mac and option B on the iPhone. A shows everything at once with room to breathe. B keeps the panel small and shows one thing at a time.</p>
+    </div>
+    <div class="d-opthead"><h4>Option A, on the Mac: the panel grows wide</h4><p>⌘E widens the panel and it stays wide until you collapse it. ⌘1 to ⌘9 jump straight to a session.</p></div>
+    <div class="stage"><div class="stage-in"><div class="fitbox"><div class="fit mk m-wide" data-fit="780" style="width:780px">
+      <div class="m-cols">
+        <div class="m-col">
+          <div class="m-head"><i class="m-dot"></i><div class="m-grow"><b class="m-ws">Acme</b><small>ACM-412 Checkout redirect</small></div><span class="m-icon"><svg class="ic"><use href="#i-collapse"/></svg></span></div>
+          <div class="m-clock">
+            <div class="m-digits"><span>1:24</span><span class="ss">:10</span></div>
+            <div class="m-sub">left of 2:00, break in 19 min</div>
+            <div class="m-track"><i class="fill" style="width:30%"></i><span class="nt"><i style="left:20.83%;width:4.17%"></i><i style="left:45.83%;width:4.17%"></i><i style="left:70.83%;width:4.17%"></i></span></div>
+          </div>
+          <div class="m-quick">
+            <span class="m-q"><svg class="ic"><use href="#i-pause"/></svg><span>Pause</span></span>
+            <span class="m-q"><svg class="ic"><use href="#i-cup"/></svg><span>Break</span></span>
+            <span class="m-q"><span class="m-q-big">+15</span><span>min</span></span>
+            <span class="m-q"><svg class="ic"><use href="#i-swap"/></svg><span>Switch</span></span>
+          </div>
+          <div>
+            <div class="m-group">Today</div>
+            <div class="m-ev"><span class="t">09:00</span><i class="bar"></i><div><b>Acme</b><small>ACM-412, running</small></div><span class="len">2:00</span></div>
+            <div class="m-ev" data-ws="m"><span class="t">11:30</span><i class="bar"></i><div><b>Sprint sync</b><small>Globex calendar</small></div><span class="len">0:30</span></div>
+            <div class="m-ev" data-ws="b"><span class="t">13:00</span><i class="bar plan"></i><div><b>Globex</b><small>planned</small></div><span class="len">2:00</span></div>
+          </div>
+        </div>
+        <div class="m-col">
+          <div class="m-head"><b class="m-ws m-grow">Sessions</b><span class="m-segc"><span class="on">All 5</span><span>Acme 3</span><span>Globex 1</span><span>Personal 1</span></span></div>
+          <div class="m-list">
+            <div class="m-group wait">Needs you</div>
+            <div class="m-row"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>acme-web</b><small>Checkout redirect, Claude (work) in iTerm2</small></div><span class="m-btn go">Focus</span><span class="m-key">⌘1</span></div>
+            <div class="m-group">Working</div>
+            <div class="m-row"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>acme-api</b><small>Flaky payment test, Claude (work) in Cursor</small></div><span class="m-key">⌘2</span></div>
+            <div class="m-row" data-ws="b"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>globex-cms</b><small>Image pipeline, Claude (work) in VS Code</small></div><span class="m-key">⌘3</span></div>
+            <div class="m-group">Idle</div>
+            <div class="m-row idle"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>acme-infra</b><small>Terraform plan, Claude (work) in Terminal</small></div><span class="m-meta">12 min</span><span class="m-key">⌘4</span></div>
+            <div class="m-row idle" data-ws="c"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>insight-flow</b><small>N19 review, Claude (personal) in iTerm2</small></div><span class="m-meta">40 min</span><span class="m-key">⌘5</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="m-bottom">
+        <span class="m-total"><i class="m-dot sm"></i>Acme <b>0:36</b></span>
+        <span class="m-total" data-ws="b"><i class="m-dot sm"></i>Globex <b>0:00</b></span>
+        <span class="m-total" data-ws="c"><i class="m-dot sm"></i>Personal <b>0:10</b></span>
+        <span class="m-grow"></span>
+        <span class="m-btn">Log time</span>
+        <span class="m-btn">Open window ⌘O</span>
+      </div>
+    </div></div></div></div>
+
+    <div class="d-opthead"><h4>Option B, on the iPhone: pages inside a small panel</h4><p>A bar at the bottom switches between the pages. Drawn here at Mac size so the two can be compared. On the Mac this one is not built.</p></div>
+    <div class="stage"><div class="stage-in eq">
+      <figure class="m-fig"><div class="mk m-panel slim">
+        <div class="m-head"><div class="m-grow"><b class="m-ws">Sessions</b><small>5 open, 1 needs you</small></div></div>
+        <div class="m-list">
+          <div class="m-group wait">Needs you</div>
+          <div class="m-row"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>acme-web</b><small>Claude (work) in iTerm2</small></div><span class="m-btn go">Focus</span></div>
+          <div class="m-group">Working</div>
+          <div class="m-row"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>acme-api</b><small>Claude (work) in Cursor</small></div><span class="m-key">⌘2</span></div>
+          <div class="m-row" data-ws="b"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>globex-cms</b><small>Claude (work) in VS Code</small></div><span class="m-key">⌘3</span></div>
+          <div class="m-group">Idle</div>
+          <div class="m-row idle"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>acme-infra</b><small>Claude (work) in Terminal</small></div><span class="m-key">⌘4</span></div>
+          <div class="m-row idle" data-ws="c"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>insight-flow</b><small>Claude (personal) in iTerm2</small></div><span class="m-key">⌘5</span></div>
+        </div>
+        <div class="m-tabs"><span class="m-tab"><svg class="ic"><use href="#i-clock"/></svg>Now</span><span class="m-tab on"><svg class="ic"><use href="#i-term"/></svg>Sessions</span><span class="m-tab"><svg class="ic"><use href="#i-day"/></svg>Today</span><span class="m-tab"><svg class="ic"><use href="#i-check"/></svg>Log</span></div>
+      </div></figure>
+      <figure class="m-fig"><div class="mk m-panel slim">
+        <div class="m-head"><div class="m-grow"><b class="m-ws">Today</b><small>0:46 tracked, 1 meeting</small></div></div>
+        <div class="m-tl">
+          <div class="m-blk"><span class="t">09:00</span><div class="m-card h2"><b>Acme</b><small>ACM-412 Checkout redirect</small><small>36 min done, 1:24 left</small></div></div>
+          <div class="m-free">30 min free</div>
+          <div class="m-blk" data-ws="m"><span class="t">11:30</span><div class="m-card"><b>Sprint sync</b><small>Globex calendar, 30 min</small></div></div>
+          <div class="m-free">1 h free</div>
+          <div class="m-blk" data-ws="b"><span class="t">13:00</span><div class="m-card plan h2"><b>Globex</b><small>GLX-88 CMS image pipeline</small><small>planned, 2 h</small></div></div>
+        </div>
+        <div class="m-tabs"><span class="m-tab"><svg class="ic"><use href="#i-clock"/></svg>Now</span><span class="m-tab"><svg class="ic"><use href="#i-term"/></svg>Sessions</span><span class="m-tab on"><svg class="ic"><use href="#i-day"/></svg>Today</span><span class="m-tab"><svg class="ic"><use href="#i-check"/></svg>Log</span></div>
+      </div></figure>
+      <figure class="m-fig"><div class="mk m-panel slim">
+        <div class="m-head"><div class="m-grow"><b class="m-ws">Log time</b><small>Friday 13 Nov, rounded to 15 min</small></div></div>
+        <div class="m-list">
+          <div class="m-row"><span class="m-check on"><svg class="ic"><use href="#i-check"/></svg></span><div class="m-grow"><b>ACM-412</b><small>tracked 3:11</small></div><span class="m-step"><span>−</span><b>3:15</b><span>+</span></span></div>
+          <div class="m-row" data-ws="b"><span class="m-check on"><svg class="ic"><use href="#i-check"/></svg></span><div class="m-grow"><b>GLX-88</b><small>tracked 1:49</small></div><span class="m-step"><span>−</span><b>1:45</b><span>+</span></span></div>
+          <div class="m-row dim"><span class="m-check"></span><div class="m-grow"><b>insight-flow N19</b><small>No Jira issue</small></div><span class="m-num">0:50</span></div>
+        </div>
+        <span class="m-btn go wide">Send 2 worklogs (5:00)</span>
+        <div class="m-sub">Change any time with − and + before it goes to Jira.</div>
+        <div class="m-tabs"><span class="m-tab"><svg class="ic"><use href="#i-clock"/></svg>Now</span><span class="m-tab"><svg class="ic"><use href="#i-term"/></svg>Sessions</span><span class="m-tab"><svg class="ic"><use href="#i-day"/></svg>Today</span><span class="m-tab on"><svg class="ic"><use href="#i-check"/></svg>Log</span></div>
+      </div></figure>
+    </div></div>
+    <div class="d-notes">
+      <p><b>A fits a big screen.</b> One key and you see every session, the plan for today and the totals together.</p>
+      <p><b>B never grows.</b> It behaves the same on a laptop and has the same structure as the iPhone app.</p>
+      <p><b>Decided: A on the Mac.</b> The Mac has room for an overview, and the phone uses B anyway.</p>
+    </div>
+  </div>
+
+  <div class="d-step">
+    <div>
+      <h3>Quick functions</h3>
+      <p class="d-lead">Three ways to act without opening the panel at all.</p>
+    </div>
+    <div class="stage"><div class="stage-in col">
+      <figure class="m-fig wide">
+        <div class="mk m-cmd">
+          <div class="m-cmd-in"><svg class="ic"><use href="#i-search"/></svg><span>az 2h 412<i class="m-caret"></i></span></div>
+          <div class="m-cmd-row sel"><i class="m-dot"></i><div class="m-grow"><b>Start Acme for 2 h</b><small>ACM-412 Checkout redirect</small></div><span class="m-key">↵</span></div>
+          <div class="m-cmd-row"><i class="m-dot"></i><div class="m-grow"><b>Start Acme for 2 h without an issue</b></div><span class="m-key">⌘↵</span></div>
+          <div class="m-cmd-foot"><span>You can also type</span><span class="m-code">globex 1h</span><span class="m-code">break 10</span><span class="m-code">+15</span><span class="m-code">focus web</span><span class="m-code">log</span></div>
+          <div class="m-cmd-foot"><span>Or press one key while the field is empty</span><span class="m-key">P</span><span>pause</span><span class="m-key">B</span><span>break</span><span class="m-key">F</span><span>focus</span><span class="m-key">1–3</span><span>presets</span></div>
+        </div>
+        <figcaption class="m-cap">Command bar, opened with ⌥ Space from anywhere</figcaption>
+      </figure>
+      <div class="stage-row">
+        <figure class="m-fig">
+          <div class="mk m-menu">
+            <div class="m-mi sel">Pause</div>
+            <div class="m-mi">Take a break</div>
+            <div class="m-mi">Add 15 minutes</div>
+            <div class="m-mi">End block</div>
+            <div class="m-sep"></div>
+            <div class="m-mi" data-ws="a"><i class="m-dot sm"></i>Start Acme for 2 h</div>
+            <div class="m-mi" data-ws="b"><i class="m-dot sm"></i>Start Globex for 1 h</div>
+            <div class="m-mi" data-ws="c"><i class="m-dot sm"></i>Start Personal for 25 min</div>
+            <div class="m-sep"></div>
+            <div class="m-mi">Focus the waiting session</div>
+            <div class="m-mi">Open the window<kbd>⌘O</kbd></div>
+          </div>
+          <figcaption class="m-cap">Right-click on the menu bar item</figcaption>
+        </figure>
+        <figure class="m-fig">
+          <div class="mk m-hud">
+            <div class="m-hud-row">
+              <div class="m-app sel"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg><i class="m-state wait"></i></span>acme-web</div>
+              <div class="m-app"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg><i class="m-state run"></i></span>acme-api</div>
+              <div class="m-app" data-ws="b"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg><i class="m-state run"></i></span>globex-cms</div>
+              <div class="m-app"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg><i class="m-state idle"></i></span>acme-infra</div>
+              <div class="m-app" data-ws="c"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg><i class="m-state idle"></i></span>insight-flow</div>
+            </div>
+            <div class="m-hud-cap"><b>acme-web</b> needs you, Claude (work) in iTerm2</div>
+          </div>
+          <figcaption class="m-cap">Session switcher: hold ⌥ and tap Tab, release to jump there</figcaption>
+        </figure>
+      </div>
+    </div></div>
+    <div class="d-keys">
+      <div class="d-keyrow"><span>Open the command bar</span><span class="d-kb"><kbd>⌥ Space</kbd></span></div>
+      <div class="d-keyrow"><span>Switch between sessions</span><span class="d-kb"><kbd>⌥ Tab</kbd></span></div>
+      <div class="d-keyrow"><span>Pause, break, focus the waiting session</span><span class="d-kb"><kbd>⌥ Space</kbd>then<kbd>P</kbd><kbd>B</kbd><kbd>F</kbd></span></div>
+      <div class="d-keyrow"><span>Start preset 1 to 3</span><span class="d-kb"><kbd>⌥ Space</kbd>then<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd></span></div>
+      <div class="d-keyrow"><span>Expand or collapse the open panel</span><span class="d-kb"><kbd>⌘ E</kbd></span></div>
+      <div class="d-keyrow"><span>Jump to a session while the panel is open</span><span class="d-kb"><kbd>⌘ 1</kbd>to<kbd>⌘ 9</kbd></span></div>
+    </div>
+    <p class="d-fine">Only ⌥ Space and ⌥ Tab are global. Both can be changed in Settings.</p>
+  </div>
+
+  <div class="d-step">
+    <div>
+      <h3>The window for the day plan, history and Jira review</h3>
+      <p class="d-lead">Opened with ⌘O. You use it a few times a week, so it can afford detail.</p>
+    </div>
+    <div class="d-opthead"><h4>Today: plan the whole day</h4><p>Meetings come in from your calendars. You lay out blocks around them, in the morning or the evening before.</p></div>
+    <div class="stage"><div class="stage-in"><div class="fitbox"><div class="fit mk m-win" data-fit="980" style="width:980px">
+      <div class="m-titlebar"><i></i><i></i><i></i><b>Don't Burn Your Brain</b></div><div class="m-winbody"><div class="m-side"><span class="m-nav on"><svg class="ic"><use href="#i-clock"/></svg>Today</span><span class="m-nav"><svg class="ic"><use href="#i-bars"/></svg>History</span><span class="m-nav"><svg class="ic"><use href="#i-term"/></svg>Sessions</span><span class="m-nav"><svg class="ic"><use href="#i-check"/></svg>Jira review<span class="m-count" data-p="count">2</span></span><span class="m-side-sp"></span><div class="m-group">Last week</div><span class="m-total"><i class="m-dot sm"></i>Acme<b>15:41</b></span><span class="m-total" data-ws="b"><i class="m-dot sm"></i>Globex<b>13:19</b></span><span class="m-total" data-ws="c"><i class="m-dot sm"></i>Personal<b>2:20</b></span></div>
+        <div class="m-main">
+          <div class="m-mainhead"><span class="m-h">Today</span><span class="m-sub">Monday 16 Nov</span><span class="m-grow"></span><span class="m-btn">Plan tomorrow</span></div>
+          <div class="m-plan">
+            <div class="m-cal">
+              <span class="hr" style="top:0px">08:00</span><span class="hr" style="top:44px">09:00</span><span class="hr" style="top:88px">10:00</span><span class="hr" style="top:132px">11:00</span><span class="hr" style="top:176px">12:00</span><span class="hr" style="top:220px">13:00</span><span class="hr" style="top:264px">14:00</span><span class="hr" style="top:308px">15:00</span><span class="hr" style="top:352px">16:00</span><span class="hr" style="top:396px">17:00</span><span class="hr" style="top:440px">18:00</span>
+              <div class="b run" style="top:44px;height:88px"><b>Acme</b><span>ACM-412 Checkout redirect</span><span class="m-grow"></span><span>running, 1:24 left</span></div>
+              <div class="b meet" data-ws="m" style="top:154px;height:22px"><b>Sprint sync</b><span>Globex calendar</span></div>
+              <div class="b plan" data-ws="b" style="top:220px;height:88px"><b>Globex</b><span>GLX-88 CMS image pipeline</span><span class="m-grow"></span><span>planned</span></div>
+              <div class="b add" style="top:308px;height:22px">30 min free, click to add a block</div>
+              <div class="b meet" data-ws="m" style="top:330px;height:22px"><b>Review call</b><span>Acme calendar</span></div>
+              <div class="b plan" style="top:352px;height:44px"><b>Acme</b><span>ACM-398 Flaky payment test</span><span class="m-grow"></span><span>planned</span></div>
+              <i class="now" style="top:70px"></i>
+            </div>
+            <div class="m-rail">
+              <div><b>Planned 6:00 of 8:00</b><div class="m-track"><i class="fill" style="width:75%"></i></div></div>
+              <div>
+                <div class="m-railrow h"><span></span><span></span><span>done</span><span>plan</span></div>
+                <div class="m-railrow"><i class="m-dot sm"></i><span>Acme</span><span>0:36</span><b>3:00</b></div>
+                <div class="m-railrow" data-ws="b"><i class="m-dot sm"></i><span>Globex</span><span>0:00</span><b>2:00</b></div>
+                <div class="m-railrow" data-ws="m"><i class="m-dot sm"></i><span>Meetings</span><span>0:00</span><b>1:00</b></div>
+              </div>
+              <div class="m-sub">2 hours of the day have no plan yet.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div></div></div>
+    <div class="d-notes">
+      <p><b>Meetings are fixed.</b> They come from the calendars you chose, drawn in grey, and blocks go around them.</p>
+      <p><b>Plan by hand.</b> Click a gap to add a block, drag to move it, drag its edge to resize. Tomorrow can be planned the evening before.</p>
+      <p><b>The plan never starts a timer by itself.</b> When a planned block is due the app asks, and one click or key starts it.</p>
+    </div>
+
+    <div class="d-opthead"><h4>History</h4><p>What was tracked, by day and by task, with the Jira state of every task.</p></div>
+    <div class="stage"><div class="stage-in"><div class="fitbox"><div class="fit mk m-win" data-fit="980" style="width:980px">
+      <div class="m-titlebar"><i></i><i></i><i></i><b>Don't Burn Your Brain</b></div><div class="m-winbody"><div class="m-side"><span class="m-nav"><svg class="ic"><use href="#i-clock"/></svg>Today</span><span class="m-nav on"><svg class="ic"><use href="#i-bars"/></svg>History</span><span class="m-nav"><svg class="ic"><use href="#i-term"/></svg>Sessions</span><span class="m-nav"><svg class="ic"><use href="#i-check"/></svg>Jira review<span class="m-count" data-p="count">2</span></span><span class="m-side-sp"></span><div class="m-group">Last week</div><span class="m-total"><i class="m-dot sm"></i>Acme<b>15:41</b></span><span class="m-total" data-ws="b"><i class="m-dot sm"></i>Globex<b>13:19</b></span><span class="m-total" data-ws="c"><i class="m-dot sm"></i>Personal<b>2:20</b></span></div>
+        <div class="m-main">
+          <div class="m-mainhead"><span class="m-h">History</span><span class="m-sub">9 to 13 Nov, 31 h 20 min tracked</span><span class="m-grow"></span><span class="m-segc"><span>Day</span><span class="on">Week</span><span>Month</span></span></div>
+          <div class="m-chart">
+            <div class="m-yax"><span style="bottom:208px">8 h</span><span style="bottom:104px">4 h</span><span style="bottom:0">0</span></div>
+            <div class="m-plot">
+              <i class="m-gl" style="bottom:208px"></i><i class="m-gl" style="bottom:104px"></i>
+              <div class="m-day"><i data-ws="a" style="height:91px"></i><i data-ws="b" style="height:65px"></i><i data-ws="c" style="height:13px"></i><span class="tot">6:30</span></div>
+              <div class="m-day"><i data-ws="a" style="height:52px"></i><i data-ws="b" style="height:104px"></i><span class="tot">6:00</span></div>
+              <div class="m-day"><i data-ws="a" style="height:117px"></i><i data-ws="b" style="height:39px"></i><i data-ws="c" style="height:26px"></i><span class="tot">7:00</span></div>
+              <div class="m-day"><i data-ws="a" style="height:65px"></i><i data-ws="b" style="height:91px"></i><span class="tot">6:00</span></div>
+              <div class="m-day"><i data-ws="a" style="height:83px"></i><i data-ws="b" style="height:47px"></i><i data-ws="c" style="height:22px"></i><span class="tot">5:50</span></div>
+            </div>
+            <div class="m-xax"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span></div>
+          </div>
+          <div class="m-table">
+            <div class="m-tr h"><span>Task</span><span>Workspace</span><span class="n">Time</span><span>Jira</span></div>
+            <div class="m-tr"><span><b>ACM-412</b> Checkout redirect</span><span class="m-wsl"><i class="m-dot sm"></i>Acme</span><span class="n">9:36</span><span class="m-chip warn">3:11 to send</span></div>
+            <div class="m-tr"><span><b>ACM-398</b> Flaky payment test</span><span class="m-wsl"><i class="m-dot sm"></i>Acme</span><span class="n">6:05</span><span class="m-chip ok">logged</span></div>
+            <div class="m-tr" data-ws="b"><span><b>GLX-88</b> CMS image pipeline</span><span class="m-wsl"><i class="m-dot sm"></i>Globex</span><span class="n">8:19</span><span class="m-chip warn">1:49 to send</span></div>
+            <div class="m-tr" data-ws="b"><span><b>GLX-91</b> Newsletter template</span><span class="m-wsl"><i class="m-dot sm"></i>Globex</span><span class="n">5:00</span><span class="m-chip ok">logged</span></div>
+            <div class="m-tr" data-ws="c"><span><b>insight-flow N19</b></span><span class="m-wsl"><i class="m-dot sm"></i>Personal</span><span class="n">2:20</span><span class="m-chip none">no Jira issue</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div></div></div>
+    <div class="d-notes">
+      <p><b>Same colors everywhere.</b> The totals in the sidebar double as the chart legend.</p>
+      <p><b>Jira state on every task.</b> Amber means tracked time that is not in Jira yet. Jira review collects exactly that.</p>
+    </div>
+
+    <div class="d-opthead"><h4>Jira review: the hours are yours to change</h4><p>This screen is live. Change the hours with − and +, edit a comment, untick a row, then press Send. After sending, change a number again and the app offers to update Jira.</p></div>
+    <div class="stage"><div class="stage-in"><div class="fitbox"><div class="fit mk m-win" data-fit="980" style="width:980px" data-review>
+      <div class="m-titlebar"><i></i><i></i><i></i><b>Don't Burn Your Brain</b></div><div class="m-winbody"><div class="m-side"><span class="m-nav"><svg class="ic"><use href="#i-clock"/></svg>Today</span><span class="m-nav"><svg class="ic"><use href="#i-bars"/></svg>History</span><span class="m-nav"><svg class="ic"><use href="#i-term"/></svg>Sessions</span><span class="m-nav on"><svg class="ic"><use href="#i-check"/></svg>Jira review<span class="m-count" data-p="count">2</span></span><span class="m-side-sp"></span><div class="m-group">Last week</div><span class="m-total"><i class="m-dot sm"></i>Acme<b>15:41</b></span><span class="m-total" data-ws="b"><i class="m-dot sm"></i>Globex<b>13:19</b></span><span class="m-total" data-ws="c"><i class="m-dot sm"></i>Personal<b>2:20</b></span></div>
+        <div class="m-main">
+          <div class="m-mainhead"><span class="m-h">Jira review</span><span class="m-sub">Friday 13 Nov</span><span class="m-grow"></span><span class="m-sub">Rounding and breaks follow each workspace</span></div>
+          <div class="m-rv">
+            <div class="m-rvr h"><span></span><span>Task</span><span class="n">Tracked</span><span>Goes to Jira</span><span>Comment for Jira</span></div>
+            <div class="m-rvr" data-row data-tracked="191" data-log="195">
+              <button class="m-check on" data-a="toggle" data-p="check" aria-label="Include ACM-412"><svg class="ic"><use href="#i-check"/></svg></button>
+              <div><span class="m-wsl"><i class="m-dot sm"></i><b>ACM-412</b></span><small>Checkout redirect</small></div>
+              <span class="n">3:11<small>0:20 in breaks</small></span>
+              <div class="m-tolog"><span class="m-step"><button data-a="minus" aria-label="15 minutes less">−</button><b data-p="val">3:15</b><button data-a="plus" aria-label="15 minutes more">+</button></span><span class="m-st warn" data-p="chip">to send</span></div>
+              <input class="m-input" id="rv-c1" type="text" autocomplete="off" value="Redirect fix and tests" aria-label="Comment for ACM-412">
+            </div>
+            <div class="m-rvr" data-ws="b" data-row data-tracked="109" data-log="105">
+              <button class="m-check on" data-a="toggle" data-p="check" aria-label="Include GLX-88"><svg class="ic"><use href="#i-check"/></svg></button>
+              <div><span class="m-wsl"><i class="m-dot sm"></i><b>GLX-88</b></span><small>CMS image pipeline</small></div>
+              <span class="n">1:49<small>0:10 in breaks</small></span>
+              <div class="m-tolog"><span class="m-step"><button data-a="minus" aria-label="15 minutes less">−</button><b data-p="val">1:45</b><button data-a="plus" aria-label="15 minutes more">+</button></span><span class="m-st warn" data-p="chip">to send</span></div>
+              <input class="m-input" id="rv-c2" type="text" autocomplete="off" value="Pipeline: resize step" aria-label="Comment for GLX-88">
+            </div>
+            <div class="m-rvr" data-ws="c">
+              <span class="m-check"></span>
+              <div><span class="m-wsl"><i class="m-dot sm"></i><b>insight-flow N19</b></span><small>No Jira issue</small></div>
+              <span class="n">0:50<small>no breaks</small></span>
+              <div class="m-tolog"><span class="m-btn">Choose an issue</span></div>
+              <span class="m-sub">Stays out of Jira until you choose one.</span>
+            </div>
+          </div>
+          <div class="m-rvfoot">
+            <div class="m-grow"><b data-p="sum">Tracked 5:00, going to Jira 5:00</b><small data-p="status">Nothing has been sent yet.</small></div>
+            <button class="m-btn go big" data-a="send" data-p="send">Send 2 worklogs (5:00)</button>
+          </div>
+          <script type="application/json" data-p="rt">{"one":"%n worklog","many":"%n worklogs","send":"Send %a (%s)","update":"Update %a in Jira","sendUpd":"Send %a and update %b","allIn":"Everything is in Jira","none":"Nothing selected","toSend":"to send","leftOut":"left out","inJira":"in Jira","changed":"changed, Jira has %s","sum":"Tracked %t, going to Jira %s","sentMsg":"Sent. Change a number and the app corrects that worklog in Jira.","updMsg":"Jira is updated."}</script>
+        </div>
+      </div>
+    </div></div></div></div>
+    <div class="d-notes">
+      <p><b>Two numbers per task.</b> Tracked is what the timer measured, breaks included when the workspace counts them. The other is what Jira gets: rounded by the workspace rule first, then yours to change with − and + or by typing a value.</p>
+      <p><b>Changes after sending.</b> Change the hours and the app updates that worklog in Jira. Removing a row deletes the worklog there.</p>
+      <p><b>Nothing leaves without you.</b> Tasks without a Jira issue stay out, and nothing is sent until you press the button.</p>
+    </div>
+  </div>
+
+  <div class="d-step">
+    <div>
+      <h3>Out of office: a day you are not working</h3>
+      <p class="d-lead">An Out of office entry in a calendar is not a meeting. It says you are not working, so the app marks the day and stays quiet.</p>
+    </div>
+    <div class="d-opthead"><h4>In the menu bar and the panel</h4><p>Out of office belongs to the workspace whose calendar it is in. If that leaves nothing planned for today, the whole day is off.</p></div>
+    <div class="stage"><div class="stage-in">
+      <figure class="m-fig is-idle">
+        <div class="m-pill mk"><i class="m-dot"></i><span>0:15</span></div>
+        <div class="mk m-panel">
+          <div class="m-head"><div class="m-grow"><b class="m-ws">Nothing running</b><small>Free until 13:00</small></div></div>
+          <div class="m-starts">
+            <div class="m-start" data-ws="a"><i class="m-dot"></i><span class="m-grow"><b>Acme</b><span class="m-len">2 h</span><small>ACM-398 Flaky payment test</small></span><span class="m-key">1</span></div>
+            <div class="m-start away" data-ws="b"><i class="m-dot"></i><span class="m-grow"><b>Globex</b><small>Out of office all day</small></span><span class="m-key">2</span></div>
+            <div class="m-start" data-ws="c"><i class="m-dot"></i><span class="m-grow"><b>Personal</b><span class="m-len">25 min</span><small>insight-flow N19</small></span><span class="m-key">3</span></div>
+            <div class="m-start ghost"><span class="m-grow"><b>Custom block</b></span><span class="m-key">⌘N</span></div>
+          </div>
+          <div class="m-foot"><span>Today: 0:00 tracked</span></div>
+        </div>
+        <figcaption class="m-cap">One workspace is out. The others start as usual, and Globex asks first.</figcaption>
+      </figure>
+      <figure class="m-fig is-off">
+        <div class="m-pill mk"><svg class="ic"><use href="#i-away"/></svg><span>Off</span></div>
+        <div class="mk m-panel">
+          <div class="m-head"><span class="m-awayic"><svg class="ic"><use href="#i-away"/></svg></span><div class="m-grow"><b class="m-ws">Day off</b><small>Globex is out of office</small></div></div>
+          <div class="m-offnote"><b>No reminders today</b><small>Nothing else is planned, so untracked time is not counted.</small></div>
+          <div class="m-starts">
+            <div class="m-start ghost"><span class="m-grow"><b>Start a block anyway</b></span><span class="m-key">⌘N</span></div>
+          </div>
+          <div class="m-foot"><span>From the Globex calendar</span></div>
+        </div>
+        <figcaption class="m-cap">Nothing else is planned, so the whole day is off and the menu bar says Off.</figcaption>
+      </figure>
+    </div></div>
+    <div class="d-opthead"><h4>In the day plan</h4><p>The Friday from the left panel. Globex is out, and the Acme and Personal blocks stay where you put them.</p></div>
+    <div class="stage"><div class="stage-in"><div class="fitbox"><div class="fit mk m-win" data-fit="980" style="width:980px">
+      <div class="m-titlebar"><i></i><i></i><i></i><b>Don't Burn Your Brain</b></div><div class="m-winbody"><div class="m-side"><span class="m-nav on"><svg class="ic"><use href="#i-clock"/></svg>Today</span><span class="m-nav"><svg class="ic"><use href="#i-bars"/></svg>History</span><span class="m-nav"><svg class="ic"><use href="#i-term"/></svg>Sessions</span><span class="m-nav"><svg class="ic"><use href="#i-check"/></svg>Jira review<span class="m-count" data-p="count">2</span></span><span class="m-side-sp"></span><div class="m-group">Last week</div><span class="m-total"><i class="m-dot sm"></i>Acme<b>15:41</b></span><span class="m-total" data-ws="b"><i class="m-dot sm"></i>Globex<b>13:19</b></span><span class="m-total" data-ws="c"><i class="m-dot sm"></i>Personal<b>2:20</b></span></div>
+        <div class="m-main">
+          <div class="m-mainhead"><span class="m-h">Today</span><span class="m-sub">Friday 20 Nov</span><span class="m-grow"></span><span class="m-btn">Plan Monday</span></div>
+          <div class="m-plan">
+            <div>
+              <div class="m-ooo" data-ws="b"><svg class="ic"><use href="#i-away"/></svg><span class="m-grow"><b>Globex is out of office</b> <span>all day</span></span><span class="m-btn">Work anyway</span></div>
+              <div class="m-cal" style="height:352px">
+                <span class="hr" style="top:0px">08:00</span><span class="hr" style="top:44px">09:00</span><span class="hr" style="top:88px">10:00</span><span class="hr" style="top:132px">11:00</span><span class="hr" style="top:176px">12:00</span><span class="hr" style="top:220px">13:00</span><span class="hr" style="top:264px">14:00</span><span class="hr" style="top:308px">15:00</span><span class="hr" style="top:352px">16:00</span>
+                <div class="b plan" style="top:44px;height:88px"><b>Acme</b><span>ACM-398 Flaky payment test</span><span class="m-grow"></span><span>planned</span></div>
+                <div class="b meet off" data-ws="m" style="top:154px;height:22px"><b>Sprint sync</b><span>Globex calendar, not counted</span></div>
+                <div class="b meet" data-ws="m" style="top:220px;height:22px"><b>Review call</b><span>Acme calendar</span></div>
+                <div class="b plan" data-ws="c" style="top:264px;height:44px"><b>Personal</b><span>insight-flow N19</span><span class="m-grow"></span><span>planned</span></div>
+                <i class="now" style="top:29px"></i>
+              </div>
+            </div>
+            <div class="m-rail">
+              <div><b>Planned 3:30 of 8:00</b><div class="m-track"><i class="fill" style="width:44%"></i></div></div>
+              <div>
+                <div class="m-railrow h"><span></span><span></span><span>done</span><span>plan</span></div>
+                <div class="m-railrow"><i class="m-dot sm"></i><span>Acme</span><span>0:00</span><b>2:00</b></div>
+                <div class="m-railrow away" data-ws="b"><i class="m-dot sm"></i><span>Globex</span><em>out of office</em></div>
+                <div class="m-railrow" data-ws="c"><i class="m-dot sm"></i><span>Personal</span><span>0:00</span><b>1:00</b></div>
+                <div class="m-railrow" data-ws="m"><i class="m-dot sm"></i><span>Meetings</span><span>0:00</span><b>0:30</b></div>
+              </div>
+              <div class="m-sub">Globex blocks are not suggested today.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div></div></div>
+    <div class="d-notes">
+      <p><b>Never a meeting, never time worked.</b> Out of office is not logged anywhere. If it covers only part of a day, only those hours are off.</p>
+      <p><b>Quiet for that workspace.</b> Its meetings are hatched, not counted and not announced, and its planned blocks are not suggested.</p>
+      <p><b>The app only asks.</b> Start a block for a workspace that is out and you confirm once. You can also take a day off yourself from the command bar, with no calendar involved.</p>
+      <p><b>History keeps the mark.</b> The day shows as out of office, so a short week does not look like forgotten time.</p>
+    </div>
+  </div>
+
+  <div class="d-step">
+    <div>
+      <h3>Workspaces are your own data</h3>
+      <p class="d-lead">Acme, Globex and Personal are only sample data in these drawings. You create as many workspaces as you need in Settings, opened with ⌘ and comma. This window is live too: rename a workspace, change its color, add one or remove one.</p>
+    </div>
+    <div class="stage"><div class="stage-in"><div class="fitbox"><div class="fit mk m-win" data-fit="760" style="width:760px" data-wsdemo>
+      <div class="m-titlebar"><i></i><i></i><i></i><b>Settings</b></div><div class="m-settabs"><span class="m-settab"><svg class="ic"><use href="#i-set"/></svg>General</span><span class="m-settab on"><svg class="ic"><use href="#i-grid"/></svg>Workspaces</span><span class="m-settab"><svg class="ic"><use href="#i-clock"/></svg>Rhythm</span><span class="m-settab"><svg class="ic"><use href="#i-term"/></svg>Sessions</span><span class="m-settab"><svg class="ic"><use href="#i-check"/></svg>Jira</span><span class="m-settab"><svg class="ic"><use href="#i-day"/></svg>Calendars</span><span class="m-settab"><svg class="ic"><use href="#i-key"/></svg>Shortcuts</span></div>
+      <div class="m-setbody">
+        <div class="m-wslist">
+          <div class="m-wsitems" data-p="list">
+            <button class="m-wsitem on" data-a="pick" data-i="0" data-ws="a"><i class="m-dot"></i><span>Acme</span></button>
+            <button class="m-wsitem" data-a="pick" data-i="1" data-ws="b"><i class="m-dot"></i><span>Globex</span></button>
+            <button class="m-wsitem" data-a="pick" data-i="2" data-ws="c"><i class="m-dot"></i><span>Personal</span></button>
+          </div>
+          <div class="m-wsbar"><button data-a="add" aria-label="Add a workspace">+</button><button data-a="remove" aria-label="Archive this workspace">−</button></div>
+        </div>
+        <div class="m-form">
+          <label for="ws-name">Name</label><input class="m-input" id="ws-name" type="text" autocomplete="off" value="Acme" data-p="name">
+          <span class="lab">Color</span>
+          <div class="m-swatches">
+            <button class="m-sw on" data-a="color" data-ws="a" aria-label="Color 1"></button>
+            <button class="m-sw" data-a="color" data-ws="b" aria-label="Color 2"></button>
+            <button class="m-sw" data-a="color" data-ws="c" aria-label="Color 3"></button>
+            <button class="m-sw" data-a="color" data-ws="d" aria-label="Color 4"></button>
+            <button class="m-sw" data-a="color" data-ws="e" aria-label="Color 5"></button>
+            <button class="m-sw" data-a="color" data-ws="f" aria-label="Color 6"></button>
+          </div>
+          <span class="lab">Default block</span><span class="m-select"><span data-p="block">2 h</span><svg class="ic"><use href="#i-down"/></svg></span>
+          <span class="lab">Rhythm</span><span class="m-select"><span data-p="rhythm">25 min focus, 5 min break</span><svg class="ic"><use href="#i-down"/></svg></span>
+          <span class="lab">Folders</span>
+          <div class="m-foldwrap"><div class="m-folders" data-p="folders"><span class="m-code">~/code/acme-web</span><span class="m-code">~/code/acme-api</span><span class="m-code">~/code/acme-infra</span></div><span class="m-btn">Add a folder</span></div>
+          <span class="lab">Jira</span><span class="m-select"><span data-p="jira">Acme Jira, project ACM</span><svg class="ic"><use href="#i-down"/></svg></span>
+          <span class="lab">Round to</span><span class="m-select"><span data-p="round">15 min</span><svg class="ic"><use href="#i-down"/></svg></span>
+          <span class="lab">Breaks</span><div class="m-swrow"><button class="m-switch on" data-a="breaks" data-p="breaks" role="switch" aria-checked="true" aria-label="Count breaks as working time"><i></i></button><span>Count as working time and go to Jira</span></div>
+          <span class="lab">Calendar</span><span class="m-select"><span data-p="cal">Acme work account</span><svg class="ic"><use href="#i-down"/></svg></span>
+          <span class="lab">Quick start</span><span class="m-sub" data-p="qs">Shown on key 1</span>
+        </div>
+      </div>
+      <script type="application/json" data-p="wd">{"ws":[{"name":"Acme","c":"a","block":"2 h","rhythm":"25 min focus, 5 min break","folders":["~/code/acme-web","~/code/acme-api","~/code/acme-infra"],"jira":"Acme Jira, project ACM","cal":"Acme work account","round":"15 min","breaks":true},{"name":"Globex","c":"b","block":"1 h","rhythm":"50 min focus, 10 min break","folders":["~/code/globex-cms"],"jira":"Globex Jira, project GLX","cal":"Globex work account","round":"30 min","breaks":true},{"name":"Personal","c":"c","block":"25 min","rhythm":"25 min focus, 5 min break","folders":["~/code/insight-flow","~/code/dont-burn-your-brain"],"jira":"","cal":"Personal calendar","round":"15 min","breaks":true}],"newName":"New workspace","unnamed":"Unnamed","none":"None","noFolders":"No folders yet","qs":"Shown on key %n"}</script>
+    </div></div></div></div>
+    <div class="d-notes">
+      <p><b>Folders tie sessions to a workspace.</b> A Claude or Codex session started in one of these folders shows up under that workspace.</p>
+      <p><b>Jira and calendar are per workspace.</b> A workspace with no Jira, such as a personal one, never appears in Jira review. Out of office in a workspace's calendar marks that workspace as off.</p>
+      <p><b>Quick start follows this list.</b> The order here is the order of the presets and of their number keys.</p>
+      <p><b>Rounding and breaks are set here.</b> One employer may want quarter hours with breaks counted, another exact time without them. Breaks count by default.</p>
+      <p><b>Removing archives.</b> The workspace leaves the menus and its history stays.</p>
+    </div>
+    <div class="d-opthead"><h4>Sessions: Claude profiles are found automatically</h4><p>Each Claude account is its own Claude Code profile folder. The app lists them here, labels every session with its profile and installs its hook into each one when you allow it.</p></div>
+    <div class="stage"><div class="stage-in"><div class="fitbox"><div class="fit mk m-win" data-fit="760" style="width:760px">
+      <div class="m-titlebar"><i></i><i></i><i></i><b>Settings</b></div><div class="m-settabs"><span class="m-settab"><svg class="ic"><use href="#i-set"/></svg>General</span><span class="m-settab"><svg class="ic"><use href="#i-grid"/></svg>Workspaces</span><span class="m-settab"><svg class="ic"><use href="#i-clock"/></svg>Rhythm</span><span class="m-settab on"><svg class="ic"><use href="#i-term"/></svg>Sessions</span><span class="m-settab"><svg class="ic"><use href="#i-check"/></svg>Jira</span><span class="m-settab"><svg class="ic"><use href="#i-day"/></svg>Calendars</span><span class="m-settab"><svg class="ic"><use href="#i-key"/></svg>Shortcuts</span></div>
+      <div class="m-setpane">
+        <div>
+          <div class="m-group">Claude Code profiles</div>
+          <div class="m-list">
+            <div class="m-row"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>personal</b><small>~/.claude-personal</small></div><span class="m-chip ok">hook installed</span></div>
+            <div class="m-row"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>client</b><small>~/.claude-client</small></div><span class="m-chip ok">hook installed</span></div>
+            <div class="m-row"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>work</b><small>~/.claude-work</small></div><span class="m-btn">Install hook</span></div>
+          </div>
+          <span class="m-btn">Add a profile folder</span>
+          <div class="m-group">Other agents</div>
+          <div class="m-list">
+            <div class="m-row idle"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>Codex</b><small>Not installed on this Mac</small></div><span class="m-chip none">added later</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="m-group">Terminals</div>
+          <div class="m-list">
+            <div class="m-row"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>iTerm2</b><small>Jumps to the exact tab</small></div><span class="m-chip ok">allowed</span></div>
+            <div class="m-row"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>Terminal</b><small>Jumps to the exact tab</small></div><span class="m-chip ok">allowed</span></div>
+            <div class="m-row"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>VS Code</b><small>Brings the window forward</small></div><span class="m-chip ok">allowed</span></div>
+            <div class="m-row"><span class="m-tile"><svg class="ic"><use href="#i-term"/></svg></span><div class="m-grow"><b>Cursor</b><small>Brings the window forward</small></div><span class="m-btn">Allow</span></div>
+          </div>
+        </div>
+      </div>
+    </div></div></div></div>
+    <p class="d-fine">The profile names are examples.</p>
+  </div>
+
+  <div class="d-step">
+    <div>
+      <h3>iPhone, the same block in your pocket</h3>
+      <p class="d-lead">The phone uses the pages of option B. Sessions are read-only there, because the terminals live on the Mac.</p>
+    </div>
+    <div class="stage"><div class="stage-in">
+      <div class="mk m-phone m-lock"><span class="m-island"></span><div class="m-screen">
+        <div class="m-locktime">9:36</div>
+        <div class="m-lockdate">Monday 16 November</div>
+        <div class="m-la">
+          <div class="m-head"><i class="m-dot"></i><div class="m-grow"><b class="m-ws">Acme</b><small>ACM-412 Checkout redirect</small></div></div>
+          <div class="m-digits"><span>1:24</span><span class="ss">:10</span></div>
+          <div class="m-track"><i class="fill" style="width:30%"></i><span class="nt"><i style="left:20.83%;width:4.17%"></i><i style="left:45.83%;width:4.17%"></i><i style="left:70.83%;width:4.17%"></i></span></div>
+          <div class="m-btns"><span class="m-btn">Pause</span><span class="m-btn">Break</span></div>
+        </div>
+      </div></div>
+      <div class="mk m-phone"><span class="m-island"></span><div class="m-screen">
+        <div class="m-head"><i class="m-dot"></i><div class="m-grow"><b class="m-ws">Acme</b><small>ACM-412 Checkout redirect</small></div></div>
+        <div class="m-clock">
+          <div class="m-digits"><span>1:24</span><span class="ss">:10</span></div>
+          <div class="m-sub">left of 2:00, break in 19 min</div>
+          <div class="m-track"><i class="fill" style="width:30%"></i><span class="nt"><i style="left:20.83%;width:4.17%"></i><i style="left:45.83%;width:4.17%"></i><i style="left:70.83%;width:4.17%"></i></span></div>
+        </div>
+        <div class="m-quick two">
+          <span class="m-q"><svg class="ic"><use href="#i-pause"/></svg><span>Pause</span></span>
+          <span class="m-q"><svg class="ic"><use href="#i-cup"/></svg><span>Break</span></span>
+          <span class="m-q"><span class="m-q-big">+15</span><span>min</span></span>
+          <span class="m-q"><svg class="ic"><use href="#i-swap"/></svg><span>Switch</span></span>
+        </div>
+        <div class="m-alert"><div class="m-grow"><b>1 session needs you</b><small>acme-web on your Mac</small></div></div>
+        <div class="m-tabs"><span class="m-tab on"><svg class="ic"><use href="#i-clock"/></svg>Now</span><span class="m-tab"><svg class="ic"><use href="#i-day"/></svg>Today</span><span class="m-tab"><svg class="ic"><use href="#i-bars"/></svg>History</span><span class="m-tab"><svg class="ic"><use href="#i-check"/></svg>Log</span></div>
+      </div></div>
+      <div class="mk m-phone"><span class="m-island"></span><div class="m-screen">
+        <div class="m-head"><div class="m-grow"><b class="m-ws">Today</b><small>0:46 tracked, 1 meeting</small></div></div>
+        <div class="m-tl">
+          <div class="m-blk"><span class="t">09:00</span><div class="m-card h2"><b>Acme</b><small>ACM-412</small><small>1:24 left</small></div></div>
+          <div class="m-free">30 min free</div>
+          <div class="m-blk" data-ws="m"><span class="t">11:30</span><div class="m-card"><b>Sprint sync</b><small>30 min</small></div></div>
+          <div class="m-free">1 h free</div>
+          <div class="m-blk" data-ws="b"><span class="t">13:00</span><div class="m-card plan h2"><b>Globex</b><small>GLX-88</small><small>planned, 2 h</small></div></div>
+        </div>
+        <div class="m-tabs"><span class="m-tab"><svg class="ic"><use href="#i-clock"/></svg>Now</span><span class="m-tab on"><svg class="ic"><use href="#i-day"/></svg>Today</span><span class="m-tab"><svg class="ic"><use href="#i-bars"/></svg>History</span><span class="m-tab"><svg class="ic"><use href="#i-check"/></svg>Log</span></div>
+      </div></div>
+    </div></div>
+  </div>
+
+  <div class="grid g2">
+    <div class="card">
+      <h3>Decided</h3>
+      <ul>
+        <li>Expanded panel: A on the Mac, B on the phone.</li>
+        <li>Quick actions: Pause, Break, +15 and Switch. End block lives in the right-click menu.</li>
+        <li>Shortcuts: ⌥ Space and ⌥ Tab. Both can be changed in Settings if they clash with something.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Sounds</h3>
+      <ul>
+        <li>Soft chime when a focus interval ends</li>
+        <li>A different chime when a break ends</li>
+        <li>Longer tone when the block ends</li>
+        <li>Short tick when an agent needs you, which can be muted during focus</li>
+      </ul>
+    </div>
+  </div>
+</section>
+</main>
+<script src="design.js"></script>
+</body>
+</html>
