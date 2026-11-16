@@ -23,15 +23,14 @@ Everything an agent or a person needs before changing code. These files are the 
 
 | File | What it answers |
 |---|---|
-| [process/agent-flow.md](process/agent-flow.md) | The roles, the path of one task, statuses and the definition of done |
+| [process/agent-flow.md](process/agent-flow.md) | The roles, the path of one task and the statuses |
 | [process/checks.md](process/checks.md) | The local check command, its receipt on the commit, and what runs on GitHub |
 | [process/tasks.md](process/tasks.md) | Where tasks live, what each one carries and how the next phase gets its tasks |
-| [process/releases.md](process/releases.md) | Versions, the Dev and Release builds side by side on Mac and iPhone, how a version is released, and what agents may do with each |
-| [process/safety-and-privacy.md](process/safety-and-privacy.md) | What agents may touch on the maintainer's Mac, what never enters the repository, and what the app itself may do |
+| [process/releases.md](process/releases.md) | Versions, the Dev and Release builds side by side on Mac and iPhone, and how a version is released |
+| [process/safety-and-privacy.md](process/safety-and-privacy.md) | A pointer to the rule file, and what was done because the repository is public from the start |
 
-The rules that bind agents are in `rules/` at the repository root: [../rules/README.md](../rules/README.md) first, then one file per role in `roles/`. The subagents and the owner's commands are in `.claude/`.
+The rules that bind agents are in `rules/` at the repository root: [../rules/README.md](../rules/README.md) first, then the general rules (code style, testing, git, safety and privacy, releases, the definition of done and the lessons) and one file per role in `roles/`. Where a rule and a page here cover the same subject, the rule file is the only copy and the page points at it. The subagents and the owner's commands are in `.claude/`.
 
 ## Notes that come later
 
 - `spikes/` gets the findings of the phase 0 spikes.
-- `rules/` gets the general rules in card 3: code style, testing, git, safety and privacy, the definition of done, releases and lessons.

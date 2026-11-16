@@ -1,8 +1,11 @@
 # Rules for agents
 
-Every agent reads the files listed for its role **before** it starts work. A rule here wins over a habit. A rule in `CLAUDE.md` wins over this folder, and the two must not disagree.
+Every agent reads the files listed for its role **before** it starts work. Each role file has a "Must read" line that names them.
 
-This is the minimum the agent flow needs to run. Card 3 adds code style, testing, git, safety and privacy, the definition of done, releases and lessons. Until then, the documents named below are binding as they stand.
+Which text wins when two disagree:
+
+1. `CLAUDE.md` wins over this folder. The two must not disagree. If you find a disagreement, follow `CLAUDE.md` and tell the Leader.
+2. This folder wins over a habit, a skill and any guide from outside the repository. Nothing from outside is binding here.
 
 | File | What it covers | Who reads it |
 |---|---|---|
@@ -13,10 +16,15 @@ This is the minimum the agent flow needs to run. Card 3 adds code style, testing
 | [roles/tester.md](roles/tester.md) | Checking the card in the running Dev build, and all tests | Tester |
 | [roles/reviewer.md](roles/reviewer.md) | Reading code and tests, privacy and safety first | Reviewer |
 | [roles/documenter.md](roles/documenter.md) | Keeping `docs/` in step | Documenter |
-| [../docs/process/agent-flow.md](../docs/process/agent-flow.md) | The flow, the statuses and the definition of done | everyone |
-| [../docs/process/safety-and-privacy.md](../docs/process/safety-and-privacy.md) | The maintainer's Mac, the public repository, the app's own rules | everyone. The Reviewer reads it in full for every task |
-| [../docs/process/releases.md](../docs/process/releases.md) | Versions and the Dev and Release builds. Its "Rules for agents" are binding | everyone |
-| [../docs/process/checks.md](../docs/process/checks.md) | `./scripts/check`, the hooks and the `local/check` receipt | everyone who commits |
+| [code-style.md](code-style.md) | Swift 6, SwiftUI and SwiftData as this project writes them | Developer, Designer, Tester, Reviewer |
+| [testing.md](testing.md) | Who writes tests, what is worth testing, running the Dev build, checking a screen | Tester, Reviewer. Developer for "Running the Dev build". Designer for that and "Checking a screen" |
+| [git.md](git.md) | Branches, worktrees, commits, pushing, pull requests, verdicts | Everyone |
+| [safety-and-privacy.md](safety-and-privacy.md) | The maintainer's Mac, the public repository, what the app itself may do | Everyone. The Reviewer reads it in full for every task |
+| [releases.md](releases.md) | What agents may do with versions and the Dev and Release builds | Everyone |
+| [definition-of-done.md](definition-of-done.md) | Two checklists: before Ready to merge, and before the merge | Leader, Release master |
+| [lessons.md](lessons.md) | What went wrong before and which rule came from it | Leader, at the start of every card |
+
+Background, not rules: [the flow and its statuses](../docs/process/agent-flow.md), [the check command and its receipt](../docs/process/checks.md), [versions and build variants](../docs/process/releases.md), [tasks and the board](../docs/process/tasks.md).
 
 ## The result line
 
@@ -27,18 +35,6 @@ RESULT: <DONE | NEEDS_DESIGN | NEEDS_DECISION | PASS | FAIL | APPROVE | REJECTED
 ```
 
 The Leader reads this line first, then checks every claim in the report before it moves the card.
-
-## Verdicts
-
-The Tester and the Reviewer post their verdict as a comment on the pull request, because all agents share one GitHub account and cannot approve. The first line names the commit it was given on:
-
-```
-APPROVE: <short reason> (on <short sha>)
-REJECTED: <short reason> (on <short sha>)
-- <finding with file:line, severity and the fix>
-```
-
-A verdict belongs to that commit. A later commit that changes product code, tests, `rules/`, `.claude/` or `CLAUDE.md` needs a new verdict.
 
 ## Comments on the card
 
@@ -52,14 +48,13 @@ Subagents report to the Leader, and the Leader posts the comment for their step 
 
 ## Where the work happens
 
-- Each card gets its own branch, `<type>/<card number>-<short-slug>` such as `feat/10-timer-engine`, and its own git worktree at `.worktrees/<branch>`, made from a fresh `origin/main`. All roles work in that worktree. The main checkout, where the session started, stays as it is.
+- Each card gets its own branch and its own git worktree at `.worktrees/<branch>`. All roles work in that worktree. The main checkout, where the session started, stays as it is. See [git.md](git.md).
 - The rules are read from the main checkout: this `rules/` folder in the directory the session started in.
-- Build, run and test only the Dev variant. See `docs/process/releases.md`.
-- Never pass `--no-verify`, never force-push, never rewrite pushed history.
+- Build, run and test only the Dev variant. See [releases.md](releases.md).
 
 ## Who changes this folder
 
-Only the Leader, and only after the owner's yes. That covers `rules/`, `.claude/agents/` and `.claude/skills/`. Every other role says what should change in its report to the Leader.
+Only the Leader, and only after the owner's yes: one before the change is written, and one at the merge, where the Release master names every changed file. `rules/roles/leader.md` section 8 says how. That covers `rules/`, `.claude/agents/` and `.claude/skills/`. Every other role says what should change in its report to the Leader.
 
 ## Language
 

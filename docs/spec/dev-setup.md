@@ -12,7 +12,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 - An Apple ID. Enough to build and run on your own Mac for phases 0 to 5.
 - Apple Developer Program, 99 USD per year. Not joined yet. It is needed for CloudKit, TestFlight and notarized builds, so join at phase 6 or when the first build goes to someone else, whichever comes first. The fee applies even though the app is free.
 - An iPhone with Developer Mode switched on, for phase 6.
-- Git repo on GitHub. Private while you build, public under the MIT license when you open it up.
+- Git repo on GitHub, public under the MIT license from the first commit.
 
 ### Command line tools
 
@@ -57,7 +57,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 - `docs/` the spec, the design prototype and the process notes
 - `.claude/` the agent flow: subagents in `agents/`, the owner's commands in `skills/`
 - `.mcp.json` the Trello MCP server
-- `rules/` rules for agents: `README.md` first, then one file per role in `roles/`
+- `rules/` rules for agents: `README.md` first, then the general rules and one file per role in `roles/`
 - `scripts/` and `.githooks/` the check command and the git hooks
 
 ### Permissions the Mac app will ask you for
@@ -69,4 +69,4 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 
 The app is not sandboxed, because it reads session files from other tools and scripts your terminals. It makes network calls only to Jira sites you add and to iCloud.
 
-What agents may do on the Mac they work on, and what never enters the repository, is in [../process/safety-and-privacy.md](../process/safety-and-privacy.md).
+What agents may do on the Mac they work on, and what never enters the repository, is in [../../rules/safety-and-privacy.md](../../rules/safety-and-privacy.md).

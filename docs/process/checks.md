@@ -55,9 +55,11 @@ How it works:
 
 1. `./scripts/check` passes on a clean working tree and records the pass in `.git/local-check/<sha>`. Worktrees share this folder, because it sits in the repository's common git folder.
 2. `scripts/receipt <commit>` posts the status for a recorded commit, once GitHub has that commit. The check calls it at the end, so a check on a commit that is already pushed posts at once.
-3. `./scripts/push` runs `git push` and then `scripts/receipt` for the pushed commit. **Push with `./scripts/push`.** A plain `git push` still runs the check through the hook but posts nothing, so run `scripts/receipt` after it.
+3. `./scripts/push` runs `git push` and then `scripts/receipt` for the pushed commit. A plain `git push` still runs the check through the hook but posts nothing, until `scripts/receipt` is run for that commit.
 
-Rules:
+How agents push is in [../../rules/git.md](../../rules/git.md) under "Pushing".
+
+What follows from this:
 
 - A dirty working tree gets no receipt, because the pass would not describe the commit.
 - GitHub accepts a status only for a commit it already has. That is why the hook only records the pass, and the status is posted after the push.
@@ -83,7 +85,7 @@ It prints `success` for a commit that passed, and nothing for a commit nobody ch
 
 The pre-push hook refuses two things the check could not vouch for: a dirty working tree, and a push of a commit that is not the one checked out. A commit that already passed is not checked twice.
 
-Never pass `--no-verify`. If a hook is wrong, fix the hook in its own pull request.
+`git commit --no-verify` and `git push --no-verify` would skip these hooks. The rule about that, and what happens when a hook is wrong, are in [../../rules/git.md](../../rules/git.md) under "Commits".
 
 ## What GitHub enforces
 
@@ -93,7 +95,7 @@ The repository is public, so rulesets are available on the free plan. A ruleset 
 - the head commit must carry a successful `local/check` status. A pull request without it shows as blocked
 - no force-push to `main`, and `main` cannot be deleted
 
-Repository admins can bypass it. That is the maintainer's account, which the agents also use, so for them the bypass is closed by rule rather than by GitHub: an agent never bypasses the ruleset.
+Repository admins can bypass it. That is the maintainer's account, which the agents also use, so GitHub does not stop them. The bypass is closed by a rule instead, in [../../rules/git.md](../../rules/git.md) under "Never".
 
 The flow checks it too: the Release master reads the status and runs the check again before asking for the owner's yes.
 

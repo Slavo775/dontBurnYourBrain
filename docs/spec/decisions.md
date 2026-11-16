@@ -28,7 +28,7 @@ All rows below date from 15 November 2026, except those marked 16 Nov.
 | **Every part works alone** | Other people will not have everything set up the way the maintainer has. Each part works without the others | The timer needs nothing else. Sessions, terminal focus, Jira, calendar, sync and insight-flow are optional layers: a part that is missing, not installed or not permitted is left out of the interface and nothing else breaks. Each feature task names its missing case, and the Tester checks it. Building from a fresh clone needs only Xcode and the four command line tools |
 | **Repository** | Public from the first commit, under the maintainer's personal GitHub account. *16 Nov* | Privacy rules hold from commit one. Rulesets are available, so `main` can require the local check. GitHub's own runners are free for public repositories, but checks stay local for now |
 | **Language** | Everything written is in English. *16 Nov* | Code, comments, commits, pull requests, docs and Trello cards |
-| **Privacy in the repository** | Nothing personal enters the repository. Sample data is Acme, Globex and Personal | A privacy scan in the check command, and rules that hold from the first commit. See [../process/safety-and-privacy.md](../process/safety-and-privacy.md) |
+| **Privacy in the repository** | Nothing personal enters the repository. Sample data is Acme, Globex and Personal | A privacy scan in the check command, and rules that hold from the first commit. See [../../rules/safety-and-privacy.md](../../rules/safety-and-privacy.md) |
 
 ## Still assumptions
 
