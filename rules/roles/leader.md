@@ -22,7 +22,7 @@ Trello tools take the long `ari:cloud:trello::…` ids from read results, never 
 1. Read the card: description, checklist, comments, and the parts of `docs/spec` it names.
 2. Challenge it like an architect. Is this the real need, is there a simpler way, what are the risks? Ask the owner only what the card, the spec and the rules leave open.
 3. When a task needs a look the design docs do not show, ask the owner for a reference before anyone proposes one. The Designer then shows the proposal as a whole screen.
-4. The first card that adds a screen also gives the Dev build a launch argument that sets light or dark for one launch, and names it in "Checking a screen" of `rules/testing.md`. Put that into its done-when list.
+4. The first card that adds a window or panel confirms that `-DontBurnAppearance`, the launch argument for the mode named in "Checking a screen" of `rules/testing.md`, reaches it, and puts that into its done-when list.
 5. When a task adds or moves something in a shared element (the menu bar item, the panel, the window sidebar), write that element's documented limits from `docs/spec/design.md` on the card and into the brief.
 6. When a task adds a dependency, the card names it with its license and the reason before work starts. The owner says yes, and the Reviewer checks both.
 7. List the open pull requests and the files they change: `gh pr list --json number,title,files`. When one touches the same files, name it on the card with the merge order.
