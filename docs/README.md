@@ -12,7 +12,7 @@ Everything an agent or a person needs before changing code. These files are the 
 | [spec/tech-stack.md](spec/tech-stack.md) | Why Swift, the architecture, and the data model |
 | [spec/design.md](spec/design.md) | Every screen and how it behaves |
 | [spec/plan.md](spec/plan.md) | The phases, from setup to a release for other people |
-| [spec/dev-setup.md](spec/dev-setup.md) | Tools, quality gates, repository layout, permissions |
+| [spec/dev-setup.md](spec/dev-setup.md) | Tools, launch arguments, quality gates, repository layout, permissions |
 | [spec/decisions.md](spec/decisions.md) | What was decided and what each decision changes |
 
 ## The design
