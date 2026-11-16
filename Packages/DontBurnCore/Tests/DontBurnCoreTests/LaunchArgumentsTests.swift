@@ -9,6 +9,7 @@ private let screenshotInstant = Date(timeIntervalSince1970: 1_768_466_490)
     "2026-01-15T09:41:30+01:00",
     "2026-01-15T08:41:30Z",
     "2026-01-15T03:11:30-05:30",
+    "2026-01-15T10:40:30+01:59",
     "2026-01-15T22:41:30+14:00",
     "2026-01-14T14:41:30-18:00",
     "2026-01-15T08:41:30-00:00",
@@ -40,6 +41,11 @@ func `fixed time rejects a date or time that does not exist`(raw: String) {
 
 @Test(arguments: ["+18:01", "-18:01", "+19:00", "+25:00", "-99:00"])
 func `fixed time rejects an offset beyond eighteen hours`(offset: String) {
+    #expect(FixedTime.date(from: "2026-01-15T09:41:30\(offset)") == nil)
+}
+
+@Test(arguments: ["+00:60", "+00:99", "-05:60"])
+func `fixed time rejects offset minutes of 60 or more`(offset: String) {
     #expect(FixedTime.date(from: "2026-01-15T09:41:30\(offset)") == nil)
 }
 
