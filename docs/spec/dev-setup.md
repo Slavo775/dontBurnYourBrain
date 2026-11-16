@@ -12,7 +12,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 - An Apple ID. Enough to build and run on your own Mac for phases 0 to 5.
 - Apple Developer Program, 99 USD per year. Not joined yet. It is needed for CloudKit, TestFlight and notarized builds, so join at phase 6 or when the first build goes to someone else, whichever comes first. The fee applies even though the app is free.
 - An iPhone with Developer Mode switched on, for phase 6.
-- Git repo on GitHub. Private while you build, public under the MIT license when you open it up.
+- Git repo on GitHub, public under the MIT license from the first commit.
 
 ### Command line tools
 

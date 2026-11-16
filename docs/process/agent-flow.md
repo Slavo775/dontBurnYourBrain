@@ -13,11 +13,11 @@ The design follows a flow the maintainer already runs in another project, called
 | `rules/README.md` | What every agent reads first: the list of rule files and who reads each, the result line, the card comments, where the work happens |
 | `rules/*.md` | The general rules: code style, testing, git, safety and privacy, releases, the definition of done and the lessons |
 | `rules/roles/` | One file per role: what it does, what it may touch, how it reports |
-| `.worktrees/` | One git worktree per card, made from a fresh `origin/main`. Ignored by git |
+| `.worktrees/` | One git worktree per card, made from a fresh `origin/main`. Also a takeover's own worktree under `takeover/`, and the Tester's screenshots under `screenshots/`, which stay local. Ignored by git |
 
 `/lead` and `/release` run in the main session, because they talk to the owner, move cards and call the subagents. `/review` and `/design` run the Reviewer or the Designer alone, as a forked subagent. `/next` only reads the board.
 
-Every card is worked on in its own worktree, `.worktrees/<branch>`, so the main checkout stays as it is and two cards never share a working tree. The rules are always read from the main checkout.
+Every card is worked on in its own worktree, `.worktrees/<branch>`, so the main checkout stays as it is and two cards never share a working tree. A Leader that takes over a stopped session's card works in a worktree of its own instead, as [../../rules/roles/leader.md](../../rules/roles/leader.md) says under "Taking over". The rules are always read from the main checkout.
 
 ## The idea
 
@@ -30,7 +30,7 @@ The owner talks to one agent, the Leader. The Leader runs a small team of roles 
 | **Leader** | `/lead`, in the main session | Takes the owner's request or the next card, checks it against `docs/spec`, writes the brief, calls the subagents, checks every claim before trusting it, moves the card and comments on it | Edits code, tests or docs |
 | **Developer** | The Leader, as the `developer` subagent | Logic, data and services in Swift. Opens the pull request | Writes tests. Changes how a view looks beyond wiring it up |
 | **Designer** | The Leader as the `designer` subagent, or `/design` | The look of the SwiftUI views, held against `docs/spec/design.md` and the prototype | Writes logic |
-| **Tester** | The Leader, as the `tester` subagent | Builds and starts the development build, checks the done-when line by hand, then writes the tests. Posts a verdict with screenshots when a screen changed | Changes product code |
+| **Tester** | The Leader, as the `tester` subagent | Builds and starts the development build, checks the done-when list by hand, then writes the tests. A card that changes nothing in the app is checked as its "How to verify" says instead. Posts a verdict. When a screen changed, takes screenshots that stay on the Mac | Changes product code |
 | **Reviewer** | The Leader as the `reviewer` subagent, or `/review <PR>` | Reads code and tests. Privacy and what the app does on the user's Mac come first. Posts a verdict | Changes anything |
 | **Documenter** | The Leader, as the `documenter` subagent | Keeps `docs/` in step when behaviour changed, or notes that nothing needed changing | Changes code |
 | **Release master** | `/release`, in the main session | Goes through the second checklist of the definition of done on the latest commit, asks the owner for one yes, merges, moves the card to Done | Merges without the yes. Fixes things |
@@ -43,7 +43,7 @@ The roles cannot do each other's job: only the Tester writes tests, only the Dev
 
 1. **Leader.** Picks the card (`/next` shows which one and why), writes the brief from the card and the spec, and asks the owner only what they leave open. Checks the card's `Blocked by` line and the open pull requests that touch the same files.
 2. **Developer or Designer.** Works on the card's branch, in its worktree made from a fresh `origin/main`, and opens the pull request.
-3. **Tester.** `APPROVE:` or `REJECTED:` on the pull request, with screenshots in light and dark when a screen changed.
+3. **Tester.** `APPROVE:` or `REJECTED:` on the pull request. When a screen changed, the Tester takes screenshots in light and dark. They are never committed or uploaded: the Leader shows them to the owner. See "Checking a screen" in [../../rules/testing.md](../../rules/testing.md).
 4. **Reviewer.** `APPROVE:` or `REJECTED:`. A serious finding sends the task back.
 5. **Documenter.** Docs updated in the same pull request, or a note that none are needed.
 6. **Release master.** The owner's yes, then the merge.
@@ -80,7 +80,7 @@ Every role the Leader calls ends its last message with one `RESULT:` line. The L
 
 ## Verdicts
 
-All agents act through one GitHub account, so none of them can approve a pull request. The Tester and the Reviewer post a verdict as a comment instead, `APPROVE:` or `REJECTED:`, and it belongs to the commit it names. The format, and which later commits need a new verdict, are in [../../rules/git.md](../../rules/git.md).
+All agents act through one GitHub account, so none of them can approve a pull request. The Tester and the Reviewer post a verdict as a comment instead, `APPROVE:` or `REJECTED:`, and it belongs to the commit it names. The format, and when a verdict still counts for a later head commit, are in [../../rules/git.md](../../rules/git.md) under "Verdicts".
 
 ## Definition of done
 
@@ -100,11 +100,11 @@ Someone who clones this repository has no access to the maintainer's Trello boar
 
 ## Lessons
 
-[../../rules/lessons.md](../../rules/lessons.md) holds what went wrong before and the rule that came from it. It starts with the lessons carried over from the reference flow. The Leader reads it at the start of every card and writes an entry after a bad outcome. When an entry is written, where it is committed, its format and the three statuses are in that file.
+[../../rules/lessons.md](../../rules/lessons.md) holds what went wrong before and the rule that came from it. It starts with the lessons carried over from the reference flow. The Leader reads it at the start of every card and proposes an entry to the owner after a bad outcome. An entry is a task of its own, apart from the card it came from. When an entry is written, where it is committed, its format and the three statuses are in that file.
 
 ## Who may change the agents and the rules
 
-That is said in [../../rules/README.md](../../rules/README.md) under "Who changes this folder". It covers `rules/`, `.claude/agents/` and `.claude/skills/`.
+That is said in [../../rules/README.md](../../rules/README.md) under "Who changes this folder", and how a change is made is in [../../rules/roles/leader.md](../../rules/roles/leader.md) under "Changing the flow". It covers `rules/`, `.claude/agents/` and `.claude/skills/`, and the owner is asked twice: before the change is written and again at the merge.
 
 ## Not part of the flow yet
 
