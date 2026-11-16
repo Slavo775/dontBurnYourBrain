@@ -6,7 +6,7 @@ What went wrong, and the rule that came from it. The Leader reads this file at t
 
 The Leader writes one after a bad outcome: two or more failed rounds, a decision the owner corrected, a blocked merge, or a cancelled task.
 
-An entry never goes onto the card's own branch, because a change to `rules/` there would need new verdicts, and a cancelled card's branch never merges. The Leader shows the entry to the owner in the chat and in a comment on the card. It is then committed in a pull request of its own, on a branch `docs/lesson-<short-slug>`, together with the rule change when the owner accepted it.
+An entry never goes onto the card's own branch, because a change to `rules/` there would need new verdicts, and a cancelled card's branch never merges. The Leader shows the entry to the owner in the chat and in a comment on the card. It is then committed in a pull request of its own, together with the rule change when the owner accepted it. That is a task like any other: a card of its own when there is a board, and a branch named as `rules/git.md` says.
 
 ## The entry format
 

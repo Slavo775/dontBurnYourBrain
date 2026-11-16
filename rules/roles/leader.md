@@ -77,13 +77,24 @@ When every item of the first checklist in `rules/definition-of-done.md` holds, c
 
 ## 7. Taking over
 
-A card whose session has stopped can be taken over by any Leader, after the owner confirms that session is closed. Say so in a comment on the card. Work in your own worktree, on a local branch made from `origin/<branch>`: `git fetch origin`, then `git worktree add .worktrees/takeover/<branch> -b takeover/<branch> origin/<branch>`. Push with `./scripts/push origin HEAD:<branch>`. Never check out or remove another session's worktree.
+A card whose session has stopped can be taken over by any Leader, after the owner confirms that session is closed. Say so in a comment on the card. Work in your own worktree, on a local branch made from `origin/<branch>`: `git fetch origin`, then `git worktree add .worktrees/takeover/<branch> -b takeover/<branch> origin/<branch>`. Never check out or remove another session's worktree. The stopped session's worktree is the owner's to remove.
+
+From then on the takeover worktree is the card's worktree:
+
+- Name its path in your comment on the card and in every brief.
+- Every role pushes from it with `./scripts/push origin HEAD:<branch>`, never with the branch name alone, because the local branch there is `takeover/<branch>`. Say so in every brief.
+- The Release master checks in it and removes it.
 
 ## 8. Changing the flow
 
-You are the only role that changes `rules/`, `.claude/agents/` and `.claude/skills/`. Write the change in the card's worktree and commit it there. The pull request is the diff the owner sees, and it still goes through the Tester and the Reviewer. Rules are read from the main checkout, so nothing applies until the owner's yes merges it.
+You are the only role that changes `rules/`, `.claude/agents/` and `.claude/skills/`. There are two gates, and both are the owner's:
 
-A lesson is the one exception: it never goes onto a card's branch. `rules/lessons.md` says where it goes. Its pull request is a task of its own and goes through the flow like any other.
+1. **Before you write.** Say in the chat what you want to change and why, and write it only after his yes. A card whose goal is the rules is that yes for what the card asks.
+2. **At the merge.** The Release master names every changed file under `rules/`, `.claude/` and `CLAUDE.md` when it asks for the yes.
+
+Write the change in the card's worktree and commit it there. It goes through the Tester and the Reviewer like any other change. Rules are read from the main checkout, so nothing applies until it is merged.
+
+A lesson is the one exception: it never goes onto a card's branch. `rules/lessons.md` says where it goes. Its pull request is a task of its own, with a card of its own when there is a board, and goes through the flow like any other.
 
 ## Report
 

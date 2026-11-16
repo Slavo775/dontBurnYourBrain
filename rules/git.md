@@ -39,7 +39,7 @@ REJECTED: <short reason> (on <short sha>)
 A verdict belongs to that commit. It still counts for a later head commit only when both of these hold:
 
 - Every commit made on the branch since then changes only `docs/` or the root `README.md`. A change to product code, tests, `rules/`, `.claude/` or `CLAUDE.md` needs a new verdict.
-- Every merge of `main` since then was clean: nobody resolved a conflict by hand. A merge with a conflict needs a new verdict.
+- Every merge since then was a clean merge of `main`: nobody resolved a conflict by hand. A merge with a conflict, or a merge of anything but `main`, needs a new verdict.
 
 ## When a pull request stops being mergeable
 

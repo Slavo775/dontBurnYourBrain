@@ -9,7 +9,7 @@ Two checklists. The Leader goes through the first before a card moves to Ready t
 - [ ] The Tester posted `APPROVE:` on the pull request. A card that changes what the app does was checked in the running Dev build, including the case where an optional part is missing, and tests were added or updated. A card that changes nothing in the app, or a spike, was checked the way its "How to verify" says. When a screen changed, there are screenshots in light and dark, and the owner has seen them.
 - [ ] The Reviewer posted `APPROVE:`, with no open CRITICAL or HIGH finding.
 - [ ] Both verdicts still count for the head commit, as "Verdicts" in `rules/git.md` says.
-- [ ] No test is skipped, or each skipped test is named on the card with its reason.
+- [ ] No test is skipped, or each skipped test is named on the card with its reason and the owner accepted it.
 - [ ] Docs are updated in the same pull request, or the Documenter said why none are needed.
 - [ ] The privacy scan is clean: nothing personal in code, docs, screenshots, commit messages or the pull request.
 - [ ] No more than three failed rounds. Otherwise the card went to Needs decision and the owner decided.
@@ -24,6 +24,6 @@ Two checklists. The Leader goes through the first before a card moves to Ready t
 - [ ] The Documenter's note is on the card: what was documented, or why nothing was needed.
 - [ ] The pull request's `mergeStateStatus` is `CLEAN`.
 - [ ] The card has a comment for every step.
-- [ ] The owner said yes to this pull request, in this session.
+- [ ] The owner said yes to this pull request, in this session, after seeing every changed file under `rules/`, `.claude/` and `CLAUDE.md` named.
 
 When an item of the second list fails, the card goes to Merge blocked with a comment that says which one. The Release master fixes nothing.

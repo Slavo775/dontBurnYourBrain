@@ -54,7 +54,7 @@ Subagents report to the Leader, and the Leader posts the comment for their step 
 
 ## Who changes this folder
 
-Only the Leader, through a pull request, and it holds only after the owner's yes merges it. That covers `rules/`, `.claude/agents/` and `.claude/skills/`. Every other role says what should change in its report to the Leader.
+Only the Leader, and only after the owner's yes: one before the change is written, and one at the merge, where the Release master names every changed file. `rules/roles/leader.md` section 8 says how. That covers `rules/`, `.claude/agents/` and `.claude/skills/`. Every other role says what should change in its report to the Leader.
 
 ## Language
 
