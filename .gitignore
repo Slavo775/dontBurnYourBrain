@@ -16,3 +16,7 @@ DerivedData/
 
 # Local, per-machine settings
 Local.xcconfig
+
+# Agent flow: one git worktree per card, and personal Claude Code settings
+.worktrees/
+.claude/settings.local.json

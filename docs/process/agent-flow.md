@@ -1,8 +1,22 @@
 # The agent flow
 
-How a task moves through this repository when agents do most of the work. It is built only from what Claude Code itself offers: subagents and commands in `.claude/`. Tasks are cards on the maintainer's Trello board, and the board's lists are the statuses. Card 2 builds the flow, and this file is then corrected to match what was built. Until then it is the design.
+How a task moves through this repository when agents do most of the work. It is built only from what Claude Code itself offers: subagents and skills in `.claude/`. Tasks are cards on the maintainer's Trello board, and the board's lists are the statuses.
 
 The design follows a flow the maintainer already runs in another project, called the reference flow here, cut down for one repository and one Mac app.
+
+## How it is built
+
+| Path | What it holds |
+|---|---|
+| `.claude/agents/` | Five subagents: `developer`, `designer`, `tester`, `reviewer`, `documenter`. Each is short and sends the agent to `rules/README.md` and its role file. Each has a fixed set of tools: none of them has the Trello tools or can start another agent, and the Reviewer cannot edit files |
+| `.claude/skills/` | The commands the owner types: `/lead`, `/release`, `/next`, `/review`, `/design`. Only a person can start them |
+| `rules/README.md` | What every agent reads first: the result line, the verdict format, the card comments, where the work happens |
+| `rules/roles/` | One file per role: what it does, what it may touch, how it reports |
+| `.worktrees/` | One git worktree per card, made from a fresh `origin/main`. Ignored by git |
+
+`/lead` and `/release` run in the main session, because they talk to the owner, move cards and call the subagents. `/review` and `/design` run the Reviewer or the Designer alone, as a forked subagent. `/next` only reads the board.
+
+Every card is worked on in its own worktree, `.worktrees/<branch>`, so the main checkout stays on `main` and two cards never share a working tree. The rules are always read from the main checkout.
 
 ## The idea
 
@@ -13,21 +27,21 @@ The owner talks to one agent, the Leader. The Leader runs a small team of roles 
 | Role | Started with | Does | Never does |
 |---|---|---|---|
 | **Leader** | `/lead`, in the main session | Takes the owner's request or the next card, checks it against `docs/spec`, writes the brief, calls the subagents, checks every claim before trusting it, moves the card and comments on it | Edits code, tests or docs |
-| **Developer** | The Leader, as a subagent | Logic, data and services in Swift. Opens the pull request | Writes tests. Changes how a view looks beyond wiring it up |
-| **Designer** | The Leader as a subagent, or `/design` | The look of the SwiftUI views, held against `docs/spec/design.md` and the prototype | Writes logic |
-| **Tester** | The Leader, as a subagent | Builds and starts the development build, checks the done-when line by hand, then writes the tests. Posts a verdict with screenshots when a screen changed | Changes product code |
-| **Reviewer** | The Leader as a subagent, or `/review` | Reads code and tests. Privacy and what the app does on the user's Mac come first. Posts a verdict | Changes anything |
-| **Documenter** | The Leader, as a subagent | Keeps `docs/` in step when behaviour changed, or notes that nothing needed changing | Changes code |
+| **Developer** | The Leader, as the `developer` subagent | Logic, data and services in Swift. Opens the pull request | Writes tests. Changes how a view looks beyond wiring it up |
+| **Designer** | The Leader as the `designer` subagent, or `/design` | The look of the SwiftUI views, held against `docs/spec/design.md` and the prototype | Writes logic |
+| **Tester** | The Leader, as the `tester` subagent | Builds and starts the development build, checks the done-when line by hand, then writes the tests. Posts a verdict with screenshots when a screen changed | Changes product code |
+| **Reviewer** | The Leader as the `reviewer` subagent, or `/review <PR>` | Reads code and tests. Privacy and what the app does on the user's Mac come first. Posts a verdict | Changes anything |
+| **Documenter** | The Leader, as the `documenter` subagent | Keeps `docs/` in step when behaviour changed, or notes that nothing needed changing | Changes code |
 | **Release master** | `/release`, in the main session | Goes through the whole definition of done again on the latest commit, asks the owner for one yes, merges, moves the card to Done | Merges without the yes. Fixes things |
 
-The Leader and the Release master run in the main session, because a subagent cannot start other subagents. Only these two move cards and write on the board. Subagents report to the Leader.
+The Leader and the Release master run in the main session, because they talk to the owner and call the subagents. Only these two move cards and write on the board. Subagents report to the Leader, and the Leader posts the comment for their step under the role's name.
 
 Nobody but the Tester writes tests. Nobody but the Developer and the Designer changes product code. The Reviewer edits nothing.
 
 ## The path of one task
 
 1. **Leader.** Picks the card (`/next` shows which one and why), writes the brief from the card and the spec, and asks the owner only what they leave open. Checks the card's `Blocked by` line and the open pull requests that touch the same files.
-2. **Developer or Designer.** Works on a branch from a fresh `main` and opens the pull request.
+2. **Developer or Designer.** Works on the card's branch, in its worktree made from a fresh `origin/main`, and opens the pull request.
 3. **Tester.** `APPROVE:` or `REJECTED:` on the pull request, with screenshots in light and dark when a screen changed.
 4. **Reviewer.** `APPROVE:` or `REJECTED:`. A serious finding sends the task back.
 5. **Documenter.** Docs updated in the same pull request, or a note that none are needed.
@@ -80,12 +94,12 @@ The Leader reads this line first, then checks the claim: it looks at the pull re
 All agents act through one GitHub account, so none of them can approve a pull request. A verdict is a comment on the pull request:
 
 ```
-APPROVE: <short reason>
-REJECTED: <short reason>
+APPROVE: <short reason> (on <short sha>)
+REJECTED: <short reason> (on <short sha>)
 - <finding with file:line>
 ```
 
-Only the Tester and the Reviewer post verdicts. A verdict belongs to the commit it was given on. A later commit that changes product code or tests needs a new one.
+Only the Tester and the Reviewer post verdicts. A verdict belongs to the commit it names. A later commit that changes product code or tests needs a new one. A later commit that only changes docs does not.
 
 ## Definition of done
 
@@ -114,7 +128,7 @@ Every card carries two lines in its description, `Blocked by:` and `Blocks:`, wi
 
 ## Working without the board
 
-Someone who clones this repository has no access to the maintainer's Trello board, and the Trello server may simply not be connected. The flow still works: `/lead` takes the task from what the person writes in the chat, reports each status in its replies instead of moving a card, and everything else stays the same.
+Someone who clones this repository has no access to the maintainer's Trello board, and the Trello server may simply not be connected. The flow still works: `/lead <the task in words>` takes the task from the chat, reports each status in its replies instead of moving a card, and everything else stays the same. `/release` then takes the pull request number. `/next` says that it cannot read a board.
 
 ## Lessons
 
@@ -124,7 +138,7 @@ The file starts with lessons carried over from the reference flow.
 
 ## Who may change the agents and the rules
 
-Only the Leader, and only after the owner's yes. That covers `.claude/agents/`, the commands and `rules/`. Every other role says what should change in its report to the Leader.
+Only the Leader, and only after the owner's yes. That covers `.claude/agents/`, `.claude/skills/` and `rules/`. Every other role says what should change in its report to the Leader.
 
 ## Not part of the flow yet
 

@@ -13,8 +13,9 @@ A macOS menu bar app, with an iPhone companion later, for time blocks, tasks and
 | `Apps/Mac` | The menu bar app and Mac-only services |
 | `Tools/dontburn-hook` | The hook CLI |
 | `project.yml` | The XcodeGen definition. The Xcode project is generated and stays out of git |
-| `rules/` | Rules for agents, one file per role (from card 3 on) |
-| `.claude/` | The agent flow: subagents and commands (from card 2 on) |
+| `rules/` | Rules for agents: `README.md` first, then one file per role in `roles/`. Card 3 adds the general rules |
+| `.claude/` | The agent flow: subagents in `agents/`, the owner's commands in `skills/` |
+| `.worktrees/` | One git worktree per card while it is worked on. Ignored by git |
 | `.mcp.json` | The Trello MCP server. Only its address, never a token |
 
 ## Commands
@@ -30,7 +31,7 @@ Run from the repository root. Details in `docs/process/checks.md`.
 - Test the shared package: `swift test --package-path Packages/DontBurnCore`
 - Start the development build: `open DerivedData/Build/Products/Debug/DontBurn.app`. Note its process ID with `pgrep -f DerivedData/Build/Products/Debug/DontBurn.app` and stop only that one
 - The hook tool: `DerivedData/Build/Products/Debug/dontburn-hook`
-- Next card: `/next`. Start work on it: `/lead`. Merge: `/release`
+- Next card: `/next`. Start work on it: `/lead [card]`. Merge: `/release`. A review alone: `/review <PR>`. Design alone: `/design <card and screen>`
 
 ## Rules that always apply
 

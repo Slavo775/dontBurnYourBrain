@@ -1,2 +1,2 @@
 --swift-version 6.2
---exclude DerivedData,**/.build
+--exclude DerivedData,**/.build,.worktrees
