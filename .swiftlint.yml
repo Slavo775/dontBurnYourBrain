@@ -1,0 +1,9 @@
+included:
+  - Apps
+  - Packages/DontBurnCore/Sources
+  - Packages/DontBurnCore/Tests
+  - Tools
+
+disabled_rules:
+  # SwiftFormat owns formatting and adds trailing commas to multiline lists.
+  - trailing_comma

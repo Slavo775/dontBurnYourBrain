@@ -1,0 +1,24 @@
+#!/bin/bash
+# Runs the whole check before a push. A failure stops the push.
+set -uo pipefail
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+head=$(git rev-parse HEAD)
+while read -r _ local_sha _ _; do
+    [[ $local_sha =~ ^0+$ ]] && continue # a deleted branch
+    if [ "$local_sha" != "$head" ]; then
+        echo "pre-push: the check runs on the checked-out commit. Check out the branch you push."
+        exit 1
+    fi
+done
+
+if [ -n "$(git status --porcelain)" ]; then
+    echo "pre-push: the working tree is not clean, so the check would not describe the pushed commit."
+    exit 1
+fi
+
+if [ -f "$(git rev-parse --git-common-dir)/local-check/$head" ]; then
+    echo "pre-push: $head already passed the check."
+    exit 0
+fi
+exec scripts/check

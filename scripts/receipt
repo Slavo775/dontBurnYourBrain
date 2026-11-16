@@ -1,0 +1,24 @@
+#!/bin/bash
+# Posts the local/check commit status for a commit that passed ./scripts/check,
+# once GitHub has that commit. Usage: scripts/receipt [commit]
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+sha=$(git rev-parse "${1:-HEAD}")
+record="$(git rev-parse --git-common-dir)/local-check/$sha"
+
+if [ ! -f "$record" ]; then
+    echo "receipt: no pass recorded for $sha. Run ./scripts/check on a clean working tree."
+    exit 1
+fi
+if ! command -v gh >/dev/null || ! gh auth status >/dev/null 2>&1; then
+    echo "receipt: recorded locally. gh is not signed in, so nothing is posted."
+    exit 0
+fi
+if ! gh api "repos/{owner}/{repo}/commits/$sha" --silent 2>/dev/null; then
+    echo "receipt: recorded locally. GitHub does not have $sha yet, ./scripts/push posts it."
+    exit 0
+fi
+gh api "repos/{owner}/{repo}/statuses/$sha" --silent \
+    -f state=success -f context=local/check -f description="./scripts/check passed"
+echo "receipt: local/check posted for $sha."

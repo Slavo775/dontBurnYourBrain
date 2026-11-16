@@ -11,12 +11,12 @@ let package = Package(
     targets: [
         .target(
             name: "DontBurnCore",
-            swiftSettings: [.treatAllWarnings(as: .error)]
+            swiftSettings: [.treatAllWarnings(as: .error)],
         ),
         .testTarget(
             name: "DontBurnCoreTests",
             dependencies: ["DontBurnCore"],
-            swiftSettings: [.treatAllWarnings(as: .error)]
+            swiftSettings: [.treatAllWarnings(as: .error)],
         ),
-    ]
+    ],
 )

@@ -1,0 +1,15 @@
+#!/bin/bash
+# Conventional Commits: the subject starts with a type, an optional scope and a colon.
+set -euo pipefail
+
+subject=$(head -n 1 "$1")
+types='feat|fix|test|docs|refactor|chore'
+
+if [[ $subject =~ ^($types)(\([a-z0-9-]+\))?!?:\ .+ ]] \
+    || [[ $subject =~ ^(Merge|Revert|fixup!|squash!)\  ]]; then
+    exit 0
+fi
+
+echo "commit-msg: the subject must look like 'feat: add the timer' or 'fix(hook): ...'."
+echo "Types: ${types//|/, }. See docs/process/checks.md."
+exit 1
