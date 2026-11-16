@@ -41,8 +41,9 @@ Run from the repository root. Details in `docs/process/checks.md`.
 5. **Be careful on the maintainer's Mac.** Stop only what you started, by process ID. Run only the development build, which keeps its data in its own folder. Never touch a Claude Code profile without the owner's yes.
 6. **No GitHub Actions for tests.** Checks run locally. Workflows arrive with releases in phase 8.
 7. **Every part works without the others.** Sessions, terminal focus, Jira, calendar, sync, the insight-flow integration and each terminal or agent adapter are optional layers on top of the timer. A part that is not set up, not installed or not permitted is left out of the interface, and nothing else breaks or nags. Every feature task says what the app does when its part is missing, and the Tester checks that case. The same holds for building and for the agent flow: a clone without Trello, the private notes or a signing team still builds, passes the check and runs the flow.
-8. **Everything is written in English.** Code, comments, commits, pull requests, docs and Trello cards.
-9. **The app only asks.** It never starts a timer, sends a worklog or changes another tool's settings by itself.
+8. **Only the Dev build is yours.** Build, run and test the Debug variant only. Never touch the installed Release app or its data, never change the version or build number, never tag. Anything named outside the app derives from the bundle identifier. See `docs/process/releases.md`.
+9. **Everything is written in English.** Code, comments, commits, pull requests, docs and Trello cards.
+10. **The app only asks.** It never starts a timer, sends a worklog or changes another tool's settings by itself.
 
 ## Architecture rules
 
