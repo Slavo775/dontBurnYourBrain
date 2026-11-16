@@ -1,0 +1,70 @@
+name: DontBurn
+
+options:
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+
+packages:
+  DontBurnCore:
+    path: Packages/DontBurnCore
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+    GCC_TREAT_WARNINGS_AS_ERRORS: YES
+    MARKETING_VERSION: 0.1.0
+    CURRENT_PROJECT_VERSION: 1
+    # "Sign to Run Locally": works without an Apple developer account.
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGN_IDENTITY: "-"
+    DEVELOPMENT_TEAM: ""
+
+targets:
+  DontBurn:
+    type: application
+    platform: macOS
+    sources:
+      - Apps/Mac
+    dependencies:
+      - package: DontBurnCore
+    settings:
+      base:
+        PRODUCT_NAME: DontBurn
+        GENERATE_INFOPLIST_FILE: YES
+        # Menu bar only, no Dock icon.
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_CFBundleDisplayName: $(APP_DISPLAY_NAME)
+        # The app reads other tools' session files and scripts terminals.
+        ENABLE_APP_SANDBOX: NO
+      configs:
+        # The development build has its own identifier, so its data, settings
+        # and permissions never mix with the daily copy.
+        Debug:
+          PRODUCT_BUNDLE_IDENTIFIER: io.github.slavo775.dontburn.dev
+          APP_DISPLAY_NAME: "Don't Burn Your Brain Dev"
+        Release:
+          PRODUCT_BUNDLE_IDENTIFIER: io.github.slavo775.dontburn
+          APP_DISPLAY_NAME: "Don't Burn Your Brain"
+
+  dontburn-hook:
+    type: tool
+    platform: macOS
+    sources:
+      - Tools/dontburn-hook
+    dependencies:
+      - package: DontBurnCore
+    settings:
+      base:
+        PRODUCT_NAME: dontburn-hook
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.slavo775.dontburn.hook
+
+schemes:
+  DontBurn:
+    build:
+      targets:
+        DontBurn: all
+        dontburn-hook: all
+    run:
+      config: Debug

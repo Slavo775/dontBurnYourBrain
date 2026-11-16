@@ -18,7 +18,32 @@ The full description is in [docs/spec](docs/spec), and the drawn screens are in 
 
 ## Build
 
-Written when the Xcode project exists.
+You need a Mac on macOS 26 or later, Xcode 27 selected as the active developer directory, and the tools from Homebrew:
+
+```sh
+brew install swiftlint swiftformat xcbeautify xcodegen
+```
+
+The Xcode project is generated from `project.yml` and is not in git. From the repository root:
+
+```sh
+# Generate DontBurn.xcodeproj
+xcodegen generate
+
+# Build the app and the hook tool
+xcodebuild -project DontBurn.xcodeproj -scheme DontBurn -configuration Debug \
+  -derivedDataPath DerivedData build | xcbeautify
+
+# Run the tests of the shared package
+swift test --package-path Packages/DontBurnCore
+
+# Start the development build. It appears in the menu bar, with a Quit item
+open DerivedData/Build/Products/Debug/DontBurn.app
+```
+
+No Apple developer account is needed. The build is signed to run locally.
+
+The Debug build is a separate app, "Don't Burn Your Brain Dev", with its own bundle identifier (`io.github.slavo775.dontburn.dev`). Its data, settings and permissions stay apart from a Release build on the same Mac.
 
 ## How work is done here
 

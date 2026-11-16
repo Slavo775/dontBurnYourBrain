@@ -19,10 +19,14 @@ A macOS menu bar app, with an iPhone companion later, for time blocks, tasks and
 
 ## Commands
 
-Filled in when the Xcode project and the check command exist. Until then, see `docs/process/checks.md`.
+Run from the repository root. The check command arrives with card 1. Until then, see `docs/process/checks.md`.
 
 - Generate the project: `xcodegen generate`
-- Check everything before a push: `./scripts/check`
+- Build the app and the hook tool: `xcodebuild -project DontBurn.xcodeproj -scheme DontBurn -configuration Debug -derivedDataPath DerivedData build | xcbeautify`
+- Test the shared package: `swift test --package-path Packages/DontBurnCore`
+- Start the development build: `open DerivedData/Build/Products/Debug/DontBurn.app`. Note its process ID with `pgrep -f DerivedData/Build/Products/Debug/DontBurn.app` and stop only that one
+- The hook tool: `DerivedData/Build/Products/Debug/dontburn-hook`
+- Check everything before a push: `./scripts/check` (from card 1 on)
 - Next card: `/next`. Start work on it: `/lead`. Merge: `/release`
 
 ## Rules that always apply
