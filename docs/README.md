@@ -29,7 +29,9 @@ Everything an agent or a person needs before changing code. These files are the 
 | [process/releases.md](process/releases.md) | Versions, the Dev and Release builds side by side on Mac and iPhone, how a version is released, and what agents may do with each |
 | [process/safety-and-privacy.md](process/safety-and-privacy.md) | What agents may touch on the maintainer's Mac, what never enters the repository, and what the app itself may do |
 
+The rules that bind agents are in `rules/` at the repository root: [../rules/README.md](../rules/README.md) first, then one file per role in `roles/`. The subagents and the owner's commands are in `.claude/`.
+
 ## Notes that come later
 
 - `spikes/` gets the findings of the phase 0 spikes.
-- `rules/` at the repository root gets the rules for agents in card 3.
+- `rules/` gets the general rules in card 3: code style, testing, git, safety and privacy, the definition of done, releases and lessons.

@@ -55,9 +55,9 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 - `Tools/dontburn-hook` the hook CLI
 - `project.yml` XcodeGen definition
 - `docs/` the spec, the design prototype and the process notes
-- `.claude/` the agent flow: subagents and commands
+- `.claude/` the agent flow: subagents in `agents/`, the owner's commands in `skills/`
 - `.mcp.json` the Trello MCP server
-- `rules/` rules for agents, one file per role
+- `rules/` rules for agents: `README.md` first, then one file per role in `roles/`
 - `scripts/` and `.githooks/` the check command and the git hooks
 
 ### Permissions the Mac app will ask you for
