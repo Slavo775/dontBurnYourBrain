@@ -57,7 +57,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 - `docs/` the spec, the design prototype and the process notes
 - `.claude/` the agent flow: subagents in `agents/`, the owner's commands in `skills/`
 - `.mcp.json` the Trello MCP server
-- `rules/` rules for agents: `README.md` first, then one file per role in `roles/`
+- `rules/` rules for agents: `README.md` first, then the general rules and one file per role in `roles/`
 - `scripts/` and `.githooks/` the check command and the git hooks
 
 ### Permissions the Mac app will ask you for
@@ -69,4 +69,4 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 
 The app is not sandboxed, because it reads session files from other tools and scripts your terminals. It makes network calls only to Jira sites you add and to iCloud.
 
-What agents may do on the Mac they work on, and what never enters the repository, is in [../process/safety-and-privacy.md](../process/safety-and-privacy.md).
+What agents may do on the Mac they work on, and what never enters the repository, is in [../../rules/safety-and-privacy.md](../../rules/safety-and-privacy.md).

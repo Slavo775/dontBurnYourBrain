@@ -8,12 +8,12 @@ A macOS menu bar app, with an iPhone companion later, for time blocks, tasks and
 |---|---|
 | `docs/spec/` | What to build: overview, features, feasibility, tech stack, design, plan, dev setup, decisions |
 | `docs/design/prototype/index.html` | The drawn screens. Open it in a browser |
-| `docs/process/` | How work is done here: agent flow, checks, tasks, safety and privacy |
+| `docs/process/` | How work is done here: agent flow, checks, tasks, releases and build variants |
 | `Packages/DontBurnCore` | Shared logic and models, with tests |
 | `Apps/Mac` | The menu bar app and Mac-only services |
 | `Tools/dontburn-hook` | The hook CLI |
 | `project.yml` | The XcodeGen definition. The Xcode project is generated and stays out of git |
-| `rules/` | Rules for agents: `README.md` first, then one file per role in `roles/`. Card 3 adds the general rules |
+| `rules/` | Rules for agents: `README.md` first, then the general rules (code style, testing, git, safety and privacy, releases, definition of done, lessons) and one file per role in `roles/` |
 | `.claude/` | The agent flow: subagents in `agents/`, the owner's commands in `skills/` |
 | `.worktrees/` | One git worktree per card while it is worked on. Ignored by git |
 | `.mcp.json` | The Trello MCP server. Only its address, never a token |
@@ -38,11 +38,11 @@ Run from the repository root. Details in `docs/process/checks.md`.
 1. **Tasks are Trello cards.** The board is https://trello.com/b/nTimgmK2/dont-burn-your-brain, its lists are the statuses, and every step leaves a comment on the card. One card, one branch, one pull request. Read the card's `Blocked by` line before starting. Without access to the board, take the task from the chat. See `docs/process/tasks.md`.
 2. **Nothing is done without proof.** The check command passes on the exact commit, and the commit carries its `local/check` status. A skipped test is not a pass.
 3. **The owner merges by saying yes.** No agent merges, force-pushes or rewrites history on its own.
-4. **Nothing personal in the repository.** No real employer, client, project or account names, no email addresses, no absolute home paths. Sample data is always Acme, Globex and Personal. See `docs/process/safety-and-privacy.md`.
+4. **Nothing personal in the repository.** No real employer, client, project or account names, no email addresses, no absolute home paths. Sample data is always Acme, Globex and Personal. See `rules/safety-and-privacy.md`.
 5. **Be careful on the maintainer's Mac.** Stop only what you started, by process ID. Run only the development build, which keeps its data in its own folder. Never touch a Claude Code profile without the owner's yes.
 6. **No GitHub Actions for tests.** Checks run locally. Workflows arrive with releases in phase 8.
 7. **Every part works without the others.** Sessions, terminal focus, Jira, calendar, sync, the insight-flow integration and each terminal or agent adapter are optional layers on top of the timer. A part that is not set up, not installed or not permitted is left out of the interface, and nothing else breaks or nags. Every feature task says what the app does when its part is missing, and the Tester checks that case. The same holds for building and for the agent flow: a clone without Trello, the private notes or a signing team still builds, passes the check and runs the flow.
-8. **Only the Dev build is yours.** Build, run and test the Debug variant only. Never touch the installed Release app or its data, never change the version or build number, never tag. Anything named outside the app derives from the bundle identifier. See `docs/process/releases.md`.
+8. **Only the Dev build is yours.** Build, run and test the Debug variant only. Never touch the installed Release app or its data, never change the version or build number, never tag. Anything named outside the app derives from the bundle identifier. See `rules/releases.md`.
 9. **Everything is written in English.** Code, comments, commits, pull requests, docs and Trello cards.
 10. **The app only asks.** It never starts a timer, sends a worklog or changes another tool's settings by itself.
 

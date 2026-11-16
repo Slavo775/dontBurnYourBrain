@@ -10,7 +10,8 @@ The design follows a flow the maintainer already runs in another project, called
 |---|---|
 | `.claude/agents/` | Five subagents: `developer`, `designer`, `tester`, `reviewer`, `documenter`. Each is short and sends the agent to `rules/README.md` and its role file. Each has a fixed set of tools: none of them has the Trello tools or can start another agent, and the Reviewer has no editing tools |
 | `.claude/skills/` | The commands the owner types: `/lead`, `/release`, `/next`, `/review`, `/design`. Only a person can start them |
-| `rules/README.md` | What every agent reads first: the result line, the verdict format, the card comments, where the work happens |
+| `rules/README.md` | What every agent reads first: the list of rule files and who reads each, the result line, the card comments, where the work happens |
+| `rules/*.md` | The general rules: code style, testing, git, safety and privacy, releases, the definition of done and the lessons |
 | `rules/roles/` | One file per role: what it does, what it may touch, how it reports |
 | `.worktrees/` | One git worktree per card, made from a fresh `origin/main`. Ignored by git |
 
@@ -81,42 +82,15 @@ A typo in a list name breaks the flow quietly. The Leader reads the board's list
 
 ## The result line
 
-Every role the Leader calls ends its last message with exactly one line:
-
-```
-RESULT: <DONE | NEEDS_DESIGN | NEEDS_DECISION | PASS | FAIL | APPROVE | REJECTED> – <one sentence>
-```
-
-The Leader reads this line first, then checks the claim: it looks at the pull request, the commit status or the file itself before it moves the task on.
+Every role the Leader calls ends its last message with one `RESULT:` line. The Leader reads it first, then checks the claim before it moves the task on. The exact form is in [../../rules/README.md](../../rules/README.md).
 
 ## Verdicts
 
-All agents act through one GitHub account, so none of them can approve a pull request. A verdict is a comment on the pull request:
-
-```
-APPROVE: <short reason> (on <short sha>)
-REJECTED: <short reason> (on <short sha>)
-- <finding with file:line, severity and the fix>
-```
-
-Only the Tester and the Reviewer post verdicts. A verdict belongs to the commit it names. A later commit that changes product code, tests, `rules/`, `.claude/` or `CLAUDE.md` needs a new one. A later commit that only changes `docs/` or the root `README.md` does not.
+All agents act through one GitHub account, so none of them can approve a pull request. The Tester and the Reviewer post a verdict as a comment instead, `APPROVE:` or `REJECTED:`, and it belongs to the commit it names. The format, and which later commits need a new verdict, are in [../../rules/git.md](../../rules/git.md).
 
 ## Definition of done
 
-A card may move to Ready to merge only when all of this is true:
-
-- The done-when list on the card is met, shown by evidence from this session.
-- `./scripts/check` passed on the head commit of the pull request, and that commit carries the `local/check` status.
-- The Tester posted `APPROVE:`: checked in the running development build, with screenshots in light and dark when a screen changed, and tests added or updated.
-- The Reviewer posted `APPROVE:`, with no open serious finding on privacy, on safety or on security.
-- Docs are updated in the same pull request, or the Documenter noted why none are needed.
-- The privacy scan is clean: nothing personal in code, docs, screenshots or commit messages.
-- No more than three failed rounds. Otherwise the card went to Needs decision and the owner decided.
-- The card has a comment for every step, and links the pull request.
-
-Before merging, the Release master checks all of it again on the latest commit, runs the check command once more, and needs the owner's yes from this session.
-
-Card 3 turns this section into `rules/definition-of-done.md`.
+It is in [../../rules/definition-of-done.md](../../rules/definition-of-done.md), as two checklists. The Leader goes through the first before a card moves to Ready to merge. The Release master goes through the second before the merge, on the latest commit, and it ends with the owner's yes.
 
 ## Spikes
 
@@ -132,9 +106,7 @@ Someone who clones this repository has no access to the maintainer's Trello boar
 
 ## Lessons
 
-`rules/lessons.md` does not exist yet. It arrives with card 3, and the Leader reads it at the start once it does. From then on the Leader writes an entry after a bad outcome: two or more failed rounds, a decision the owner corrected, a blocked merge, a cancelled task. Each entry says what happened, the root cause and the proposed change, with a status: `proposed`, then `accepted` or `declined`. Nothing in a rule or an agent changes without the owner's yes. Accepted lessons are binding.
-
-The file will start with lessons carried over from the reference flow.
+[../../rules/lessons.md](../../rules/lessons.md) holds what went wrong before and the rule that came from it. It starts with the lessons carried over from the reference flow. The Leader reads it at the start of every card and writes an entry after a bad outcome. The entry format and the three statuses are in that file.
 
 ## Who may change the agents and the rules
 
