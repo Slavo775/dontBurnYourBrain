@@ -18,7 +18,7 @@ The compiler runs in Swift 6 mode with warnings as errors, SwiftFormat owns the 
 - A rule, a calculation or a state change belongs in `DontBurnCore`. It imports no SwiftUI and no AppKit.
 - A view reads state and sends the user's intent on. If a view needs an `if` that is about the business and not about layout, the rule moves to `DontBurnCore`.
 - A Mac-only service sits in `Apps/Mac` behind a small protocol, with one adapter per agent tool and per terminal. When its part is not set up, not installed or not permitted, the service says so, and the interface leaves that part out. Nothing else breaks and nothing nags.
-- Time is passed in, as a `Date` or a clock. `DontBurnCore` never calls `Date()`, `Date.now` or a clock's `now`, and never sleeps. When a rule depends on the calendar or the time zone, those are passed in too.
+- Time is passed in, as a `Date` or a clock. `DontBurnCore` never reads the system clock itself (`Date()`, `Date.now`, `ContinuousClock.now`), and never sleeps. It asks only the date or the clock it was given. When a rule depends on the calendar or the time zone, those are passed in too.
 - The version, the bundle identifier and the app's name are never written in code. See [releases.md](releases.md).
 
 ## Errors
@@ -63,5 +63,5 @@ The compiler runs in Swift 6 mode with warnings as errors, SwiftFormat owns the 
 
 ## Known traps
 
-- **A window of a menu bar app opens behind other apps**, and the Settings window hides when the app loses focus. An app without a Dock icon is not brought forward by itself. Bring the app forward when it opens a window, and check this by hand in every card that adds one.
+- **A window of a menu bar app opens behind other apps**, and the Settings window can end up hidden behind them. An app without a Dock icon is not brought forward by itself. Bring the app forward when it opens a window, and check this by hand in every card that adds one.
 - **`JSONEncoder` with `.iso8601` dates drops fractions of a second.** Anything that compares times written that way needs a strategy that keeps them.

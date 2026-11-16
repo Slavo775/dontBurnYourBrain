@@ -68,6 +68,6 @@ These are product rules. A change that breaks one of them needs the owner's deci
 - **It only asks.** The app never starts a timer by itself, never sends a worklog without showing it first, never changes another tool's settings by itself, and never installs a hook without consent.
 - **Hooks are reversible.** Installing adds the app's own entries to a profile's settings and nothing else. Uninstalling removes exactly those.
 - **Transcripts are read, not kept.** The app reads a session's title and last activity from disk. It does not copy transcript content into its own store, and nothing from a transcript is synced.
-- **Input from outside is checked.** Every new way into the app from outside (the hook's event channel, a URL scheme, a watched file) limits the size and checks the shape of what it reads before acting on it.
+- **Input from outside is checked.** Every way into the app from outside (the hook's event channel, a URL scheme, a watched file) limits the size and checks the shape of what it reads before acting on it.
 - **Permissions one at a time**, each asked when it is first needed, with the reason.
 - **Logs** hold no issue titles, no meeting titles, no paths inside a user's projects and no tokens.

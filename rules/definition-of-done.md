@@ -6,9 +6,9 @@ Two checklists. The Leader goes through the first before a card moves to Ready t
 
 - [ ] Every item of the card's done-when list is met, and you can point at the evidence for each.
 - [ ] `./scripts/check` passed on the head commit of the pull request, and that commit carries the `local/check` status as `success`.
-- [ ] The Tester posted `APPROVE:` on the pull request. The card was checked in the running Dev build, including the case where an optional part is missing, and tests were added or updated. When a screen changed, there are screenshots in light and dark, and the owner has seen them.
+- [ ] The Tester posted `APPROVE:` on the pull request. A card that changes what the app does was checked in the running Dev build, including the case where an optional part is missing, and tests were added or updated. A card that changes nothing in the app, or a spike, was checked the way its "How to verify" says. When a screen changed, there are screenshots in light and dark, and the owner has seen them.
 - [ ] The Reviewer posted `APPROVE:`, with no open CRITICAL or HIGH finding.
-- [ ] Both verdicts still count for the head commit: nothing but `docs/` and the root `README.md` changed after them.
+- [ ] Both verdicts still count for the head commit, as "Verdicts" in `rules/git.md` says.
 - [ ] No test is skipped, or each skipped test is named on the card with its reason.
 - [ ] Docs are updated in the same pull request, or the Documenter said why none are needed.
 - [ ] The privacy scan is clean: nothing personal in code, docs, screenshots, commit messages or the pull request.

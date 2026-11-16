@@ -64,7 +64,7 @@ You build and run nothing yourself. The roles you call build, run and test only 
 
 A failed round is a Tester `FAIL` or a Reviewer `REJECTED`. Count them from the card's comments. After the third, stop: move the card to Needs decision, comment the open findings, and ask the owner what to do. A merge of `main` into the branch because another pull request merged first is not a failed round.
 
-After a bad outcome, write an entry in `rules/lessons.md` as that file says, with the status `proposed`, and ask the owner: two or more failed rounds, a decision the owner corrected, a blocked merge, or a cancelled task.
+After a bad outcome, propose a lesson to the owner. `rules/lessons.md` says when, in what form and where it is committed.
 
 ## 5. Spikes
 
@@ -76,7 +76,7 @@ When every item of the first checklist in `rules/definition-of-done.md` holds, c
 
 ## 7. Taking over
 
-A card whose session has stopped can be taken over by any Leader, after the owner confirms that session is closed. Say so in a comment on the card. Work in your own worktree, on a local branch made from `origin/<branch>` after `git fetch`, and push with `./scripts/push origin HEAD:<branch>`. Never check out or remove another session's worktree.
+A card whose session has stopped can be taken over by any Leader, after the owner confirms that session is closed. Say so in a comment on the card. Work in your own worktree, on a local branch made from `origin/<branch>`: `git fetch origin`, then `git worktree add .worktrees/takeover/<branch> -b takeover/<branch> origin/<branch>`. Push with `./scripts/push origin HEAD:<branch>`. Never check out or remove another session's worktree.
 
 ## 8. Changing the flow
 

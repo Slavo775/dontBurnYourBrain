@@ -6,6 +6,8 @@ What went wrong, and the rule that came from it. The Leader reads this file at t
 
 The Leader writes one after a bad outcome: two or more failed rounds, a decision the owner corrected, a blocked merge, or a cancelled task.
 
+An entry never goes onto the card's own branch, because a change to `rules/` there would need new verdicts, and a cancelled card's branch never merges. The Leader shows the entry to the owner in the chat and in a comment on the card. It is then committed in a pull request of its own, on a branch `docs/lesson-<short-slug>`, together with the rule change when the owner accepted it.
+
 ## The entry format
 
 ```
@@ -20,7 +22,7 @@ The Leader writes one after a bad outcome: two or more failed rounds, a decision
 
 | Status | Meaning |
 |---|---|
-| `proposed` | Written by the Leader. Not binding yet |
+| `proposed` | Written by the Leader and waiting for the owner, in the chat or in an open pull request. Not binding yet |
 | `accepted` | The owner said yes. The rule is written into the file named, through a pull request, and is binding |
 | `declined` | The owner said no. The entry stays, with his reason, so it is not proposed again |
 

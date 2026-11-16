@@ -36,11 +36,14 @@ REJECTED: <short reason> (on <short sha>)
 - <finding with file:line, severity and the fix>
 ```
 
-A verdict belongs to that commit. A later commit that changes product code, tests, `rules/`, `.claude/` or `CLAUDE.md` needs a new verdict. A later commit that only changes `docs/` or the root `README.md` does not.
+A verdict belongs to that commit. It still counts for a later head commit only when both of these hold:
+
+- Every commit made on the branch since then changes only `docs/` or the root `README.md`. A change to product code, tests, `rules/`, `.claude/` or `CLAUDE.md` needs a new verdict.
+- Every merge of `main` since then was clean: nobody resolved a conflict by hand. A merge with a conflict needs a new verdict.
 
 ## When a pull request stops being mergeable
 
-When the only reason is that another pull request merged first, the role that owns the conflicting files merges `main` into the branch with a normal merge commit. Never a rebase, never a force-push. The check runs again. This is a merge step, not a failed round.
+When the only reason is that another pull request merged first, the role that owns the conflicting files merges `main` into the branch with a normal merge commit. Never a rebase, never a force-push. The check runs again. Whether the verdicts still count is said under "Verdicts" above. This is a merge step, not a failed round.
 
 ## Never
 

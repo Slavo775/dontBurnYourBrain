@@ -34,7 +34,7 @@ For the Tester, and for a Developer or Designer who starts the app.
 ## Checking a screen
 
 - Go through every done-when item by hand, and through the case where an optional part is missing.
-- **Light and dark are each checked on a fresh launch with the mode already set for that launch.** Never by switching the mode while the app is open, and never by changing the system's appearance.
+- **Light and dark are each checked on a fresh launch with the mode already set for that launch.** Never by switching the mode while the app is open, and never by changing the system's appearance. The first card that adds a screen gives the Dev build a launch argument for the mode and names it here. Until then, a mode that could not be set is reported as not checked, never as a pass.
 - Screenshots come from the Dev build with the sample data, taken with `screencapture` and saved in `.worktrees/screenshots/<branch>/`, which git ignores. They are never committed. The verdict lists their paths, and the Leader shows them to the owner before Ready to merge.
 - **A screen test proves that the screen reacts.** It performs at least one real interaction, such as a click, typed text or a shortcut, and checks what changed.
 
