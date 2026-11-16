@@ -24,7 +24,7 @@ Which text wins when two disagree:
 | [definition-of-done.md](definition-of-done.md) | Two checklists: before Ready to merge, and before the merge | Leader, Release master |
 | [lessons.md](lessons.md) | What went wrong before and which rule came from it | Leader, at the start of every card |
 
-Background, not rules: [the flow and its statuses](../docs/process/agent-flow.md), [the check command and its receipt](../docs/process/checks.md), [versions and build variants](../docs/process/releases.md).
+Background, not rules: [the flow and its statuses](../docs/process/agent-flow.md), [the check command and its receipt](../docs/process/checks.md), [versions and build variants](../docs/process/releases.md), [tasks and the board](../docs/process/tasks.md).
 
 ## The result line
 

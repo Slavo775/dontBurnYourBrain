@@ -50,7 +50,7 @@ The repository is public, and git keeps everything. Every push can be read by an
 
 Trello cards and their comments follow the same rules, because the board may be shared later.
 
-**Sample data** is always the same neutral set: the workspaces Acme, Globex and Personal, issue keys such as `ACM-412` and `GLX-88`, folders such as `~/code/acme-web`. Previews, tests and screenshots use only this set, loaded by a launch argument.
+**Sample data** is always the same neutral set: the workspaces Acme, Globex and Personal, issue keys such as `ACM-412` and `GLX-88`, folders such as `~/code/acme-web`. Previews, tests, screenshots and recordings use only this set, loaded by a launch argument.
 
 **The privacy scan** is part of the check command. It reads a list of patterns from a file outside the repository and fails when any of them appears in a tracked file. It also fails on an email address, an absolute home path, and a new commit without a noreply address. On a machine without the list, the word check is skipped and says so.
 
