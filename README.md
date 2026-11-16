@@ -24,6 +24,8 @@ You need a Mac on macOS 26 or later, Xcode 27 selected as the active developer d
 brew install swiftlint swiftformat xcbeautify xcodegen
 ```
 
+After cloning, run `./scripts/bootstrap` once. It sets up the git hooks. `./scripts/check` then runs format, lint, build, tests and a privacy scan in one go, and it also runs before every push.
+
 The Xcode project is generated from `project.yml` and is not in git. From the repository root:
 
 ```sh

@@ -1,0 +1,6 @@
+#!/bin/bash
+# git push, then the local/check receipt for the pushed commit. The pre-push
+# hook runs the check and makes sure the pushed commit is the checked-out one.
+set -euo pipefail
+git push "$@"
+"$(git rev-parse --show-toplevel)/scripts/receipt" HEAD

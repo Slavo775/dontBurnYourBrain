@@ -1,0 +1,20 @@
+#!/bin/bash
+# Prepares a fresh clone: git runs the hooks in .githooks/.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+git config core.hooksPath .githooks
+echo "Git hooks: .githooks"
+
+missing=""
+for tool in xcodebuild swiftformat swiftlint xcodegen xcbeautify jq; do
+    command -v "$tool" >/dev/null || missing="$missing $tool"
+done
+if [ -n "$missing" ]; then
+    echo "Missing:$missing. See the Build section of README.md."
+fi
+
+if [ -z "$(git config --get dontburn.privacyWords)" ]; then
+    echo "No private word list set. The privacy scan skips the word check."
+    echo "To add one: git config dontburn.privacyWords <path to a file outside the repository>"
+fi

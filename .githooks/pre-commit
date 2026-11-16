@@ -1,0 +1,12 @@
+#!/bin/bash
+# SwiftFormat and SwiftLint on the staged Swift files.
+set -euo pipefail
+
+files=$(git diff --cached --name-only --diff-filter=ACMR -- '*.swift')
+[ -z "$files" ] && exit 0
+
+# Paths in this repository have no spaces, so word splitting is safe here.
+# shellcheck disable=SC2086
+swiftformat --lint --quiet $files
+# shellcheck disable=SC2086
+swiftlint lint --strict --quiet $files

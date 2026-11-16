@@ -16,26 +16,54 @@ The decision was made for cost: on a private repository, tests on GitHub's Mac r
 
 ## The check command
 
-Card 1 builds it. One command, `./scripts/check`, runs everything in this order and stops at the first failure:
+One command, `./scripts/check`, runs everything in this order and stops at the first failure:
 
-1. SwiftFormat in lint mode
-2. SwiftLint, strict
+1. SwiftFormat in lint mode, with the rules in `.swiftformat`
+2. SwiftLint, strict, with the rules in `.swiftlint.yml`
 3. `xcodegen generate`
-4. Build of the Mac app in Swift 6 mode, with warnings treated as errors
-5. Unit tests of `DontBurnCore`
-6. The privacy scan, on machines where the private word list exists
-7. One summary line with the result and the time each step took
+4. Build of the Mac app and the hook tool in Swift 6 mode, with warnings treated as errors
+5. Unit tests of `DontBurnCore`, with code coverage
+6. The privacy scan, described below
 
-`./scripts/bootstrap` prepares a fresh clone: it points git at the hooks in `.githooks/`.
+It ends with one summary line:
+
+```
+check: PASS | format 0s · lint 0s · generate 0s · build 3s · tests 5s · privacy 0s | coverage 100% | total 8s
+check: FAIL at tests | format 0s · lint 0s · generate 0s · build 2s · tests failed
+```
+
+The coverage is the share of lines in `DontBurnCore`'s sources that the tests run. The target is 80%. It is printed but does not fail the check yet.
+
+`./scripts/bootstrap` prepares a fresh clone. It points git at the hooks in `.githooks/`, names the tools that are missing, and says whether a private word list is set.
+
+### The privacy scan
+
+It reads every file git tracks, plus new files that are not ignored, and fails on any of these:
+
+- a pattern from the private word list. It prints only the file and the line, never the word
+- an email address, except GitHub's noreply addresses and `git@github.com`
+- an absolute home path such as `/Users/<name>/`
+- a commit on the branch, after `origin/main`, whose author or committer address is not a GitHub noreply address
+
+The private word list is a file outside the repository, with one extended regular expression per line. The check finds it through the `DONTBURN_PRIVACY_WORDS` environment variable, or else through `git config dontburn.privacyWords <path>`. That setting lives in the clone's own `.git/config` and is never committed. Without a list, the word check is skipped and says so. The other three checks always run.
 
 ## The receipt
 
 When the check passes on a clean working tree, it is proof about one commit. That proof is posted to GitHub as a commit status with the context `local/check`, and the pull request shows it next to the commit.
 
+How it works:
+
+1. `./scripts/check` passes on a clean working tree and records the pass in `.git/local-check/<sha>`. Worktrees share this folder, because it sits in the repository's common git folder.
+2. `scripts/receipt <commit>` posts the status for a recorded commit, once GitHub has that commit. The check calls it at the end, so a check on a commit that is already pushed posts at once.
+3. `./scripts/push` runs `git push` and then `scripts/receipt` for the pushed commit. **Push with `./scripts/push`.** A plain `git push` still runs the check through the hook but posts nothing, so run `scripts/receipt` after it.
+
+Rules:
+
 - A dirty working tree gets no receipt, because the pass would not describe the commit.
-- GitHub accepts a status only for a commit it already has. So the hook records the pass locally before the push, and the status is posted right after the push.
+- GitHub accepts a status only for a commit it already has. That is why the hook only records the pass, and the status is posted after the push.
 - A commit made after the check has no status until it is checked again.
 - Anyone who can push can also post a status. The receipt is a record, not a lock. That is why the Tester and the Release master run the check again themselves.
+- Without `gh`, or when it is not signed in, the pass is recorded and nothing is posted. The check still passes.
 
 Reading the receipt:
 
@@ -43,23 +71,33 @@ Reading the receipt:
 gh api repos/{owner}/{repo}/commits/<sha>/status --jq '.statuses[] | select(.context=="local/check") | .state'
 ```
 
+It prints `success` for a commit that passed, and nothing for a commit nobody checked.
+
 ## Git hooks
 
 | Hook | What it does |
 |---|---|
 | `pre-commit` | SwiftFormat and SwiftLint on the staged Swift files. Fast |
-| `commit-msg` | Conventional Commits: `feat:`, `fix:`, `test:`, `docs:`, `refactor:`, `chore:` |
+| `commit-msg` | Conventional Commits: `feat:`, `fix:`, `test:`, `docs:`, `refactor:`, `chore:`, with an optional scope such as `fix(hook):`. Merge, revert, `fixup!` and `squash!` subjects pass |
 | `pre-push` | The whole check command. A failure stops the push |
+
+The pre-push hook refuses two things the check could not vouch for: a dirty working tree, and a push of a commit that is not the one checked out. A commit that already passed is not checked twice.
 
 Never pass `--no-verify`. If a hook is wrong, fix the hook in its own pull request.
 
 ## What GitHub enforces
 
-The repository is public, so rulesets are available on the free plan. Card 1 adds one to `main`: changes arrive only through a pull request, and the head commit must carry a successful `local/check` status. The maintainer can bypass it, for example for the first commits of the project.
+The repository is public, so rulesets are available on the free plan. A ruleset named `main` protects the default branch:
+
+- changes arrive only through a pull request. No approval is required, because the agents and the maintainer share one GitHub account, and an account cannot approve its own pull request
+- the head commit must carry a successful `local/check` status. A pull request without it shows as blocked
+- no force-push to `main`, and `main` cannot be deleted
+
+Repository admins can bypass it. That is the maintainer's account, which the agents also use, so for them the bypass is closed by rule rather than by GitHub: an agent never bypasses the ruleset.
 
 The flow checks it too: the Release master reads the status and runs the check again before asking for the owner's yes.
 
-Pull requests from other people cannot get the `local/check` status from their own Mac. Until a workflow exists, the maintainer runs the check on such a branch himself.
+Pull requests from other people cannot get the `local/check` status from their own Mac. Until a workflow exists, the maintainer checks such a pull request out with `gh pr checkout <number>`, runs `./scripts/check`, and the check posts the receipt on its head commit, because GitHub already has it. A workflow on GitHub's own runners, free for public repositories, can take this over later.
 
 ## A runner of your own
 

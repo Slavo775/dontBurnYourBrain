@@ -1,9 +1,8 @@
+@testable import DontBurnCore
 import Foundation
 import Testing
 
-@testable import DontBurnCore
-
-@Test func storeFolderIsNamedAfterTheBundleIdentifier() {
+@Test func `store folder is named after the bundle identifier`() {
     let support = URL(filePath: "/tmp/Application Support", directoryHint: .isDirectory)
 
     let release = StoreLocation.directory(bundleIdentifier: "com.example.app", applicationSupport: support)

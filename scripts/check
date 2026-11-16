@@ -1,0 +1,91 @@
+#!/bin/bash
+# The whole local check: format, lint, project, build, tests, privacy scan.
+# Stops at the first failure and ends with one summary line. A pass on a clean
+# working tree records a receipt for HEAD. See docs/process/checks.md.
+set -uo pipefail
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+steps=""
+started=$SECONDS
+coverage="?"
+
+run() {
+    local name=$1 start=$SECONDS
+    shift
+    echo "==> $name"
+    if "$@"; then
+        steps="$steps · $name $((SECONDS - start))s"
+    else
+        steps="$steps · $name failed"
+        echo "check: FAIL at $name |${steps# ·}"
+        exit 1
+    fi
+}
+
+format() { swiftformat --lint --quiet .; }
+
+lint() { swiftlint lint --strict --quiet; }
+
+generate() { xcodegen generate --quiet; }
+
+build() {
+    xcodebuild -project DontBurn.xcodeproj -scheme DontBurn -configuration Debug \
+        -derivedDataPath DerivedData build 2>&1 | xcbeautify --quiet
+}
+
+tests() {
+    swift test --package-path Packages/DontBurnCore --enable-code-coverage --quiet || return 1
+    local json
+    json=$(swift test --package-path Packages/DontBurnCore --show-codecov-path) || return 1
+    # Lines of DontBurnCore's own sources, without the tests.
+    coverage=$(jq -r '[.data[0].files[] | select(.filename | contains("/Sources/")) | .summary.lines]
+        | (map(.covered) | add) * 100 / (map(.count) | add) | floor' "$json")%
+}
+
+privacy() {
+    local words failed=0
+    words=${DONTBURN_PRIVACY_WORDS:-$(git config --get dontburn.privacyWords)}
+    if [ -n "$words" ] && [ -f "$words" ]; then
+        # File and line only, so the private words never reach a log.
+        if git grep -nIiE --untracked -f "$words" | cut -d: -f1,2 | grep .; then
+            echo "A private word is on the lines above."
+            failed=1
+        fi
+    else
+        echo "No private word list on this machine, the word scan is skipped."
+    fi
+    if git grep -nIoE --untracked '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' \
+        | grep -vE 'git@github\.com|users\.noreply\.github\.com'; then
+        echo "Email addresses above. Only GitHub's noreply addresses are allowed."
+        failed=1
+    fi
+    if git grep -nIE --untracked '/Users/[A-Za-z]'; then
+        echo "Absolute home paths above. Write ~ instead."
+        failed=1
+    fi
+    if git rev-parse --verify --quiet origin/main >/dev/null \
+        && git log --format='%ae%n%ce' origin/main..HEAD | sort -u | grep -v 'users\.noreply\.github\.com$'; then
+        echo "Commits above carry an address that is not GitHub's noreply one."
+        failed=1
+    fi
+    return $failed
+}
+
+run format format
+run lint lint
+run generate generate
+run build build
+run tests tests
+run privacy privacy
+
+summary="check: PASS |${steps# ·} | coverage $coverage | total $((SECONDS - started))s"
+echo "$summary"
+
+if [ -n "$(git status --porcelain)" ]; then
+    echo "receipt: none, the working tree is not clean."
+    exit 0
+fi
+sha=$(git rev-parse HEAD)
+dir="$(git rev-parse --git-common-dir)/local-check"
+mkdir -p "$dir" && echo "$summary" >"$dir/$sha"
+scripts/receipt "$sha" || true
