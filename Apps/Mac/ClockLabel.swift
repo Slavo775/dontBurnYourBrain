@@ -14,13 +14,14 @@ struct ClockLabel: View {
     /// font, so tabular figures, which keep the item's width steady as the
     /// digits change, survive only in an image.
     private var image: NSImage {
-        let time = Text(ticker.now, format: .dateTime.hour().minute().second()).monospacedDigit()
-        let renderer = ImageRenderer(content: time)
+        let time = ticker.now.formatted(.dateTime.hour().minute().second())
+        let renderer = ImageRenderer(content: Text(verbatim: time).monospacedDigit())
         // Sharp on Retina displays. Others scale it down.
         renderer.scale = 2
         let image = renderer.nsImage ?? NSImage()
         image.isTemplate = true
-        image.accessibilityDescription = Bundle.main.displayName
+        // What VoiceOver reads, since the image is all the item shows.
+        image.accessibilityDescription = time
         return image
     }
 }
@@ -37,14 +38,20 @@ final class Ticker {
     init(fixedTime: Date?) {
         now = fixedTime ?? .now
         guard fixedTime == nil else { return }
-        // The first tick on the next whole second, so every tick lands on the second.
-        let next = Date(timeIntervalSinceReferenceDate: now.timeIntervalSinceReferenceDate.rounded(.down) + 1)
-        let timer = Timer(fire: next, interval: 1, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.now = .now }
+        let timer = Timer(fire: Self.nextSecond(after: now), interval: 1, repeats: true) { [weak self] timer in
+            let now = Date.now
+            // The schedule runs on a clock that stops while the Mac sleeps,
+            // so every tick lines up with the next whole second again.
+            timer.fireDate = Self.nextSecond(after: now)
+            MainActor.assumeIsolated { self?.now = now }
         }
         // Common modes, so it keeps ticking while the menu is open. The ticker
         // lives as long as the app, so the timer is never invalidated.
         RunLoop.main.add(timer, forMode: .common)
+    }
+
+    private nonisolated static func nextSecond(after date: Date) -> Date {
+        Date(timeIntervalSinceReferenceDate: date.timeIntervalSinceReferenceDate.rounded(.down) + 1)
     }
 }
 
