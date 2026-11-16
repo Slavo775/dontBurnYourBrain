@@ -33,11 +33,11 @@ The owner talks to one agent, the Leader. The Leader runs a small team of roles 
 | **Tester** | The Leader, as the `tester` subagent | Builds and starts the development build, checks the done-when line by hand, then writes the tests. Posts a verdict with screenshots when a screen changed | Changes product code |
 | **Reviewer** | The Leader as the `reviewer` subagent, or `/review <PR>` | Reads code and tests. Privacy and what the app does on the user's Mac come first. Posts a verdict | Changes anything |
 | **Documenter** | The Leader, as the `documenter` subagent | Keeps `docs/` in step when behaviour changed, or notes that nothing needed changing | Changes code |
-| **Release master** | `/release`, in the main session | Goes through the whole definition of done again on the latest commit, asks the owner for one yes, merges, moves the card to Done | Merges without the yes. Fixes things |
+| **Release master** | `/release`, in the main session | Goes through the second checklist of the definition of done on the latest commit, asks the owner for one yes, merges, moves the card to Done | Merges without the yes. Fixes things |
 
-The Leader and the Release master run in the main session, because they talk to the owner and call the subagents. Only these two move cards and write on the board. Subagents report to the Leader, and the Leader posts the comment for their step under the role's name.
+The Leader and the Release master run in the main session, because they talk to the owner and call the subagents. Only these two move cards and write on the board. Subagents report to the Leader.
 
-Nobody but the Tester writes tests. Nobody but the Developer and the Designer changes product code. The Reviewer edits nothing.
+The roles cannot do each other's job: only the Tester writes tests, only the Developer and the Designer change product code, and the Reviewer edits nothing. What each role may touch is in its file in [../../rules/roles/](../../rules/roles/).
 
 ## The path of one task
 
@@ -50,13 +50,7 @@ Nobody but the Tester writes tests. Nobody but the Developer and the Designer ch
 
 After three failed rounds of testing or review, the Leader moves the card to Needs decision and asks the owner.
 
-Every step ends with a comment on the card:
-
-```
-**<Role>**: <what was done> → <what happens next>
-```
-
-Concrete: files, pull request numbers, numbers from the check. No secrets, no personal data, nothing from the maintainer's real calendar or Jira. Paths in card comments, verdicts and pull requests are relative to the repository root, never absolute.
+Every step ends with a comment on the card. Its form, and what never goes into one, are in [../../rules/README.md](../../rules/README.md) under "Comments on the card".
 
 ## Statuses
 
@@ -94,11 +88,11 @@ It is in [../../rules/definition-of-done.md](../../rules/definition-of-done.md),
 
 ## Spikes
 
-A spike answers a question instead of delivering a feature. It follows the same order with two differences: the Tester only repeats the result and confirms the numbers, and the Documenter's note in `docs/spikes/` is what gets delivered. Spike code stays out of the app target.
+A spike answers a question instead of delivering a feature. It follows the same order, with a lighter test and a note in `docs/spikes/` as what gets delivered. The differences are in [../../rules/roles/leader.md](../../rules/roles/leader.md) under "Spikes".
 
 ## Dependencies between cards
 
-Every card carries two lines in its description, `Blocked by:` and `Blocks:`, with card numbers such as `#5`, or `none`. The Leader reads them and does not start a card whose blockers are not in Done.
+Every card carries two lines in its description, `Blocked by:` and `Blocks:`, with card numbers such as `#5`, or `none`. The Leader reads them before it starts a card. What it does with a blocked card is in [../../rules/roles/leader.md](../../rules/roles/leader.md).
 
 ## Working without the board
 
@@ -106,11 +100,11 @@ Someone who clones this repository has no access to the maintainer's Trello boar
 
 ## Lessons
 
-[../../rules/lessons.md](../../rules/lessons.md) holds what went wrong before and the rule that came from it. It starts with the lessons carried over from the reference flow. The Leader reads it at the start of every card and writes an entry after a bad outcome. The entry format and the three statuses are in that file.
+[../../rules/lessons.md](../../rules/lessons.md) holds what went wrong before and the rule that came from it. It starts with the lessons carried over from the reference flow. The Leader reads it at the start of every card and writes an entry after a bad outcome. When an entry is written, where it is committed, its format and the three statuses are in that file.
 
 ## Who may change the agents and the rules
 
-Only the Leader, and only after the owner's yes. That covers `.claude/agents/`, `.claude/skills/` and `rules/`. Every other role says what should change in its report to the Leader.
+That is said in [../../rules/README.md](../../rules/README.md) under "Who changes this folder". It covers `rules/`, `.claude/agents/` and `.claude/skills/`.
 
 ## Not part of the flow yet
 

@@ -37,7 +37,7 @@ The top card in Ready whose `Blocked by` cards are all in Done. `/next` shows it
 - A checklist named `Checklist`: the steps, ending with the check command and a pull request.
 - From the first step on: a comment per step, and the link to the pull request.
 
-Branches are named after the card: `feat/<number>-<short-slug>`, such as `feat/10-timer-engine`.
+Branches are named after the card, such as `feat/10-timer-engine`. The exact form is in [../../rules/git.md](../../rules/git.md).
 
 ## Phases and when their cards are written
 

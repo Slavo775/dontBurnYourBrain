@@ -1,6 +1,6 @@
 # Releases, versions and build variants
 
-How the app is versioned, how a development build and the maintainer's daily copy live side by side on one Mac and one iPhone, and what agents may and may not do with either.
+How the app is versioned, how a development build and the maintainer's daily copy live side by side on one Mac and one iPhone. The rules for agents are in [../../rules/releases.md](../../rules/releases.md).
 
 ## Versions
 
