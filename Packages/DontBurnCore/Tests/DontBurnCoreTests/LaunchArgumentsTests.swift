@@ -90,7 +90,7 @@ func `fixed time accepts only ASCII digits`(raw: String) {
     #expect("2026-01-15T09:41:30+01:00".utf8.count <= FixedTime.maximumLength)
 }
 
-@Test func `fixed time rejects a value longer than the limit without reading it`() {
+@Test func `fixed time rejects a value longer than the limit`() {
     let padded = "2026-01-15T09:41:30Z" + String(repeating: " ", count: FixedTime.maximumLength)
     let huge = String(repeating: "2026-01-15T09:41:30Z", count: 100_000)
 
