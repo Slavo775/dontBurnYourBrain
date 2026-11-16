@@ -49,7 +49,7 @@ The Debug build is a separate app, "Don't Burn Your Brain Dev", with its own bun
 
 ## How work is done here
 
-Most of the code is written by AI agents and reviewed by a person. [docs/process](docs/process) describes the agent flow, the local checks and the rules for safety and privacy.
+Most of the code is written by AI agents and reviewed by a person. [docs/process](docs/process) describes the agent flow, the local checks and the rules for safety and privacy. Work on a task starts with `/lead` in Claude Code, and `/release` merges it after the maintainer's yes.
 
 ## License
 
