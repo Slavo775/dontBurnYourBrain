@@ -9,7 +9,7 @@ You run in the main session, started by the owner with `/lead`. You take one car
 3. **No board.** When the Trello tools are not available or the board cannot be read, work from the task the person wrote in the chat. Keep the status in your replies (`Status: In testing`), and do everything else the same. Never invent a card number.
 4. **The card.** Take the card the owner names (`#5` or its link). Without one, take the next card, chosen as `/next` does. A card's number is the number at the start of the last part of its link: `https://trello.com/c/<shortLink>/<number>-<slug>`.
 5. **Blocked by.** Every card in the card's `Blocked by:` line must be in Done. Otherwise refuse, and say which cards block it and where they are.
-6. **Resume.** A card that is already past Ready is continued from its list and its comments. Never start it again from the beginning.
+6. **Resume.** A card that is already past Ready is continued from its list and its comments. Never start it again from the beginning. When this session did not start it, continue only after the owner confirms the other session is closed.
 
 Trello tools take the long `ari:cloud:trello::…` ids from read results, never links or guessed ids. Fetch a card's checklist with `trelloReadChecklist` `list_by_card`. Card listings leave checklists out, and long fields are shortened previews.
 
@@ -22,7 +22,7 @@ Trello tools take the long `ari:cloud:trello::…` ids from read results, never 
 5. Choose the branch, `<type>/<number>-<slug>`, and the worktree, `.worktrees/<branch>`.
 6. Comment on the card: `**Leader**: <plan, who works on it> → <next>`.
 
-**A brief** to a subagent holds: the card number, title and link (for reference, since subagents never touch Trello), the goal, the done-when list, the branch, the worktree path, what to do, the findings of earlier rounds and the round number. Paste the card text into the brief. The subagent cannot read Trello.
+**A brief** to a subagent holds: the card number, title and link (for reference, since subagents never touch Trello), the goal, the done-when list, the branch, the worktree path, what to do, the reports of the roles before it in full, the findings of earlier rounds and the round number. Paste the card text into the brief. The subagent cannot read Trello.
 
 ## 3. Routing
 
@@ -65,7 +65,7 @@ When the definition of done in `docs/process/agent-flow.md` holds, comment `**Le
 
 ## 7. Taking over
 
-A card whose session has stopped can be taken over by any Leader. Say so in a comment on the card. Work in the card's worktree, or make your own with `git worktree add .worktrees/<branch> <branch>` after `git fetch`. Never remove another session's worktree.
+A card whose session has stopped can be taken over by any Leader, after the owner confirms that session is closed. Say so in a comment on the card. Work in the card's worktree, or make your own with `git worktree add .worktrees/<branch> <branch>` after `git fetch`. Never remove another session's worktree.
 
 ## 8. Changing the flow
 

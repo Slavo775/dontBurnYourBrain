@@ -38,7 +38,7 @@ REJECTED: <short reason> (on <short sha>)
 - <finding with file:line, severity and the fix>
 ```
 
-A verdict belongs to that commit. A later commit that changes product code or tests needs a new verdict.
+A verdict belongs to that commit. A later commit that changes product code, tests, `rules/`, `.claude/` or `CLAUDE.md` needs a new verdict.
 
 ## Comments on the card
 
@@ -48,7 +48,7 @@ Only the Leader and the Release master touch the Trello board. Every step ends w
 **<Role>**: <what was done> → <what happens next>
 ```
 
-Subagents report to the Leader, and the Leader posts the comment for their step under the role's name. Be concrete: files, pull request numbers, numbers from the check. Never a secret, never personal data.
+Subagents report to the Leader, and the Leader posts the comment for their step under the role's name. Be concrete: files, pull request numbers, numbers from the check. Never a secret, never personal data. Paths in card comments, verdicts and pull requests are relative to the repository root, never absolute.
 
 ## Where the work happens
 
