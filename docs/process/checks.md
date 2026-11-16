@@ -87,7 +87,13 @@ Never pass `--no-verify`. If a hook is wrong, fix the hook in its own pull reque
 
 ## What GitHub enforces
 
-The repository is public, so rulesets are available on the free plan. Card 1 adds one to `main`: changes arrive only through a pull request, and the head commit must carry a successful `local/check` status. The maintainer can bypass it, for example for the first commits of the project.
+The repository is public, so rulesets are available on the free plan. A ruleset named `main` protects the default branch:
+
+- changes arrive only through a pull request. No approval is required, because the agents and the maintainer share one GitHub account, and an account cannot approve its own pull request
+- the head commit must carry a successful `local/check` status. A pull request without it shows as blocked
+- no force-push to `main`, and `main` cannot be deleted
+
+Repository admins can bypass it. That is the maintainer's account, which the agents also use, so for them the bypass is closed by rule rather than by GitHub: an agent never bypasses the ruleset.
 
 The flow checks it too: the Release master reads the status and runs the check again before asking for the owner's yes.
 
