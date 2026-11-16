@@ -26,6 +26,7 @@ Everything an agent or a person needs before changing code. These files are the 
 | [process/agent-flow.md](process/agent-flow.md) | The roles, the path of one task, statuses and the definition of done |
 | [process/checks.md](process/checks.md) | The local check command, its receipt on the commit, and what runs on GitHub |
 | [process/tasks.md](process/tasks.md) | Where tasks live, what each one carries and how the next phase gets its tasks |
+| [process/releases.md](process/releases.md) | Versions, the Dev and Release builds side by side on Mac and iPhone, how a version is released, and what agents may do with each |
 | [process/safety-and-privacy.md](process/safety-and-privacy.md) | What agents may touch on the maintainer's Mac, what never enters the repository, and what the app itself may do |
 
 ## Notes that come later

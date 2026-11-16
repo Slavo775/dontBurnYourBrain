@@ -51,7 +51,7 @@ At the end of each phase the Leader:
 
 Reports and requests from other people arrive from phase 8 on as GitHub issues. Each accepted one becomes a card.
 
-## The first 16 cards
+## The first 17 cards
 
 ### Phase 0: setup and risk spikes
 
@@ -78,5 +78,6 @@ Phase 0 ends when the app builds and runs from Xcode and from the command line, 
 14. Quick start in the panel
 15. Notifications and sounds
 16. Today list and simple history
+17. Release v0.1.0 beside the Dev build
 
-Phase 1 ends when the maintainer runs a full working day on the app.
+Phase 1 ends when the maintainer runs a full working day on the Release build from card 17.
