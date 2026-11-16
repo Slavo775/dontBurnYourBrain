@@ -17,7 +17,7 @@ public enum FixedTime {
     /// February 30 or 25:00.
     public static func date(from raw: String) -> Date? {
         // ASCII only, or `\d` would also take digits from other scripts.
-        let shape = /(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)(?:Z|([+-])(\d\d):(\d\d))/.asciiOnlyDigits()
+        let shape = /(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)(?:Z|([+-])(\d\d):([0-5]\d))/.asciiOnlyDigits()
         guard raw.utf8.count <= maximumLength, let match = raw.wholeMatch(of: shape) else { return nil }
         let (_, year, month, day, hour, minute, second, sign, offsetHours, offsetMinutes) = match.output
         let offset = (Int(offsetHours ?? "0") ?? 0) * 3600 + (Int(offsetMinutes ?? "0") ?? 0) * 60
