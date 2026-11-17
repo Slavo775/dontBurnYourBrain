@@ -49,6 +49,12 @@ These were learned in the reference flow before this project started. All are `a
 
 ## Entries
 
+## 2026-11-16 · Trying a rule change before the Tester · accepted
+
+- **What happened:** card #3 (PR #6) needed three test rounds. The Tester rejected the new rules twice, and the Reviewer then found three more gaps of the same kind. Rules contradicted each other, a command did not prove what its rule claimed, and a new procedure, taking a card over, was not followed through in the other role files.
+- **Root cause:** the Leader sent new rules to the Tester without running the commands they name, and without following a new procedure through every role file it touches.
+- **Proposed change:** one rule in `rules/roles/leader.md`, section 8 "Changing the flow".
+
 ## 2026-11-17 · Typing into a terminal by script · accepted
 
 - **What happened:** on card #5 (PR #8), an agent sent `/exit` into a Terminal tab with `do script`, which sends the text and Return at once. Claude Code completed it to a different slash command, which offered to change a real profile's settings. The agent cancelled it. Later, Terminal and iTerm2 stopped answering Apple events (error −1712) while a dialog was open on screen.

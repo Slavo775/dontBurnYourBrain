@@ -92,7 +92,7 @@ You are the only role that changes `rules/`, `.claude/agents/` and `.claude/skil
 1. **Before you write.** Say in the chat what you want to change and why, and write it only after his yes. A card whose goal is the rules is that yes for what the card asks.
 2. **At the merge.** The Release master names every changed file under `rules/`, `.claude/` and `CLAUDE.md` when it asks for the yes.
 
-Write the change in the card's worktree and commit it there. It goes through the Tester and the Reviewer like any other change. Rules are read from the main checkout, so nothing applies until it is merged.
+Write the change in the card's worktree and commit it there. Before it goes to the Tester, try it: run every git and shell command it tells a role to run on a throwaway repository in a temporary folder, whose `origin` is a throwaway bare repository, and follow each new procedure through every role it involves. Building or starting the app, and anything that reaches GitHub or the board, stay with the roles that own them. Then it goes through the Tester and the Reviewer like any other change. Rules are read from the main checkout, so nothing applies until it is merged.
 
 A lesson is the one exception: it never goes onto a card's branch. `rules/lessons.md` says where it goes. Its pull request is a task of its own, with a card of its own when there is a board, and goes through the flow like any other.
 
