@@ -24,7 +24,8 @@ public extension TimeBlock {
     /// Names `project` for this block, or clears it with `nil`.
     ///
     /// Throws, and leaves the block as it was, when the project is not
-    /// assignable to the block's workspace.
+    /// assignable to the block's workspace. The rule is checked only here: a
+    /// later change of workspace or of `isTimeTracked` does not undo it.
     func assign(_ project: Project?) throws(ProjectAssignmentError) {
         try project?.checkAssignable(to: workspace)
         self.project = project
@@ -35,7 +36,8 @@ public extension TimeEntry {
     /// Names `project` for this entry, or clears it with `nil`.
     ///
     /// Throws, and leaves the entry as it was, when the project is not
-    /// assignable to the entry's workspace.
+    /// assignable to the entry's workspace. The rule is checked only here: a
+    /// later change of workspace or of `isTimeTracked` does not undo it.
     func assign(_ project: Project?) throws(ProjectAssignmentError) {
         try project?.checkAssignable(to: workspace)
         self.project = project

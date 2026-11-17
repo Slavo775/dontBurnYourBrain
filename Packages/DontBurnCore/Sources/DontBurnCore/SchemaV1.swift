@@ -80,11 +80,17 @@ public enum SchemaV1: VersionedSchema {
         /// The workspace the project belongs to.
         public var workspace: Workspace?
         /// The blocks naming this project. Deleting the project keeps them.
+        ///
+        /// Read-only outside the package, because setting this side would name
+        /// the project without ``TimeBlock/assign(_:)``.
         @Relationship(deleteRule: .nullify, inverse: \TimeBlock.project)
-        public var blocks: [TimeBlock]?
+        public internal(set) var blocks: [TimeBlock]?
         /// The entries naming this project. Deleting the project keeps them.
+        ///
+        /// Read-only outside the package, because setting this side would name
+        /// the project without ``TimeEntry/assign(_:)``.
         @Relationship(deleteRule: .nullify, inverse: \TimeEntry.project)
-        public var entries: [TimeEntry]?
+        public internal(set) var entries: [TimeEntry]?
 
         /// A project inside `workspace`.
         public init(name: String, workspace: Workspace?, isTimeTracked: Bool = true, sortOrder: Int = 0) {
