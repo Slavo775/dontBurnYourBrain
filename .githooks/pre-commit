@@ -6,7 +6,8 @@ files=$(git diff --cached --name-only --diff-filter=ACMR -- '*.swift')
 [ -z "$files" ] && exit 0
 
 # Paths in this repository have no spaces, so word splitting is safe here.
+# --config: see the format step in scripts/check.
 # shellcheck disable=SC2086
-swiftformat --lint --quiet $files
+swiftformat --lint --quiet --config .swiftformat $files
 # shellcheck disable=SC2086
 swiftlint lint --strict --quiet $files
