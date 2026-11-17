@@ -2,7 +2,7 @@
 
 What was decided before the first line of code, and what each decision changes. Add a row when a decision is made or changed, with the date, and correct the other spec files in the same pull request.
 
-All rows below date from 15 November 2026, except those marked 16 Nov.
+All rows below date from 15 November 2026, except those marked 16 Nov. Text marked 17 Nov was corrected from the phase 0 spikes.
 
 | Topic | Decision | What it changes |
 |---|---|---|
@@ -12,7 +12,7 @@ All rows below date from 15 November 2026, except those marked 16 Nov.
 | **Release details** | MIT license. The repository is public from the first commit. Other people get the iPhone app through a TestFlight link | The license file is in the first commit, and every commit follows the privacy rules from the start. Adapters are built first for Claude Code, iTerm2, Terminal, VS Code, Cursor and Jira Cloud. Whether TestFlight is worth a fresh build every 90 days is looked at again in phase 8 |
 | **Name and language** | Don't Burn Your Brain, as the working name. English interface first | The app carries this name on screen. Files, the repository and code use the short form DontBurn, without the apostrophe and the spaces. A quick search found nothing with exactly this name. The full check of the App Store, GitHub and trademarks happens before the repository becomes public |
 | **Agents** | Claude Code first. Codex later | Sessions are read through one adapter per agent, so another agent is added without touching the rest |
-| **Claude accounts** | Each Claude account is its own Claude Code profile folder | The app reads every profile folder, labels each session with its profile and installs its hook once per profile. More profiles can be added by path |
+| **Claude accounts** | Each Claude account is its own Claude Code profile folder | The app reads every profile folder and labels each session with its profile. It installs its hook once per settings file, and one settings file may be shared by several profiles. *17 Nov* More profiles can be added by path |
 | **VS Code and Cursor** | Bringing the right window forward is enough | No companion extension for the exact terminal tab |
 | **Time rules** | Round to 15 minutes. Breaks are logged too, with a switch to leave them out | Both rules live in each workspace, because two employers may want different ones: the rounding step, default 15 minutes, and whether breaks count, default yes. A break inside a block goes to the task of that block. Time between blocks is never counted |
 | **Jira** | Jira Cloud with native worklogs. An assumption, not something that was checked | Phase 4 starts by finding out, in each organization, whether time is logged through Tempo. If it is, Tempo becomes a second provider |
@@ -40,8 +40,11 @@ Each of these has a moment when it gets checked.
 | ⌥ Space and ⌥ Tab are free as global shortcuts | In phase 2, when the command bar is built |
 | macOS passes along nothing that marks an Out of office entry | In phase 5 |
 | The app can ask macOS for a fresh fetch of a calendar account | In phase 5 |
-| A hook can tell which terminal tab it runs in, on all four terminal hosts | In the phase 0 spikes |
 | iCloud sync behaves in a signed, notarized build the way it does from Xcode | Early in phase 6 |
+
+Checked and taken out of the table:
+
+- "A hook can tell which terminal tab it runs in, on all four terminal hosts." Checked in the phase 0 spikes. *17 Nov* Yes in Terminal and iTerm2. In VS Code and Cursor the hook names the editor, but not the tab. See [../spikes/phase-0.md](../spikes/phase-0.md).
 
 ## What free, open source and no App Store means in practice
 

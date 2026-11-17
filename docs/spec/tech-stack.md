@@ -49,7 +49,8 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 - **iCloud (CloudKit)**: Private database
 - **Jira sites**: REST
 - **macOS Calendar**: Google accounts
-- **Terminal, iTerm2, VS Code, Cursor**: AppleScript and CLI
+- **Terminal, iTerm2**: AppleScript
+- **VS Code, Cursor**: `open -b` through LaunchServices. Neither has an AppleScript dictionary, and their `code` and `cursor` commands were not tested in phase 0
 
 ## Data model, first cut
 
