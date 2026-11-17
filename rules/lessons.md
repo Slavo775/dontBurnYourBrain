@@ -55,6 +55,12 @@ These were learned in the reference flow before this project started. All are `a
 - **Root cause:** the Leader sent new rules to the Tester without running the commands they name, and without following a new procedure through every role file it touches.
 - **Proposed change:** one rule in `rules/roles/leader.md`, section 8 "Changing the flow".
 
+## 2026-11-17 · Clicking the menu bar item · accepted
+
+- **What happened:** on card #4 (PR #7), two synthetic mouse clicks meant for the app's own menu bar item landed in other apps on the maintainer's Mac. One hit the built-in display where the cursor had rested, the other a browser's tab bar on another display. The last test round used `AXPress` only and had no stray input.
+- **Root cause:** no rule said how to interact with a menu bar item. On this macOS, status items are hosted by `MenuBarAgent`, their positions span several displays, and the owner's live mouse moves under the clicks. So clicks aimed at coordinates miss.
+- **Proposed change:** one rule in `testing.md`, "Checking a screen".
+
 ## 2026-11-17 · Typing into a terminal by script · accepted
 
 - **What happened:** on card #5 (PR #8), an agent sent `/exit` into a Terminal tab with `do script`, which sends the text and Return at once. Claude Code completed it to a different slash command, which offered to change a real profile's settings. The agent cancelled it. Later, Terminal and iTerm2 stopped answering Apple events (error −1712) while a dialog was open on screen.

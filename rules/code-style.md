@@ -64,4 +64,6 @@ The compiler runs in Swift 6 mode with warnings as errors, SwiftFormat owns the 
 ## Known traps
 
 - **A window of a menu bar app opens behind other apps**, and the Settings window can end up hidden behind them. An app without a Dock icon is not brought forward by itself. Bring the app forward when it opens a window, and check this by hand in every card that adds one.
+- **A `TimelineView` in a `MenuBarExtra` label hangs the app at launch.** Drive the label from a `Timer` scheduled in the `.common` run loop modes. See "Limits" under "Menu bar item" in `docs/spec/design.md`.
+- **`MenuBarExtra` drops a `Text` label's font, `.monospacedDigit()` and `.accessibilityLabel`.** Draw the label as a template image and set its `accessibilityDescription`. See the same "Limits".
 - **`JSONEncoder` with `.iso8601` dates drops fractions of a second.** Anything that compares times written that way needs a strategy that keeps them.
