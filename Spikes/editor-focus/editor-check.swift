@@ -5,8 +5,10 @@
 //   swift editor-check.swift windows <scratch>
 // <target> is a name from `target(_:)`. A window that appears during an attempt is noted in <scratch>/windows
 // under that name, by its number. Window names are never read, and no path outside <scratch> is shown.
-// Exit status: 0 when done, 1 when an expected window was named and the verdict is not RIGHT, or when
-// `measure` met a new window and stopped, 2 when the arguments or the starting state were refused.
+// Exit status. try: 1 when an expected window was named and the verdict is not RIGHT. session: 1 when the verdict
+// for a spike window open on the cwd is not RIGHT, or a new window opened. measure: 1 at the first new window,
+// where it stops; a WRONG attempt does not stop it, and its summary counts it. Every mode: 2 when the arguments or
+// a starting state were refused before that focus command was sent, or a tool or the scratch folder failed. Else 0.
 import AppKit
 
 enum Editor: String, CaseIterable {
@@ -99,7 +101,7 @@ case "try":
     let (editor, route, target) = (editor(args[2]), route(args[3]), target(args[4]))
     let scene = setScene(editor, awayFrom: target.name == "B" ? "A" : "B")
     let result = attempt(editor, route, target, expected: args.count > 5 ? args[5] : nil, prefix: scene)
-    if args.count > 5, result.agree == nil { exit(1) }
+    guard args.count == 5 || result.agree != nil else { exit(1) }
 case "measure":
     measure(editor(args[2]), route(args[3]), attempts: attempts)
 case "session":
@@ -343,7 +345,7 @@ func session(route: String) {
     let expected = name.flatMap { spikeWindow(editor, $0) != 0 ? $0 : nil }
     let scene = setScene(editor, awayFrom: name == "B" ? "A" : "B")
     let result = attempt(editor, route, (name ?? "cwd", cwd), expected: expected, prefix: scene)
-    if expected != nil, result.agree == nil { exit(1) }
+    guard result.newWindows == 0, expected == nil || result.agree != nil else { exit(1) }
 }
 
 /// A path as its place in the scratch folder, so no other path reaches the output.

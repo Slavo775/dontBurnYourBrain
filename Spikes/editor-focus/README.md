@@ -76,7 +76,13 @@ Spike windows are told apart by their window number, noted in `<scratch>/windows
 
 `measure` makes ten attempts to A and ten to B, or the number given, 1 to 20. It needs the spike windows A and B in that editor, and it stops at the first attempt that opens a new window. Before each one, the other spike window is made the editor's last active window, and the other editor's window on the same folder is put in front. So every attempt also covers two windows of one editor, and one folder open in both editors at once. `try` starts from B (or A) as the last active window when that spike window is open, with Terminal in front.
 
-The helper's exit status: 0 when the step is done. 1 when an expected window was named and the verdict is not `RIGHT`, that is `WRONG` or `NEW WINDOW`, or when `measure` stopped at a new window. 2 when it refused the arguments or the starting state: a locked screen, an editor that is not running, a spike window that is not open. So a caller can stop on anything but 0.
+The helper's exit status, per mode:
+
+- `try`: 1 when an expected window was named and the verdict is not `RIGHT`, that is `WRONG` or `NEW WINDOW`.
+- `session`: 1 when a spike window is open on the session's `cwd` and the verdict is not `RIGHT`, and whenever a new window opened.
+- `measure`: 1 at the first new window, where it stops. A `WRONG` attempt does not stop it: it exits 0 after its summary, which counts the `WRONG` attempts as not right.
+- Every mode: 2 when it refused the arguments or a starting state before that focus command was sent: a locked screen, an editor that is not running, a spike window that is not open, a starting state that was not reached. Also 2 when a tool or the scratch folder failed.
+- 0 otherwise. So a caller can stop on anything but 0, and reads `measure`'s summary for `WRONG` attempts.
 
 ## Single steps
 
@@ -107,7 +113,7 @@ One spike window per editor, A on `acme-web`, is enough for the folder case and 
 1. In that window, open the integrated terminal (Terminal, New Terminal) and start a session, with `CLAUDE_CONFIG_DIR=<profile folder>` in front for a profile:
    `CLAUDE_CODE_IDE_SKIP_AUTO_INSTALL=1 command claude --model haiku --setting-sources project,local --permission-mode default`
    The hook from card #5 appends a `SessionStart` line to `<scratch>/events.jsonl`.
-2. In Terminal: `swift $H session "$S" open`. It reads the last `SessionStart` line, picks the editor by `__CFBundleIdentifier`, and sends the focus command for the line's `cwd`. It exits 0 only when the spike window on that folder came forward. A `cwd` that no spike window has open is sent as it is, and opens a new window.
+2. In Terminal: `swift $H session "$S" open`. It reads the last `SessionStart` line, picks the editor by `__CFBundleIdentifier`, and sends the focus command for the line's `cwd`. It exits 1 when the spike window on that folder did not come forward, and whenever the command opened a new window, otherwise 0. A `cwd` that no spike window has open is sent as it is, and opens a new window, so it ends with 1.
 3. Type `/exit` in the session.
 
 ## Results
@@ -172,7 +178,7 @@ The log is gone, so this comes from the system log, which keeps process names an
 
 So the spike did not run away, and it was still the last push: it opened four windows in under a minute on a Mac that had no memory and no disk left to give. How much of the four swap files was the spike's is not known, because the system log has no memory figures per process.
 
-What changed in the spike since: the script is removed, `measure` stops at the first new window, and `try` and `session` exit with 1 when the expected window did not come forward, so nothing can go on past a failed step without being told to.
+What changed in the spike since: the script is removed, and the exit status tells a caller when to stop, per mode as under "How an attempt is counted". `measure` stops with 1 at the first new window, but goes on after a `WRONG` attempt and exits 0, counting it in its summary. `try` exits 1 when an expected window was named and did not come forward. `session` exits 1 when the spike window on its `cwd` did not come forward, and whenever a new window opened.
 
 What this means for phase 3: **an unwanted window is not only clutter.** One new editor window can start a dozen processes with the user's extensions. This is the strongest reason for the rule above, and for never sending a folder the app is not sure of in a loop or on a timer.
 
