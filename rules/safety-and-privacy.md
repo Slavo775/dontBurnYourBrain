@@ -33,7 +33,7 @@ The Mac the agents work on is the one the maintainer uses every day, for more th
 - macOS permission prompts (Automation, Accessibility, Calendars, Notifications) are answered by the maintainer. Say that a prompt is coming and why.
 - Never reset permissions, change System Settings or edit login items.
 - AppleScript that drives a terminal or an editor runs only in the tasks that are about it.
-- Type by script only into a tab or window you opened yourself. In iTerm2, send the text with `write text … newline NO`, check the input line through iTerm2's AppleScript, then send Return on its own. Terminal's `do script` always adds Return, so use it only to start a command, never to type a prompt or a slash command into a running agent session. An unexpected menu or dialog gets Escape and a report, never a choice.
+- Type by script only into a tab or window you opened yourself. In iTerm2, send the text with `write text … newline NO`, check the input line through iTerm2's AppleScript, then send Return on its own. Terminal's AppleScript cannot send text without Return, so use its `do script` only to start a command. To type into a running agent session in Terminal, stop and report it instead. Never use System Events keystrokes, which type into whatever window is in front. An unexpected menu or dialog gets Escape and a report, never a choice.
 - An AppleScript call that fails with error −1712 (an Apple event timeout) usually means a dialog is open on screen. Retry once, then stop and report it.
 
 **Git**
