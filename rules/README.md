@@ -52,9 +52,9 @@ Subagents report to the Leader, and the Leader posts the comment for their step 
 - The rules are read from the main checkout: this `rules/` folder in the directory the session started in.
 - Build, run and test only the Dev variant. See [releases.md](releases.md).
 
-## Who changes this folder
+## Who changes the rules
 
-Only the Leader, and only after the owner's yes: one before the change is written, and one at the merge, where the Release master names every changed file. `rules/roles/leader.md` section 8 says how. That covers `rules/`, `.claude/agents/` and `.claude/skills/`. Every other role says what should change in its report to the Leader.
+The gated paths are `rules/`, `.claude/` and `CLAUDE.md`. Only the Leader changes them, and only after the owner's yes: one before the change is written, and one at the merge, where the Release master names every changed file under them. `rules/roles/leader.md` section 8 says how. The one exception is the Commands section of `CLAUDE.md`, which the Documenter keeps true. Every other role says what should change in its report to the Leader.
 
 ## Language
 

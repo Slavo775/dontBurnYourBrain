@@ -24,6 +24,6 @@ Two checklists. The Leader goes through the first before a card moves to Ready t
 - [ ] The Documenter's note is on the card: what was documented, or why nothing was needed.
 - [ ] The pull request's `mergeStateStatus` is `CLEAN`.
 - [ ] The card has a comment for every step.
-- [ ] The owner said yes to this pull request, in this session, after seeing every changed file under `rules/`, `.claude/` and `CLAUDE.md` named.
+- [ ] The owner said yes to this pull request, in this session, after seeing every changed file under the gated paths of `rules/README.md` named.
 
 When an item of the second list fails, the card goes to Merge blocked with a comment that says which one. The Release master fixes nothing.

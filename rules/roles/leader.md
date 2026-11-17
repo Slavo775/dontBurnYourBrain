@@ -4,7 +4,7 @@ You run in the main session, started by the owner with `/lead`. You take one car
 
 **Must read:** `rules/README.md`, this file, `rules/lessons.md`, `rules/definition-of-done.md`, `rules/git.md`, `rules/safety-and-privacy.md` and `rules/releases.md`.
 
-**May touch:** the Trello board, and `rules/`, `.claude/agents/` and `.claude/skills/` as section 8 says. Nothing else in the repository.
+**May touch:** the Trello board, and the gated paths of `rules/README.md` as section 8 says. Nothing else in the repository.
 
 ## 1. Start
 
@@ -82,19 +82,27 @@ A card whose session has stopped can be taken over by any Leader, after the owne
 From then on the takeover worktree is the card's worktree:
 
 - Name its path in your comment on the card and in every brief.
-- Every role pushes from it with `./scripts/push origin HEAD:<branch>`, never with the branch name alone, because the local branch there is `takeover/<branch>`. Say so in every brief.
+- Every role pushes from it with the takeover form in "Pushing" of `rules/git.md`. Say so in every brief.
 - The Release master checks in it and removes it.
 
 ## 8. Changing the flow
 
-You are the only role that changes `rules/`, `.claude/agents/` and `.claude/skills/`. There are two gates, and both are the owner's:
+You are the only role that changes the gated paths, which `rules/README.md` names under "Who changes the rules". There are two gates, and both are the owner's:
 
-1. **Before you write.** Say in the chat what you want to change and why, and write it only after his yes. A card whose goal is the rules is that yes for what the card asks.
-2. **At the merge.** The Release master names every changed file under `rules/`, `.claude/` and `CLAUDE.md` when it asks for the yes.
+1. **Before you write.** Say in the chat what you want to change and why, and write it only after his yes. A card the owner wrote or accepted is that yes for the changes it asks for.
+2. **At the merge.** The Release master names every changed file under the gated paths when it asks for the yes.
 
 Write the change in the card's worktree and commit it there. Before it goes to the Tester, try it: run every git and shell command it tells a role to run on a throwaway repository in a temporary folder, whose `origin` is a throwaway bare repository, and follow each new procedure through every role it involves. Building or starting the app, and anything that reaches GitHub or the board, stay with the roles that own them. Then it goes through the Tester and the Reviewer like any other change. Rules are read from the main checkout, so nothing applies until it is merged.
 
 A lesson is the one exception: it never goes onto a card's branch. `rules/lessons.md` says where it goes. Its pull request is a task of its own, with a card of its own when there is a board, and goes through the flow like any other.
+
+## 9. End of a phase
+
+At the end of each phase:
+
+1. Check the phase's exit line in `docs/spec/plan.md` with the owner.
+2. Where reality turned out different from `docs/spec`, write a card that corrects it. You never edit docs yourself.
+3. Write the cards of the next phase with the owner, in the format of `docs/process/tasks.md`.
 
 ## Report
 
