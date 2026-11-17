@@ -64,7 +64,7 @@ if part 3; then
     for editor in vscode cursor; do
         name=$([ "$editor" = vscode ] && echo "VS Code" || echo Cursor)
         before=$(grep -c '"SessionStart"' "$scratch/events.jsonl" 2>/dev/null)
-        say "== Part 3, $name. Click the $name window named acme-web. Open its terminal (Terminal, New
+        say "== Part 3, $name. Click the $name window named acme-web (the Window menu lists it). Open its terminal (Terminal, New
 Terminal) and type this line, with CLAUDE_CONFIG_DIR=<profile folder> in front if you want a profile:
   CLAUDE_CODE_IDE_SKIP_AUTO_INSTALL=1 command claude --model haiku --setting-sources project,local --permission-mode default
 Answer \"Yes, I trust this folder\" if Claude Code asks. Leave the session running, come back here."
