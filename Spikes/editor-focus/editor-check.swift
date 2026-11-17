@@ -1,10 +1,12 @@
 // Spike helper for card #7. Not part of the app and not built by the check. See README.md.
 //   swift editor-check.swift try     <scratch> <vscode|cursor> <open|cli|app> <target> [expected window]
-//   swift editor-check.swift measure <scratch> <vscode|cursor> <open|cli|app> [attempts per window, default 10]
+//   swift editor-check.swift measure <scratch> <vscode|cursor> <open|cli|app> [attempts, 1 to 20, default 10]
 //   swift editor-check.swift session <scratch> [open|cli|app]
 //   swift editor-check.swift windows <scratch>
 // <target> is a name from `target(_:)`. A window that appears during an attempt is noted in <scratch>/windows
 // under that name, by its number. Window names are never read, and no path outside <scratch> is shown.
+// Exit status: 0 when done, 1 when an expected window was named and the verdict is not RIGHT, or when
+// `measure` met a new window and stopped, 2 when the arguments or the starting state were refused.
 import AppKit
 
 enum Editor: String, CaseIterable {
@@ -28,7 +30,12 @@ enum Editor: String, CaseIterable {
 }
 
 typealias Target = (name: String, argument: String)
-typealias Timing = (command: Double, agree: Double?)
+
+struct Timing {
+    var command: Double
+    var agree: Double?
+    var newWindows: Int
+}
 
 struct Noted {
     var editor: Editor
@@ -70,6 +77,10 @@ let scratch: String = {
     return path
 }()
 
+/// Refused before anything is looked at or sent: every attempt can open a window.
+let attempts = args[0] == "measure" && args.count > 4 ? Int(args[4]) ?? 0 : 10
+guard (1 ... 20).contains(attempts) else { fail("attempts per window: a number from 1 to 20") }
+
 if (CGSessionCopyCurrentDictionary() as? [String: Any])?["CGSSessionScreenIsLocked"] as? Bool == true {
     fail("The screen is locked, so the login window is the frontmost app. Unlock it first.")
 }
@@ -87,9 +98,10 @@ switch args[0] {
 case "try":
     let (editor, route, target) = (editor(args[2]), route(args[3]), target(args[4]))
     let scene = setScene(editor, awayFrom: target.name == "B" ? "A" : "B")
-    attempt(editor, route, target, expected: args.count > 5 ? args[5] : nil, prefix: scene)
+    let result = attempt(editor, route, target, expected: args.count > 5 ? args[5] : nil, prefix: scene)
+    if args.count > 5, result.agree == nil { exit(1) }
 case "measure":
-    measure(editor(args[2]), route(args[3]), attempts: args.count > 4 ? Int(args[4]) ?? 10 : 10)
+    measure(editor(args[2]), route(args[3]), attempts: attempts)
 case "session":
     session(route: args.count > 2 ? route(args[2]) : "open")
 case "windows":
@@ -282,7 +294,7 @@ func attempt(_ editor: Editor, _ route: String, _ target: Target, expected: Stri
     print(prefix + "\(editor.rawValue) \(route) → \(target.name): \(verdict) exit=\(result.status)"
         + " command=\(format(took)) agree=\(right ? format(agree) : "never") readings=\(readings)"
         + " \(now.line(editor, number))" + (result.message.isEmpty ? "" : " message=\"\(result.message)\""))
-    return (took, right ? agree : nil)
+    return Timing(command: took, agree: right ? agree : nil, newWindows: now.newWindows.count)
 }
 
 /// Attempts to A and to B, each with the other as the editor's last active window and the other editor
@@ -295,8 +307,11 @@ func measure(_ editor: Editor, _ route: String, attempts: Int) {
     for (name, other) in [("A", "B"), ("B", "A")] {
         for index in 1 ... attempts {
             let scene = setScene(editor, awayFrom: other, sameFolder: name)
-            results.append(attempt(editor, route, target(name), expected: name,
-                                   prefix: "\(name) \(index)/\(attempts) \(scene)"))
+            let result = attempt(editor, route, target(name), expected: name,
+                                 prefix: "\(name) \(index)/\(attempts) \(scene)")
+            // An unwanted window is worse than no focus, so the run never goes on to open another.
+            guard result.newWindows == 0 else { fail("measure stopped: a new window at \(name) \(index)", status: 1) }
+            results.append(result)
         }
     }
     for (name, part) in [("A", results.prefix(attempts)), ("B", results.suffix(attempts))] {
@@ -327,7 +342,8 @@ func session(route: String) {
         + " cwd=\(scratchName(cwd))")
     let expected = name.flatMap { spikeWindow(editor, $0) != 0 ? $0 : nil }
     let scene = setScene(editor, awayFrom: name == "B" ? "A" : "B")
-    attempt(editor, route, (name ?? "cwd", cwd), expected: expected, prefix: scene)
+    let result = attempt(editor, route, (name ?? "cwd", cwd), expected: expected, prefix: scene)
+    if expected != nil, result.agree == nil { exit(1) }
 }
 
 /// A path as its place in the scratch folder, so no other path reaches the output.
@@ -376,7 +392,7 @@ func format(_ value: Double) -> String {
     String(format: "%.3fs", value)
 }
 
-func fail(_ message: String) -> Never {
+func fail(_ message: String, status: Int32 = 2) -> Never {
     FileHandle.standardError.write(Data((message + "\n").utf8))
-    exit(2)
+    exit(status)
 }
