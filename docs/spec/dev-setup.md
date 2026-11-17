@@ -1,6 +1,6 @@
 # Dev setup and quality
 
-Tools, quality gates, the repository layout and the permissions the app asks for.
+Tools, launch arguments, quality gates, the repository layout and the permissions the app asks for.
 
 Part of the product spec. First written as draft 13 of the product spec, 15 November 2026.
 
@@ -19,6 +19,21 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 - `xcodebuild` comes with Xcode. Builds and runs tests from the terminal, so Claude Code can verify its own work.
 - `brew install swiftlint swiftformat xcbeautify xcodegen`
 - XcodeGen keeps the project definition in a small YAML file, which avoids merge pain in the generated Xcode project file and suits agent-written code.
+
+### Launch arguments
+
+The app reads two arguments from the command line, so a check or a screenshot looks the same on every run. A value saved with `defaults write` is never used.
+
+| Argument | What it does |
+| --- | --- |
+| `-DontBurnFixedTime 2026-01-15T09:41:30+01:00` | Freezes the clock at that instant, shown in the Mac's time zone. The value needs seconds and an offset, `Z` or `±hh:mm`. A malformed value is ignored, and the clock runs live. |
+| `-DontBurnAppearance light` or `dark` | Sets the app's appearance for that launch. It does not reach the menu bar item or its menu, which follow the system. Any other value follows the system. |
+
+```sh
+open DerivedData/Build/Products/Debug/DontBurn.app --args -DontBurnFixedTime 2026-01-15T09:41:30+01:00 -DontBurnAppearance dark
+```
+
+How light and dark are checked is in "Checking a screen" of [../../rules/testing.md](../../rules/testing.md).
 
 ## From web development to Apple development
 

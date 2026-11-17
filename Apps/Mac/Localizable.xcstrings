@@ -1,10 +1,7 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Don't Burn Your Brain" : {
-
-    },
-    "Quit" : {
+    "Quit %@" : {
 
     }
   },

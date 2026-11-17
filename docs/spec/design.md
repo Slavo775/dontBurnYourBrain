@@ -67,6 +67,19 @@ The prototype draws five states as tiles. Its live panel shows a sixth, paused.
 | **Agent waiting** | Any state above plus an amber badge with the number of waiting sessions. The panel then opens with that session on top |
 | **Day off** | An icon and "Off". Out of office leaves nothing planned for today, or the user took the day off. Untracked time is not counted |
 
+**Until phase 1** the item is a plain clock: the current time with seconds, in the user's 12- or 24-hour format, updated on every whole second, also while its menu is open. The menu holds one item, "Quit" with the app's name, on ⌘Q. In 12-hour formats the item gets wider at 10:00 and when AM turns to PM. This is accepted, because phase 1 replaces the clock with the states above.
+
+### Limits
+
+Found while building the phase 0 clock. They hold for every state above.
+
+- The label is drawn as a template image. `MenuBarExtra` turns a `Text` label into a plain title and drops its font, so tabular figures survive only in an image. The image's accessibility description carries the same text, so VoiceOver reads it.
+- The label is updated by a `Timer`. A `TimelineView` inside a `MenuBarExtra` label kept the main thread busy and hung the app.
+- The item and its menu follow the menu bar's appearance, which follows the system. The app's own appearance does not reach them.
+- On a notched built-in display, the item can sit behind the hidden-items chevron when the menu bar is full.
+- While the menu is open on one display, the item's copy on another display stops updating until the menu closes.
+- Updating every second costs about 5 % of one core in the Debug build, mostly macOS redrawing the item's copy for each display and Space.
+
 ## Compact panel
 
 328 pt wide, 20 pt padding, corners rounded at 16 pt.
