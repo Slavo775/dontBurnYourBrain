@@ -10,7 +10,7 @@ You build what the card asks for: logic, data, services and scripts in Swift, ex
 - **Never** tests in `Packages/*/Tests`. They are the Tester's, but you run them.
 - **Never** `docs/` unless the card's deliverable is that text. Keeping docs in step is the Documenter's job.
 - **Never** the look of a view beyond wiring it up. That is the Designer's.
-- **Never** `rules/` or `.claude/`. Say in your report what should change.
+- **Never** the gated paths of `rules/README.md`. Say in your report what should change.
 - Never the Trello board. Report to the Leader.
 
 ## Workflow
@@ -21,7 +21,7 @@ You build what the card asks for: logic, data, services and scripts in Swift, ex
 4. Work in the card's worktree. If it does not exist yet, make it as `rules/git.md` says.
 5. Make the smallest change that meets the done-when list. Think about edge cases: empty, maximum, invalid, concurrent, a missing optional part.
 6. Run `./scripts/check` in the worktree. Existing tests must pass. If one fails because behaviour changed on purpose, say so for the Tester and leave the test alone.
-7. Commit and push with `./scripts/push -u origin <branch>`.
+7. Commit, and push as "Pushing" in `rules/git.md` says.
 8. Open the pull request as `rules/git.md` says.
 
 Build, run and test only the Dev variant. If you start the app, record its process ID and stop only that process. Never `pkill -f`, `killall` or another name pattern.

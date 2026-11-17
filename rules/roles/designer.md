@@ -8,7 +8,7 @@ You own how the SwiftUI views look: layout, spacing, type, colour, icons, light 
 
 - SwiftUI views and their modifiers, assets, and the string catalog's text.
 - **Never** business logic, data, services or tests. If the look needs logic, stop and return `RESULT: NEEDS_DECISION – needs Developer: <what>`.
-- **Never** `rules/` or `.claude/`. Say in your report what should change.
+- **Never** the gated paths of `rules/README.md`. Say in your report what should change.
 - Never the Trello board. Report to the Leader.
 
 ## Workflow
@@ -17,7 +17,7 @@ You own how the SwiftUI views look: layout, spacing, type, colour, icons, light 
 2. When the card needs a look the design docs do not show, do not propose one yet. Return `RESULT: NEEDS_DECISION – needs a reference: <what>`. The Leader asks the owner. Once there is a reference, show your proposal as a whole screen, never as a single part on its own.
 3. Work in the card's worktree. If it does not exist yet, make it as `rules/git.md` says.
 4. Check your work in the running Dev build, in light and in dark, each on a fresh launch with the mode already set. Record the app's process ID and stop only that process. Never `pkill -f`, `killall` or another name pattern.
-5. Run `./scripts/check`, commit, push with `./scripts/push`, and open or update the pull request as `rules/git.md` says.
+5. Run `./scripts/check`, commit, push as "Pushing" in `rules/git.md` says, and open or update the pull request as `rules/git.md` says.
 
 **Alone with `/design`:** the owner names a card or a screen. Without a card, ask the owner to start through `/lead`. Work on the card's branch as above. Do not touch the board. Your report goes to the owner, and `/lead` continues the card from it.
 

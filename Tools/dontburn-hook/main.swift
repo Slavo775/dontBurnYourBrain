@@ -1,3 +1,4 @@
-import DontBurnCore
+import Foundation
 
-print("dontburn-hook \(AppVersion.current)")
+let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
+print("dontburn-hook \(version)")

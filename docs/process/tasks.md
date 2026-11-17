@@ -43,11 +43,7 @@ Branches are named after the card, such as `feat/10-timer-engine`. The exact for
 
 Only the current phases have cards. A later phase gets its cards when the one before it is nearly done, because spikes and daily use change the details.
 
-At the end of each phase the Leader:
-
-1. checks the phase's exit line in the plan with the maintainer
-2. corrects `docs/spec` where reality turned out different
-3. writes the cards of the next phase with the maintainer, in the format above
+What the Leader does at the end of each phase is in [../../rules/roles/leader.md](../../rules/roles/leader.md) under "End of a phase".
 
 Reports and requests from other people arrive from phase 8 on as GitHub issues. Each accepted one becomes a card.
 
