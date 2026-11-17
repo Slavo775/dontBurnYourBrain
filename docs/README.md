@@ -31,6 +31,12 @@ Everything an agent or a person needs before changing code. These files are the 
 
 The rules that bind agents are in `rules/` at the repository root: [../rules/README.md](../rules/README.md) first, then the general rules (code style, testing, git, safety and privacy, releases, the definition of done and the lessons) and one file per role in `roles/`. Where a rule and a page here cover the same subject, the rule file is the only copy and the page points at it. The subagents and the owner's commands are in `.claude/`.
 
-## Notes that come later
+## Spike notes
 
-- `spikes/` gets the findings of the phase 0 spikes.
+The findings of the phase 0 spikes, one note per spike.
+
+| File | What it answers |
+|---|---|
+| [spikes/claude-hook.md](spikes/claude-hook.md) | What a Claude Code hook tells the app about a session, its state, its terminal tab and its profile, and how the hook goes into a profile's settings and out again without a trace |
+
+`spikes/phase-0.md` sums up all the phase 0 spikes once they are done.
