@@ -23,7 +23,7 @@ The Mac the agents work on is the one the maintainer uses every day, for more th
 
 - The maintainer's Claude Code profile folders are off limits. Do not list them, read them or write to them unless the task says so and he has said yes in this session.
 - Hook experiments start in a scratch project, through that project's own settings file. A real profile is changed only after his yes, one profile at a time, with a backup of the settings file and an uninstall that has been tested.
-- Before changing a profile's settings file, check whether it is a symlink. If it is, stop and name the file it points to. Several profiles can share one file, so the maintainer's yes must name the file that is really written.
+- Before changing a profile's settings file, resolve its full path, for example with `realpath`. If the file or a folder on its path is a symlink, stop and name the real file. Several profiles can share one file, so the maintainer's yes must name the file that is really written.
 - When a profile's settings file is changed: add only this app's own entries, keep every other key and its formatting, and prove that uninstalling leaves the file identical to the backup.
 - Session transcripts hold other people's work. Read structure, never copy content, and never into this repository.
 - Other repositories on the Mac are read-only.
@@ -33,7 +33,7 @@ The Mac the agents work on is the one the maintainer uses every day, for more th
 - macOS permission prompts (Automation, Accessibility, Calendars, Notifications) are answered by the maintainer. Say that a prompt is coming and why.
 - Never reset permissions, change System Settings or edit login items.
 - AppleScript that drives a terminal or an editor runs only in the tasks that are about it.
-- Type by script only into a tab or window you opened yourself. Send the text, check the input line through the terminal's own AppleScript, then send Return on its own. Terminal's `do script` always adds Return, so never send a slash command with it. An unexpected menu or dialog gets Escape and a report, never a choice.
+- Type by script only into a tab or window you opened yourself. In iTerm2, send the text with `write text … newline NO`, check the input line through iTerm2's AppleScript, then send Return on its own. Terminal's `do script` always adds Return, so use it only to start a command, never to type a prompt or a slash command into a running agent session. An unexpected menu or dialog gets Escape and a report, never a choice.
 - An AppleScript call that fails with error −1712 (an Apple event timeout) usually means a dialog is open on screen. Retry once, then stop and report it.
 
 **Git**
