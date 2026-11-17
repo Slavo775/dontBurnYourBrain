@@ -59,6 +59,10 @@ targets:
       base:
         PRODUCT_NAME: dontburn-hook
         PRODUCT_BUNDLE_IDENTIFIER: io.github.slavo775.dontburn.hook
+        # An Info.plist inside the binary carries MARKETING_VERSION, so the
+        # tool reads its version from Bundle.main like the app does.
+        GENERATE_INFOPLIST_FILE: YES
+        CREATE_INFOPLIST_SECTION_IN_BINARY: YES
 
 schemes:
   DontBurn:
