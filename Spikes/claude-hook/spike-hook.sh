@@ -36,8 +36,10 @@ printf '%s' "$input" | jq -cRs --arg ancestors "$ancestors" '
            background_tasks: (.background_tasks | if type == "array"
                then map({id, type, status, agent_type}) else null end),
            session_crons: (.session_crons | if type == "array" then length else null end),
+           # Only known tags are named: the start of any other prompt is text the user typed.
            prompt_kind: (.prompt | if type != "string" then null
-               elif test("^<[A-Za-z_-]+") then "tag:" + capture("^<(?<t>[A-Za-z_-]+)").t
+               elif startswith("<task-notification>") then "tag:task-notification"
+               elif startswith("<") then "tag:other"
                else "typed" end)
        } | with_entries(select(.value != null)) end)
     + {

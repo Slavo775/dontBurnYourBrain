@@ -7,7 +7,7 @@ Card #5. Throwaway code that answers one question: what can a hook that Claude C
 | `spike-hook.sh` | The hook. It reads the event JSON from standard input and appends one line to `events.jsonl` next to itself: the event's field names, the ids and paths, the terminal's environment variables, and the chain of parent processes with their ttys. It never writes prompt text, replies or transcript content, and it always exits 0. Needs `jq`. Without it the hook does nothing |
 | `settings.local.json` | The scratch project's settings: the spike's hook on every event the spike looks at, with a 5-second timeout, and two allowed commands that only wait |
 | `pause` | `./pause 30` waits 30 seconds. Claude Code refuses a long plain `sleep`, so the subagents in steps 9 to 11 call this instead |
-| `profile-step.sh` | Puts the spike's hook into a real profile's `settings.json` and takes it out again, so that the file ends byte-identical to its backup. `./profile-step.sh selftest` runs it on made-up files. See "A real profile" |
+| `profile-step.sh` | Puts the spike's hook into a real profile's `settings.json` and takes it out again, so that the file ends byte-identical to its backup. `Spikes/claude-hook/profile-step.sh selftest` runs it on made-up files. See "A real profile" |
 
 ## Set up a scratch project
 
@@ -46,8 +46,8 @@ command claude --model haiku --setting-sources project,local --permission-mode d
 - Claude Code uses the profile that `CLAUDE_CONFIG_DIR` names, or `~/.claude` when it is not set. Put `CLAUDE_CONFIG_DIR=<profile folder>` in front of the command to choose one.
 - `--setting-sources project,local` leaves the hooks and plugins of the user's own settings out of this run.
 - `--permission-mode default` makes Claude Code ask before it writes a file. Without it a session can start in auto mode, and step 3 shows no prompt.
-- On the first start in a folder Claude Code asks whether you trust it. The preselected answer is "No, exit". Choose "Yes, I trust this folder".
-- When text is typed by a script, send the text and the Return key separately, and look at the input line before pressing Return. A slash command typed in one burst can be completed to a different command. In iTerm2 use `write text "…" newline NO` and then `write text ""`. Terminal's `do script` always adds Return, so leave Claude Code there with two Ctrl-D characters in one `do script` instead of `/exit`.
+- On the first start in a folder Claude Code asks whether you trust it. The preselected answer is "No, exit". Choose "Yes, I trust this folder". By script in iTerm2, send Down (`write text ((character id 27) & "[B") newline NO`), check that the second answer is marked, then send Return. Terminal has no way to send Down without Return, so run the iTerm2 session first and the folder is trusted already, or answer by hand.
+- When text is typed by a script, send the text and the Return key separately, and look at the input line before pressing Return. A slash command typed in one burst can be completed to a different command. In iTerm2 use `write text "…" newline NO` and then `write text ""`. Terminal's `do script` always adds Return, and a longer prompt sent that way can stay unsent in the input box. Check the input line, and send it with an empty `do script ""`. Leave Claude Code in Terminal with two Ctrl-D characters in one `do script` instead of `/exit`.
 
 ## Steps and what the log shows
 
@@ -68,7 +68,7 @@ jq -c 'select(.event == "SessionStart") | {session_id, cwd, transcript_path, tty
 |---|---|---|
 | 1 | Start Claude Code as above | `SessionStart` with `source: startup`, `session_id`, `cwd`, `transcript_path` and `model`. `tty` is the tab's tty, `env` has `TERM_PROGRAM` and the terminal's own session id, and `ancestors` runs from the hook through `claude` and the shell to the terminal app |
 | 2 | Type `Reply with the single word ok.` | `UserPromptSubmit` with `prompt_kind: typed`, then `Stop` with `background_tasks: []`. One second later there can be a `SubagentStop` with an empty `agent_type` and no `SubagentStart`: an agent Claude Code runs for itself |
-| 3 | Type `Use the Write tool to create a file named note.txt that contains the word hi.` Do not type for ten seconds, then answer "1. Yes" | `UserPromptSubmit`, `PermissionRequest` with `tool_name: Write` at once, `Notification` with `permission_prompt` about 6 seconds later, and `Stop` after the answer |
+| 3 | Type `Use the Write tool to create a file named note-iterm.txt that contains the word hi.`, with a new name in each terminal, such as `note-terminal.txt`, so the file does not exist yet. Do not type for ten seconds, then answer "1. Yes" | `UserPromptSubmit`, `PermissionRequest` with `tool_name: Write` at once, `Notification` with `permission_prompt` about 6 seconds later, and `Stop` after the answer |
 | 4 | Type nothing for 70 seconds | `Notification` with `idle_prompt`, 60 seconds after the last `Stop` |
 | 5 | Ask for `second.txt` the same way and answer "3. No" | `UserPromptSubmit`, `PermissionRequest`, `permission_prompt`, and then nothing: no `Stop` |
 | 6 | Type `Count from 1 to 400, one number per line, no other text.` and press Esc after two seconds | `UserPromptSubmit` and then nothing: no `Stop` |
@@ -124,12 +124,23 @@ jq -c 'select(.event == "SessionStart") | {at, tty, env, env_names, comm: [.ance
 
 Only with the owner's yes, one profile at a time. `profile-step.sh` touches only `<profile folder>/settings.json` and reads nothing else in the profile folder.
 
-1. Run `./profile-step.sh selftest` and see every line pass.
-2. Make a work folder in the temp folder, `WORK=$(mktemp -d -t dontburn-profile)`, and copy `spike-hook.sh` into it. Its log goes to `$WORK/events.jsonl`, apart from the scratch project's.
-3. `./profile-step.sh precheck <profile folder> "$WORK"`. It stops when `settings.json` is a symlink, is missing, is not a JSON object, or would change in a two-space `jq` round trip, because then no uninstall could give back the same bytes. On the test Mac every profile linked to one shared settings file, so the precheck was run on the folder of the file the links point to. An install there reaches every profile that shares it.
-4. Get everything ready for the proof first, then install as late as possible: `./profile-step.sh install <profile folder> "$WORK"`. It backs up the file, remembers whether `hooks` and which event lists already existed, adds one group per event, and writes the file in place.
+All commands run from the repository root, in one shell, because `WORK` is set in step 2 and used until step 7.
+
+1. Run `Spikes/claude-hook/profile-step.sh selftest` and see every line pass.
+2. Make a work folder in the temp folder and copy the hook into it: `WORK=$(mktemp -d -t dontburn-profile) && cp Spikes/claude-hook/spike-hook.sh "$WORK/"`. Its log goes to `$WORK/events.jsonl`, apart from the scratch project's.
+3. `Spikes/claude-hook/profile-step.sh precheck <profile folder> "$WORK"`. It stops (exit 3) in any of these cases, because then no uninstall could give back the same bytes:
+   - `settings.json` is a symlink, is missing, or is not a JSON object
+   - its `hooks` is not an object of lists of groups
+   - it would change in a two-space `jq` round trip
+
+   On the test Mac every profile linked to one shared settings file, so the precheck was run on the folder of the file the links point to. An install there reaches every profile that shares it.
+4. Get everything ready for the proof first, then install as late as possible: `Spikes/claude-hook/profile-step.sh install <profile folder> "$WORK"`. It runs the precheck again, then backs up the file, remembers whether `hooks` and which event lists already existed, adds one group per event, and writes the file in place. It refuses (exit 5, nothing written) when any of these holds:
+   - the work folder's path holds anything but letters, digits and `. _ / -`
+   - the hook is not in the work folder
+   - the work folder already holds a backup
+   - the file already holds the spike's hook
 5. In a new empty folder, start `CLAUDE_CONFIG_DIR=<profile folder> command claude --model haiku` without `--setting-sources`, type one short prompt, and `/exit`. The log gets `SessionStart`, `UserPromptSubmit`, `Stop` and `SessionEnd`, with `CLAUDE_CONFIG_DIR` and a `transcript_path` under that profile.
-6. Uninstall at once: `./profile-step.sh uninstall <profile folder> "$WORK"`. It removes only the spike's groups and what the install created, then compares the file with the backup. When they differ, it names the top-level keys and exits 4. It never writes the backup back, because the difference can be someone else's change.
+6. Uninstall at once, in the same shell, so `WORK` still names the folder of the install: `Spikes/claude-hook/profile-step.sh uninstall <profile folder> "$WORK"`. It refuses (exit 5) a work folder that holds no install. It removes only the spike's groups and what the install created, then compares the file with the backup. When they differ, it names the top-level keys and exits 4. It never writes the backup back, because the difference can be someone else's change. If `jq` fails on the way, it writes nothing.
 7. While it was installed, the hook ran for every session of that profile, so the log can hold real project folders. Take only counts and field names from it, then `rm -rf "$WORK"`.
 
 ## Clean up
