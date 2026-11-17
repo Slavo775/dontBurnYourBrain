@@ -7,6 +7,7 @@ Card #5. Throwaway code that answers one question: what can a hook that Claude C
 | `spike-hook.sh` | The hook. It reads the event JSON from standard input and appends one line to `events.jsonl` next to itself: the event's field names, the ids and paths, the terminal's environment variables, and the chain of parent processes with their ttys. It never writes prompt text, replies or transcript content, and it always exits 0. Needs `jq`. Without it the hook does nothing |
 | `settings.local.json` | The scratch project's settings: the spike's hook on every event the spike looks at, with a 5-second timeout, and two allowed commands that only wait |
 | `pause` | `./pause 30` waits 30 seconds. Claude Code refuses a long plain `sleep`, so the subagents in steps 9 to 11 call this instead |
+| `profile-step.sh` | Puts the spike's hook into a real profile's `settings.json` and takes it out again, so that the file ends byte-identical to its backup. `./profile-step.sh selftest` runs it on made-up files. See "A real profile" |
 
 ## Set up a scratch project
 
@@ -46,7 +47,7 @@ command claude --model haiku --setting-sources project,local --permission-mode d
 - `--setting-sources project,local` leaves the hooks and plugins of the user's own settings out of this run.
 - `--permission-mode default` makes Claude Code ask before it writes a file. Without it a session can start in auto mode, and step 3 shows no prompt.
 - On the first start in a folder Claude Code asks whether you trust it. The preselected answer is "No, exit". Choose "Yes, I trust this folder".
-- When text is typed by a script, send the text and the Return key separately. A slash command typed in one burst can be completed to a different command.
+- When text is typed by a script, send the text and the Return key separately, and look at the input line before pressing Return. A slash command typed in one burst can be completed to a different command. In iTerm2 use `write text "…" newline NO` and then `write text ""`. Terminal's `do script` always adds Return, so leave Claude Code there with two Ctrl-D characters in one `do script` instead of `/exit`.
 
 ## Steps and what the log shows
 
@@ -79,6 +80,30 @@ jq -c 'select(.event == "SessionStart") | {session_id, cwd, transcript_path, tty
 
 Steps 9 to 11 do not depend on the terminal app, so they need running in one terminal only.
 
+Two more events can show up on their own. A turn that ends on an API error fires `StopFailure` with an `error` field instead of `Stop`. Signing in from the session fires `Notification` with `auth_success`.
+
+## Which tab it was
+
+The hook's parent is always the `claude` process, and the event's `tty` is that process's tty. What each terminal adds, and how it matches the terminal's own AppleScript:
+
+| Terminal | `TERM_PROGRAM` | Bundle id (`__CFBundleIdentifier`) | Tab id | Matches AppleScript |
+|---|---|---|---|---|
+| Terminal | `Apple_Terminal` | `com.apple.Terminal` | `TERM_SESSION_ID`, a bare UUID | `tty` equals `tty of tab 1 of window id <id>`. AppleScript does not show `TERM_SESSION_ID` |
+| iTerm2 | `iTerm.app` | `com.googlecode.iterm2` | `ITERM_SESSION_ID` = `w<n>t<n>p<n>:<UUID>`, the same value in `TERM_SESSION_ID` | The UUID equals the session's `unique ID`, and `tty` equals the session's `tty` |
+| VS Code | `vscode` | `com.microsoft.VSCode` | None. The ancestors end with `Code Helper` and `Code` | Not scriptable. The window is found by its folder |
+| Cursor | `vscode` | `com.todesktop.230313mzl4w4u92` | None. The ancestors end with `Cursor Helper: terminal pty-host` and `Cursor` | Not scriptable. The window is found by its folder |
+
+VS Code and Cursor set the same `TERM_PROGRAM` and the same `VSCODE_*` variables, and neither sets a `CURSOR_*` variable. The bundle id and the ancestors tell them apart.
+
+To check a run, compare the `SessionStart` line with what the terminal says about the window you opened:
+
+```sh
+osascript -e 'tell application "Terminal" to get tty of tab 1 of window id <id>'
+osascript -e 'tell application "iTerm2" to get {unique ID, tty} of current session of window id <id>'
+```
+
+A tty name is reused as soon as its tab closes, so a tab is known by its tty together with the `claude` pid (`CLAUDE_PID`).
+
 ## VS Code and Cursor
 
 The same scratch folder, by hand:
@@ -94,6 +119,18 @@ Then compare what the two editors told the hook:
 ```sh
 jq -c 'select(.event == "SessionStart") | {at, tty, env, env_names, comm: [.ancestors[].comm]}' "$SCRATCH/events.jsonl"
 ```
+
+## A real profile
+
+Only with the owner's yes, one profile at a time. `profile-step.sh` touches only `<profile folder>/settings.json` and reads nothing else in the profile folder.
+
+1. Run `./profile-step.sh selftest` and see every line pass.
+2. Make a work folder in the temp folder, `WORK=$(mktemp -d -t dontburn-profile)`, and copy `spike-hook.sh` into it. Its log goes to `$WORK/events.jsonl`, apart from the scratch project's.
+3. `./profile-step.sh precheck <profile folder> "$WORK"`. It stops when `settings.json` is a symlink, is missing, is not a JSON object, or would change in a two-space `jq` round trip, because then no uninstall could give back the same bytes. On the test Mac every profile linked to one shared settings file, so the precheck was run on the folder of the file the links point to. An install there reaches every profile that shares it.
+4. Get everything ready for the proof first, then install as late as possible: `./profile-step.sh install <profile folder> "$WORK"`. It backs up the file, remembers whether `hooks` and which event lists already existed, adds one group per event, and writes the file in place.
+5. In a new empty folder, start `CLAUDE_CONFIG_DIR=<profile folder> command claude --model haiku` without `--setting-sources`, type one short prompt, and `/exit`. The log gets `SessionStart`, `UserPromptSubmit`, `Stop` and `SessionEnd`, with `CLAUDE_CONFIG_DIR` and a `transcript_path` under that profile.
+6. Uninstall at once: `./profile-step.sh uninstall <profile folder> "$WORK"`. It removes only the spike's groups and what the install created, then compares the file with the backup. When they differ, it names the top-level keys and exits 4. It never writes the backup back, because the difference can be someone else's change.
+7. While it was installed, the hook ran for every session of that profile, so the log can hold real project folders. Take only counts and field names from it, then `rm -rf "$WORK"`.
 
 ## Clean up
 
