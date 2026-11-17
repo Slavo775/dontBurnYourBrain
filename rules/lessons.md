@@ -49,4 +49,20 @@ These were learned in the reference flow before this project started. All are `a
 
 ## Entries
 
-None yet.
+## 2026-11-17 · Typing into a terminal by script · accepted
+
+- **What happened:** on card #5 (PR #8), an agent sent `/exit` into a Terminal tab with `do script`, which sends the text and Return at once. Claude Code completed it to a different slash command, which offered to change a real profile's settings. The agent cancelled it. Later, Terminal and iTerm2 stopped answering Apple events (error −1712) while a dialog was open on screen.
+- **Root cause:** no rule said how an agent types into a terminal by script, or what an Apple event timeout means.
+- **Proposed change:** two rules in `safety-and-privacy.md`, "Permissions and the system".
+
+## 2026-11-17 · A profile's settings file can be shared · accepted
+
+- **What happened:** on card #5 (PR #8), the owner approved changing one profile's `settings.json`. It was a symlink to another profile's file, which every profile on the Mac shares. The spike's precheck stopped, and the owner then approved the shared file itself.
+- **Root cause:** the rules treat each profile's settings file as its own.
+- **Proposed change:** one rule in `safety-and-privacy.md`, "Claude Code profiles and other tools".
+
+## 2026-11-17 · Removing a temporary folder · accepted
+
+- **What happened:** on card #5 (PR #8), Claude Code's safety check refused an agent's `rm -rf "$WORK"`, and nothing ran. The folder was then removed by its literal path.
+- **Root cause:** no rule said how an agent removes the temporary folders the rules ask for.
+- **Proposed change:** one rule in `testing.md`, "The clock and the data".

@@ -17,6 +17,7 @@ Only the Tester writes and changes tests. The Developer and the Designer run the
 - Time is passed in. A test hands over fixed dates. It never sleeps and never reads the system clock.
 - Tests use a store in memory, or a temporary folder that is removed afterwards, and only the sample data: Acme, Globex and Personal.
 - **Anything that deletes or rewrites data runs against a throwaway store.** Never against the Dev store other work relies on, and never against real data.
+- Look at a temporary folder before removing it, and remove it by its literal path. Claude Code refuses a recursive delete of a variable such as `rm -rf "$WORK"`.
 
 ## A skipped test is not a pass
 
