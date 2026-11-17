@@ -36,6 +36,12 @@ The coverage is the share of lines in `DontBurnCore`'s sources that the tests ru
 
 `./scripts/bootstrap` prepares a fresh clone. It points git at the hooks in `.githooks/`, names the tools that are missing, and says whether a private word list is set.
 
+### The string catalog
+
+A build in the Xcode app rewrites `Apps/Mac/Localizable.xcstrings`: it adds the strings the code uses and deletes the keys it believes are unused. A build with `xcodebuild` never rewrites the catalog, so the check cannot see this kind of drift.
+
+The app target sets `SWIFT_EMIT_LOC_STRINGS: YES` in `project.yml`, so the compiler reports every interface string the code uses and the Xcode app has no reason to delete a key. After a build in the Xcode app, look at `git status` before committing, and say so on the card if the catalog changed without a change to the interface text.
+
 ### The privacy scan
 
 It reads every file git tracks, plus new files that are not ignored, and fails on any of these:

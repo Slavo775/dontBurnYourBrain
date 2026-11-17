@@ -38,6 +38,10 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: $(APP_DISPLAY_NAME)
         # The app reads other tools' session files and scripts terminals.
         ENABLE_APP_SANDBOX: NO
+        # The compiler reports every interface string the code uses. Without
+        # it, a build in the Xcode app sees no strings and deletes every key
+        # from Localizable.xcstrings as unused.
+        SWIFT_EMIT_LOC_STRINGS: YES
       configs:
         # The development build has its own identifier, so its data, settings
         # and permissions never mix with the daily copy.
