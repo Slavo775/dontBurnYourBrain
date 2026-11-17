@@ -1,0 +1,4 @@
+#!/bin/bash
+# Waits the given seconds. Claude Code blocks a long plain sleep, so subagents call this instead.
+sleep "${1:-30}"
+echo "waited ${1:-30}s"
