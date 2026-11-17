@@ -89,7 +89,7 @@ It prints `success` for a commit that passed, and nothing for a commit nobody ch
 | `commit-msg` | Conventional Commits: `feat:`, `fix:`, `test:`, `docs:`, `refactor:`, `chore:`, with an optional scope such as `fix(hook):`. Merge, revert, `fixup!` and `squash!` subjects pass |
 | `pre-push` | The whole check command. A failure stops the push |
 
-The pre-push hook refuses two things the check could not vouch for: a dirty working tree, and a push of a commit that is not the one checked out. A commit that already passed is not checked twice.
+The pre-push hook refuses two things the check could not vouch for: a dirty working tree, and a push of a commit that is not the one checked out. A commit that already passed is not checked twice. A push that only deletes branches sends no commit, so it goes through without either guard or the check.
 
 `git commit --no-verify` and `git push --no-verify` would skip these hooks. The rule about that, and what happens when a hook is wrong, are in [../../rules/git.md](../../rules/git.md) under "Commits".
 
