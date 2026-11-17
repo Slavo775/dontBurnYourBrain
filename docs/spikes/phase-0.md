@@ -21,6 +21,7 @@ Card #8. A summary across the three phase 0 spikes. The steps, the raw results a
 - After a denied permission or an Esc, no event comes at all, so a session would stay "waiting" or "working" ([card #5](claude-hook.md#event-orders-for-the-basic-cases)).
 - In VS Code and Cursor, a folder that is not exactly a window's folder, such as a subfolder, opens a new window instead of focusing one. Reasoned from VS Code's source, not measured ([card #7](editor-focus.md#the-cards-cases)).
 - A remote or container session in an editor names neither a folder on the Mac nor an editor, so it cannot be focused. Reasoned ([card #7](editor-focus.md#the-cards-cases)).
+- With VS Code's `window.openFoldersInNewWindow` set to `"off"`, a folder no window has replaces the folder of the user's last active window. Reasoned. `window.nativeTabs` was not tried ([card #7](editor-focus.md#the-focus-command)).
 - Only the editor window comes forward, never the terminal inside it ([card #7](editor-focus.md#for-card-8)).
 - Nothing comes forward while the screen is locked ([card #6](terminal-focus.md#a-locked-screen)).
 - A settings file that does not come back byte for byte from a two-space JSON round trip, such as a hand-formatted one, cannot be given back unchanged. The spike's installer refuses it ([card #5](claude-hook.md#what-the-spike-did)).
@@ -40,9 +41,9 @@ Card #8. A summary across the three phase 0 spikes. The steps, the raw results a
 - Two subagents that finish close together make the state flicker. A debounce of about two seconds covers it ([card #5](claude-hook.md#subagents-when-the-main-thread-stops-before-its-subagents)).
 - A tty is reused at once. Before every focus in Terminal, the app checks that the session's `claude` process still holds the tty ([card #6](terminal-focus.md#the-handle-for-each-app)).
 - Several profiles can share one settings file through a symlink. The hook is installed once per file, into the link's target, and the user is told which profiles it reaches ([card #5](claude-hook.md#rules-for-phase-3s-installer)).
-- A window on another Space or in full screen comes forward with a visible jump ([card #6](terminal-focus.md#awkward-cases)). The app does not focus while the screen is locked.
-- An editor session in a subfolder: send the folder only when it looks like a project root, otherwise only activate the editor. Reasoned, and the root-marker test was never tried ([card #7](editor-focus.md#the-subfolder-case-what-phase-3-should-do)).
-- `open -b` starts an editor that is not running, so the app checks first ([card #7](editor-focus.md#for-card-8)).
+- A window on another Space or in full screen comes forward with a visible jump, as the owner judged by eye ([card #6](terminal-focus.md#awkward-cases)). The app does not focus while the screen is locked.
+- An editor session in a subfolder: send the `cwd` of the session's first `SessionStart` only when it looks like a project root, otherwise only activate the editor. Reasoned, and the root-marker test was never tried ([card #7](editor-focus.md#the-subfolder-case-what-phase-3-should-do)).
+- `open -b` is expected to start an editor that is not running. The spike never saw it, so the app checks first ([card #7](editor-focus.md#the-focus-command)).
 - Automation: the app asks for it itself, and when it is denied the Focus button is left out ([card #6](terminal-focus.md#for-card-8)).
 
 **Off the table:**
@@ -59,8 +60,8 @@ Card #8. A summary across the three phase 0 spikes. The steps, the raw results a
 
 Card #7 names four levels: **measured** by the Developer, **repeated** by the Tester, **reasoned** from VS Code's source without being seen, and **not measured** ([card #7](editor-focus.md#how-sure-each-result-is)). Across the three spikes:
 
-- **Card #5** was measured in a scratch project in Terminal and iTerm2, and repeated by the Tester with the same order and timings, within one to three seconds. VS Code and Cursor were run by hand. A real settings file was changed once, for 50 seconds ([card #5](claude-hook.md), [the real profile](claude-hook.md#on-a-real-profile)).
-- **Card #6** was measured and repeated, two rounds each ([card #6](terminal-focus.md)). **The tabs held plain shells, not live Claude Code sessions.** Card #5 proved that the hook's handles equal what each terminal's AppleScript reports, so the two halves meet at the handle ([what was not done](terminal-focus.md#what-was-not-done)).
+- **Card #5** was measured in a scratch project in Terminal and iTerm2, and repeated by the Tester with the same order and timings, within one to three seconds. VS Code and Cursor were run by hand. A real settings file was changed once, for 50 seconds ([card #5](claude-hook.md), [the real profile](claude-hook.md#on-a-real-profile)). Until a dialog that blocked Apple events was closed, the subagent cases and the Esc case ran in a pseudo-terminal with a reset environment, and iTerm2 was tested only afterwards ([what went wrong](claude-hook.md#gaps-and-what-failed)).
+- **Card #6** was measured and repeated, two rounds each ([card #6](terminal-focus.md)). **The tabs held plain shells, not live Claude Code sessions.** Card #5 proved that the hook's handles equal what each terminal's AppleScript reports, so the two halves meet at the handle ([what was not done](terminal-focus.md#what-was-not-done)). Another Space and full screen were judged by the owner by eye, not by the three signals ([awkward cases](terminal-focus.md#awkward-cases)).
 - **Card #7's main case was never run end to end.** Nobody started a session in an editor's integrated terminal and focused its window from that session's `SessionStart` line. The owner accepted it in two halves: the hook half from card #5 and the focus half from card #7 ([card #7](editor-focus.md)). The exact-folder case is measured and repeated. The subfolder, minimized and container cases are reasoned, and one step weaker for Cursor, whose code was not read. Activate only and the `cli` route are not measured ([card #7](editor-focus.md#the-cards-cases)).
 - **Nothing was sent from the real menu bar app or from a signed build.** Every Apple event and every `open -b` came from scripts started in Terminal ([card #6](terminal-focus.md#permissions), [card #7](editor-focus.md#permissions)).
 - In iTerm2, which tab shows inside the window rests on iTerm2's own `current session` alone. The window server sees only the window ([card #6](terminal-focus.md#how-an-attempt-was-counted)).
@@ -82,11 +83,11 @@ Claude Code passes each event to the hook as one JSON object on standard input. 
 - The timings are from [card #5](claude-hook.md#events-and-what-each-one-means-for-the-app).
 - The app ignores `Notification` with `idle_prompt`, which comes 60 s after the last `Stop`, and `auth_success` ([card #5](claude-hook.md#event-orders-for-the-basic-cases)). It also ignores the `SubagentStop` with an empty `agent_type` that Claude Code's own agent sends.
 - Subagents run in the background by default since Claude Code 2.1.302, which is why a `Stop` alone no longer means finished ([card #5](claude-hook.md#subagents-when-the-main-thread-stops-before-its-subagents)).
-- The hook tool exits at once when the app is not running, prints nothing, finishes well under 100 ms, and never sends content or the whole environment ([card #5](claude-hook.md#release-and-dev), [card #5](claude-hook.md#the-event-format-and-the-fields-the-app-uses)).
+- Phase 3's hook tool must exit at once when the app is not running, print nothing, finish well under 100 ms, and never send content or the whole environment. These are targets, not measurements ([card #5](claude-hook.md#release-and-dev), [the fields](claude-hook.md#the-event-format-and-the-fields-the-app-uses)). The only time measured was the spike hook's 0.16 s per call, 0.12 s of it for listing every process with `ps -A`. One `sysctl` call for the parent's tty can replace that ([card #5](claude-hook.md#which-terminal-and-which-tab)).
 
 ## How a session's profile, terminal app and tab are identified
 
-- **Profile:** `CLAUDE_CONFIG_DIR` when it is set, otherwise the part of `transcript_path` before `/projects/`, otherwise the default profile. `CLAUDE_CONFIG_DIR` came through unchanged on 50 of 50 events in the Tester's run, and a shared settings file does not change it ([card #5](claude-hook.md#which-profile)).
+- **Profile:** `CLAUDE_CONFIG_DIR` when it is set, otherwise the part of `transcript_path` before `/projects/`, otherwise the default profile. `CLAUDE_CONFIG_DIR` came through unchanged on 50 of 50 events in the Tester's run, and a shared settings file does not change it ([card #5](claude-hook.md#which-profile)). The default profile was seen only in the owner's Cursor run, never through a terminal the spike drove. Whether a profile folder already describes its live sessions was not looked at: the owner left it out, because it means reading other files in the profile folder ([card #5](claude-hook.md#what-was-not-done)).
 - **Terminal app:** `__CFBundleIdentifier`. `TERM_PROGRAM` is `vscode` in both editors, so it names neither ([card #5](claude-hook.md#which-terminal-and-which-tab)).
 - **Tab:** the hook has no tty of its own. Its parent is always the `claude` process, whose pid Claude Code exports as `CLAUDE_PID`, and the two matched in 171 of 171 events ([card #5](claude-hook.md#which-terminal-and-which-tab)).
   - iTerm2: the UUID after the colon in `ITERM_SESSION_ID`. It equals the session's AppleScript `unique ID`, is never given to another session, and kept matching for over two hours through minimize, hide, another Space and full screen ([card #6](terminal-focus.md#the-handle-for-each-app)).
@@ -100,7 +101,7 @@ Claude Code passes each event to the hook as one JSON object on standard input. 
 |---|---|---|
 | The exact tab forward, iTerm2 | 120 of 120. The card asked for 9 out of 10 | [card #6](terminal-focus.md#measured-runs), [the ask](terminal-focus.md#the-answers) |
 | The exact tab forward, Terminal | 120 of 120 | [card #6](terminal-focus.md#measured-runs) |
-| Terminal focus command | About 0.28 s. Medians 0.277 s in iTerm2 and 0.273 s in Terminal | [card #6](terminal-focus.md#the-answers), [timings](terminal-focus.md#measured-runs) |
+| Focus command, iTerm2 and Terminal | About 0.28 s. Medians 0.277 s in iTerm2 and 0.273 s in Terminal | [card #6](terminal-focus.md#the-answers), [timings](terminal-focus.md#measured-runs) |
 | Tab in front, all signals agree | About 0.45 s, at the first reading every time | [card #6](terminal-focus.md#the-answers) |
 | Minimized terminal window | About 0.8 s, because of the Dock animation | [card #6](terminal-focus.md#the-answers) |
 | A tab that no longer exists | Nothing changes, exit 1 after about 0.20 s | [card #6](terminal-focus.md#awkward-cases) |
@@ -117,14 +118,16 @@ Claude Code passes each event to the hook as one JSON object on standard input. 
 - Terminal and iTerm2 refused Apple events with error −1712 while a dialog was open on screen ([card #5](claude-hook.md#gaps-and-what-failed)).
 - Typed by script into Terminal, `/exit` was completed to a different slash command, and a long prompt stayed in the input box ([card #5](claude-hook.md#gaps-and-what-failed)).
 - The first Cursor run did not reach the log ([card #5](claude-hook.md#gaps-and-what-failed)).
-- The first review rejected the spike's installer: it could empty the settings file and overwrite its backup. Fixed in round 2. Its uninstall, pointed at a file it never installed into, still rewrites that file, a low-severity finding left unfixed ([card #5](claude-hook.md#rules-for-phase-3s-installer)).
+- Claude Code refused a long plain `sleep` in a foreground command, so the subagents used a `pause` script. The model ignored "wait for it" until fork mode was off and `run_in_background` was named ([card #5](claude-hook.md#gaps-and-what-failed)).
+- A wait loop with a broken condition cost one run of case c, which was repeated ([card #5](claude-hook.md#gaps-and-what-failed)).
+- The first review rejected the spike's installer: it could empty the settings file and overwrite its backup, and its log could hold the first word of a prompt that started with `<`. Fixed in round 2 ([card #5](claude-hook.md#gaps-and-what-failed)). Its uninstall, pointed at a file it never installed into, still rewrites that file, a low-severity finding left unfixed ([card #5](claude-hook.md#rules-for-phase-3s-installer)).
 - While the screen was locked, `activate` blocked for about 2.1 s and nothing came forward. Round 1 of card #6 lost about an hour to it ([card #6](terminal-focus.md#a-locked-screen)).
 - A window another app parked outside every display made every attempt look wrong, until the check looked at the target's spot instead of the global window list ([card #6](terminal-focus.md#several-displays)).
 - Hiding another app by script failed, so hidden became a hand step ([card #6](terminal-focus.md#awkward-cases)).
 - The first review of card #6 rejected the helper, which trusted a recorded Terminal tty without checking the pid ([card #6](terminal-focus.md#safety-work-from-the-review)).
 - A folder no window has opened a new editor window every time. Twice Cursor opened it on a Space that was not shown and did not stay in front ([card #7](editor-focus.md#measured-runs)).
 - Card #7's measured run stopped at its first attempt on the second window, when another app came forward ([card #7](editor-focus.md#measured-runs)).
-- Card #7's guided pass was interrupted after 4 min 10 s, when the Mac, already deep in swap, stopped responding and was restarted. Its log was lost, with the results of the subfolder, container and `/var` steps ([card #7](editor-focus.md#the-interrupted-guided-pass)).
+- Card #7's guided pass was interrupted after 4 min 10 s, when the Mac, already deep in swap, stopped responding and was restarted. Its log was lost, with the results of the subfolder and container steps ([card #7](editor-focus.md#the-interrupted-guided-pass)). The two `/var` steps sent no command ([card #7](editor-focus.md#the-cards-cases)).
 
 ## macOS permissions
 

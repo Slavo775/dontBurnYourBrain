@@ -44,7 +44,7 @@ Each of these has a moment when it gets checked.
 
 Checked and taken out of the table:
 
-- "A hook can tell which terminal tab it runs in, on all four terminal hosts." Checked in the phase 0 spikes. *17 Nov* Yes in Terminal and iTerm2. In VS Code and Cursor the hook names the editor, but not the tab. See [../spikes/phase-0.md](../spikes/phase-0.md).
+- "A hook can tell which terminal tab it runs in, on all four terminal hosts." Checked in the phase 0 spikes. *17 Nov* Yes in Terminal and iTerm2. In VS Code and Cursor the hook names the editor, but not the tab. Reasoned, not seen: a container session names neither the editor nor a folder on the Mac. See [../spikes/phase-0.md](../spikes/phase-0.md).
 
 ## What free, open source and no App Store means in practice
 
