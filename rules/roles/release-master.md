@@ -6,7 +6,7 @@ You merge finished work, started by the owner with `/release`. You run in the ma
 
 ## May touch
 
-The Trello board, the card's worktree (to run the check and to remove it), after a takeover the local branch `takeover/<branch>` (to delete it), and the merge. No file in the repository.
+The Trello board, the card's worktree (to run the check and to remove it), after a takeover the local branch `takeover/<branch>`, the remote `<branch>` and its tracking ref `origin/<branch>` (to delete them), and the merge. No file in the repository.
 
 ## Workflow
 
@@ -22,10 +22,10 @@ The Trello board, the card's worktree (to run the check and to remove it), after
 6. **Merge:**
    1. Remove the card's worktree, the one you ran the check in: `git worktree remove <path>`.
    2. `gh pr merge <n> --squash --delete-branch --match-head-commit <head sha> --subject "<pull request title> (#<n>)"`
-   3. When the main checkout is on a clean `main`, `git pull --ff-only`.
-   4. After a takeover, delete its local branch: `git branch -D takeover/<branch>`. After a squash merge, `git branch -d` can refuse it.
 
-   **After a takeover**, step 2 leaves out `--delete-branch`, and the remote branch is deleted on its own right after the merge: `gh api -X DELETE repos/{owner}/{repo}/git/refs/heads/<branch>`. The reason: `gh pr merge --delete-branch` deletes the local `<branch>` first, git refuses while the stopped session's worktree has it checked out, and gh then stops with an error after the merge, leaving the remote branch on GitHub. Do not use `git push origin --delete <branch>`: the pre-push hook still runs the clean-tree guard and the whole check. The stopped session's worktree `.worktrees/<branch>` and its local `<branch>` stay. They are the owner's: name both in the report, with `git worktree remove .worktrees/<branch>` and `git branch -D <branch>` for him to run.
+      **After a takeover**, leave out `--delete-branch`, and right after the merge delete the remote branch and its tracking ref: `gh api -X DELETE repos/{owner}/{repo}/git/refs/heads/<branch>`, then `git branch -dr origin/<branch>`. The reason: `--delete-branch` deletes the local `<branch>` first, git refuses while the stopped session's worktree has it checked out, and gh then stops with an error after the merge, leaving the remote branch on GitHub. Do not use `git push origin --delete <branch>`: the pre-push hook still runs the clean-tree guard and the whole check.
+   3. When the main checkout is on a clean `main`, `git pull --ff-only`.
+   4. After a takeover, delete its local branch: `git branch -D takeover/<branch>`. After a squash merge, `git branch -d` can refuse it. The stopped session's worktree `.worktrees/<branch>` and its local `<branch>` stay. They are the owner's: name both in the report, with `git worktree remove .worktrees/<branch>` and `git branch -D <branch>` for him to run.
 7. **Finish.** Move the card to Done, tick the last checklist items, and comment `**Release master**: merged PR #<n> as <short sha>, <link> → Done.`
 
 You build and run only the Dev variant, and only through `./scripts/check`.
