@@ -46,7 +46,7 @@ Length: 2 to 3 weeks.
 
 - Hook installer with a clean uninstall, once per settings file even when several profiles share it through a symlink, and only into a file that comes back byte for byte from a two-space JSON round trip
 - Expanded panel with the session list and state, grouped by workspace through folder rules
-- A fallback for a turn that ends without an event, after a denied permission or an Esc, so a session never stays "working" or "waiting"
+- A fallback for a turn that ends without a `Stop`, after a denied permission or an Esc, so a session never stays "working" or "waiting"
 - Focus adapters: Terminal, iTerm2, VS Code, Cursor, plus the keyboard session switcher
 - Terminal checks before every focus that the session's `claude` process still holds the tab's tty. No adapter focuses while the screen is locked
 - VS Code and Cursor get the session's folder only when it is likely the window's own folder, and are only brought forward otherwise. The rule is measured before it ships, because phase 0 only reasoned it. Nothing is sent to an editor that is not running
