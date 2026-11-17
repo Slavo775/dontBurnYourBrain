@@ -1,17 +1,9 @@
-// Spike helper for card #6. Not part of the app and not built by the check.
-//
-//   swift focus-check.swift signals <terminal|iterm2> <folder>
+// Spike helper for card #6. Not part of the app and not built by the check. See README.md.
 //   swift focus-check.swift focus   <terminal|iterm2> <A|B> <folder> [seconds to wait first]
 //   swift focus-check.swift measure <terminal|iterm2> <folder> [attempts per tab, default 10]
 //   swift focus-check.swift case    <terminal|iterm2> <minimized|gone> <folder> [attempts, default 3]
-//
-// A hidden app is a hand step (Cmd-H): NSRunningApplication.hide() returns false for
-// another app when called from here, and every other way needs a new permission.
-//
-// <folder> holds the files open-tabs.sh wrote. An attempt is right only when three
-// independent signals agree: the frontmost app, the terminal's own AppleScript (its
-// front window and that window's selected tab), and the window server's on-screen
-// order. Output names tabs as A, B or other, never a handle, a title or another app.
+// <folder> holds the files open-tabs.sh wrote. Right means the frontmost app, the terminal's AppleScript
+// and the window server's order agree. Output names tabs A, B or other, never a handle, title or app.
 import AppKit
 
 enum TerminalApp: String {
@@ -43,10 +35,6 @@ enum TerminalApp: String {
             "tell application \"iTerm2\" to get "
                 + "{frontmost, id of current window, unique ID of current session of current window}"
         }
-    }
-
-    var pid: pid_t? {
-        NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first?.processIdentifier
     }
 }
 
@@ -90,22 +78,18 @@ if (CGSessionCopyCurrentDictionary() as? [String: Any])?["CGSSessionScreenIsLock
     fail("The screen is locked, so the login window is the frontmost app. Unlock it first.")
 }
 
-let folder = args[args[0] == "signals" || args[0] == "measure" ? 2 : 3]
+let terminalPid = NSRunningApplication.runningApplications(withBundleIdentifier: app.bundleID).first?.processIdentifier
+let folder = args[args[0] == "measure" ? 2 : 3]
 let handleA = handle(in: "\(folder)/\(app.rawValue)-A")
 let handleB = handle(in: "\(folder)/\(app.rawValue)-B")
 let frontQueryScript = NSAppleScript(source: app.frontQuery)
-// iTerm2 shows its tabs inside one AppleScript window. Terminal shows each tab of a
-// window's tab bar as an AppleScript window of its own, with one tab.
 let windowA = windowHolding(handleA)
 let windowB = windowHolding(handleB)
+if windowA == 0 || windowB == 0 {
+    fail("No \(app.scriptName) tab holds the handle in \(windowA == 0 ? "A" : "B"). Open new spike tabs.")
+}
 
 switch args[0] {
-case "signals":
-    let clock = ContinuousClock()
-    let start = clock.now
-    let signals = currentSignals()
-    print(signals.line + " took=\(format(seconds(clock.now - start)))")
-    print(order())
 case "focus":
     let target = args[2] == "B" ? handleB : handleA
     // Time to click another app, so the focus starts from there as it will from the menu bar.
@@ -122,8 +106,6 @@ case "case":
 default:
     fail("usage: see the top of focus-check.swift")
 }
-
-// MARK: - Signals
 
 func currentSignals() -> Signals {
     var signals = Signals()
@@ -148,7 +130,7 @@ func currentSignals() -> Signals {
     let windows = onScreenWindows()
     let frontWindow = windows.first { $0.number == signals.scriptWindow }
     if let frontWindow, let top = windows.first(where: { $0.bounds.intersects(frontWindow.bounds) }) {
-        signals.serverTopIsTerminal = top.pid == app.pid
+        signals.serverTopIsTerminal = top.pid == terminalPid
         signals.serverTopWindow = top.number
     }
     return signals
@@ -180,33 +162,30 @@ func onScreenWindows() -> [ScreenWindow] {
 /// How many of the terminal's on-screen windows no window of another app covers, even in part.
 /// Only windows its AppleScript knows count, so tab bars and other helper windows are left out.
 func order() -> String {
-    let ids = Set(runScript("tell application \"\(app.scriptName)\" to get id of windows")
+    let ids = Set(osascript(["-e", "tell application \"\(app.scriptName)\" to get id of windows"]).message
         .split(separator: ",").compactMap { Int($0.trimmingCharacters(in: .whitespaces)) })
     let windows = onScreenWindows()
-    let mine = windows.enumerated().filter { $0.element.pid == app.pid && ids.contains($0.element.number) }
+    let mine = windows.enumerated().filter { $0.element.pid == terminalPid && ids.contains($0.element.number) }
     let uncovered = mine.filter { index, window in
-        !windows[..<index].contains { $0.pid != app.pid && $0.bounds.intersects(window.bounds) }
+        !windows[..<index].contains { $0.pid != terminalPid && $0.bounds.intersects(window.bounds) }
     }
     return "order: \(uncovered.count) of \(mine.count) on-screen \(app.scriptName) windows "
         + "are covered by no window of another app"
 }
 
-// MARK: - Attempts
-
 /// Runs the focus command once, then reads the signals until they agree or 3 seconds pass.
 @discardableResult
 func attempt(to target: String, label: String, prefix: String = "") -> Attempt {
-    let clock = ContinuousClock()
-    let start = clock.now
+    let start = ContinuousClock.now
     let (status, message) = osascript([app.focusScript, target])
-    let focus = seconds(clock.now - start)
+    let focus = seconds(ContinuousClock.now - start)
     var signals = currentSignals()
     var readings = 1
-    while !signals.agree(on: target), clock.now - start < .seconds(3) {
+    while !signals.agree(on: target), ContinuousClock.now - start < .seconds(3) {
         signals = currentSignals()
         readings += 1
     }
-    let agree = seconds(clock.now - start)
+    let agree = seconds(ContinuousClock.now - start)
     let right = signals.agree(on: target)
     print(prefix + "\(app.rawValue) → \(label): \(right ? "RIGHT" : "WRONG") exit=\(status)"
         + " focus=\(format(focus)) agree=\(right ? format(agree) : "never") readings=\(readings) \(signals.line)"
@@ -216,20 +195,27 @@ func attempt(to target: String, label: String, prefix: String = "") -> Attempt {
 
 /// Selects the other spike tab and puts the other terminal in front, so each attempt starts
 /// the way the Focus button will be used: from the menu bar while the user works elsewhere.
-func setScene(otherTab: String) {
-    _ = osascript([app.focusScript, otherTab])
+/// Stops the run when that starting state is not reached, and returns it for the result line.
+@discardableResult
+func setScene(otherTab: String) -> String {
+    let selected = osascript([app.focusScript, otherTab])
+    guard selected.status == 0 else { fail("Could not select tab \(label(otherTab)): \(selected.message)") }
     _ = osascript(["-e", "tell application \"\(app.other.scriptName)\" to activate"])
-    let clock = ContinuousClock()
-    let start = clock.now
-    while currentSignals().frontApp != app.other.rawValue, clock.now - start < .seconds(2) {}
+    var signals = currentSignals()
+    let ready = waitFor {
+        signals = currentSignals()
+        return signals.frontApp == app.other.rawValue && signals.scriptHandle == otherTab
+    }
+    guard ready else { fail("The starting state was not reached: \(signals.line)") }
+    return "from=\(signals.frontApp),tab \(label(signals.scriptHandle)) "
 }
 
 func measure(attempts: Int) {
     var results: [Attempt] = []
     for (target, label, otherTab) in [(handleA, "A", handleB), (handleB, "B", handleA)] {
         for index in 1 ... attempts {
-            setScene(otherTab: otherTab)
-            results.append(attempt(to: target, label: label, prefix: "\(label) \(index)/\(attempts) "))
+            let scene = setScene(otherTab: otherTab)
+            results.append(attempt(to: target, label: label, prefix: "\(label) \(index)/\(attempts) \(scene)"))
         }
     }
     print(order())
@@ -240,26 +226,37 @@ func measure(attempts: Int) {
 }
 
 func awkward(_ name: String, attempts: Int) {
+    if name == "minimized" {
+        requireSpikeOnlyWindow()
+    }
+    if name == "gone", app == .terminal, windowHolding("/dev/ttys999") != 0 {
+        fail("A Terminal tab holds /dev/ttys999, so it cannot stand for a tab that is gone.")
+    }
     var results: [Attempt] = []
     for index in 1 ... attempts {
         let prefix = "\(name) \(index)/\(attempts) "
         switch name {
         case "minimized":
             // Minimize the spike window while tab B is selected, so A is a background tab in it.
-            _ = osascript([app.focusScript, handleB])
+            let selected = osascript([app.focusScript, handleB])
+            guard selected.status == 0 else { fail("Could not select tab B: \(selected.message)") }
             let minimize = "set miniaturized of window id \(windowB) to true"
             _ = osascript(["-e", "tell application \"\(app.scriptName)\" to \(minimize)"])
-            waitFor { !onScreenWindows().contains { $0.number == windowB } }
+            guard waitFor({ !onScreenWindows().contains { $0.number == windowB } }) else {
+                fail("The spike window did not leave the screen when minimized.")
+            }
             _ = osascript(["-e", "tell application \"\(app.other.scriptName)\" to activate"])
-            results.append(attempt(to: handleA, label: "A, window minimized", prefix: prefix))
+            guard waitFor({ currentSignals().frontApp == app.other.rawValue }) else {
+                fail("\(app.other.scriptName) did not come to the front.")
+            }
+            results.append(attempt(to: handleA, label: "A, window minimized", prefix: prefix + "from=minimized "))
         case "gone":
             let gone = app == .terminal ? "/dev/ttys999" : UUID().uuidString
             setScene(otherTab: handleB)
             let before = currentSignals().line
-            let clock = ContinuousClock()
-            let start = clock.now
+            let start = ContinuousClock.now
             let (status, message) = osascript([app.focusScript, gone])
-            let took = seconds(clock.now - start)
+            let took = seconds(ContinuousClock.now - start)
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.3))
             let after = currentSignals().line
             print(prefix + "\(app.rawValue) → a tab that does not exist: exit=\(status) took=\(format(took))"
@@ -275,8 +272,6 @@ func awkward(_ name: String, attempts: Int) {
         summarize(results)
     }
 }
-
-// MARK: - Helpers
 
 func summarize(_ results: [Attempt]) {
     let focus = results.map(\.focus).sorted()
@@ -306,10 +301,6 @@ func run(_ tool: String, _ arguments: [String]) -> (status: Int32, message: Stri
     return (process.terminationStatus, text.trimmingCharacters(in: .whitespacesAndNewlines))
 }
 
-func runScript(_ source: String) -> String {
-    osascript(["-e", source]).message
-}
-
 func handle(in file: String) -> String {
     guard let text = try? String(contentsOfFile: file, encoding: .utf8) else {
         fail("\(file) is missing. Run open-tabs.sh \(app.rawValue) <folder> first")
@@ -320,6 +311,17 @@ func handle(in file: String) -> String {
     }, uniquingKeysWith: { first, _ in first })
     let value = app == .terminal ? values["tty"] : values["iterm"]?.split(separator: ":").last.map(String.init)
     guard let value, !value.isEmpty else { fail("\(file) holds no handle") }
+    // A tty goes to the next tab that opens once its tab closes. Trust it only while the
+    // spike tab's shell still holds it, so a stale folder never moves someone else's tab.
+    // An iTerm2 unique ID is never reused, so it needs no such check.
+    if app == .terminal {
+        let pid = values["pid"].flatMap { Int32($0) } ?? 0
+        let held = run("/bin/ps", ["-o", "tty=", "-p", String(pid)]).message
+        guard pid > 0, "/dev/" + held == value else {
+            fail("\(file): the shell that held this tty is gone, so the tab may be someone else's."
+                + " Open new spike tabs with open-tabs.sh.")
+        }
+    }
     return value
 }
 
@@ -341,18 +343,40 @@ func windowHolding(_ handle: String) -> Int {
             end repeat
         end tell
         """
-    return Int(runScript(source)) ?? 0
+    return Int(osascript(["-e", source]).message) ?? 0
 }
 
 func label(_ handle: String) -> String {
     handle == handleA ? "A" : handle == handleB ? "B" : handle.isEmpty ? "none" : "other"
 }
 
-func waitFor(_ condition: () -> Bool) {
-    let clock = ContinuousClock()
-    let start = clock.now
-    while !condition(), clock.now - start < .seconds(3) {
+/// Checks the condition until it holds or 3 seconds pass, and says whether it held.
+@discardableResult
+func waitFor(_ condition: () -> Bool) -> Bool {
+    let start = ContinuousClock.now
+    while !condition() {
+        guard ContinuousClock.now - start < .seconds(3) else { return false }
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.02))
+    }
+    return true
+}
+
+/// Minimizing a window takes all of its tabs along. Stops unless the spike window holds only
+/// tabs A and B, so the case never minimizes a tab that is not the spike's. In Terminal a tab
+/// is a window of its own, and the tabs of one window share its bounds.
+func requireSpikeOnlyWindow() {
+    let source = app == .terminal
+        ? """
+        tell application "Terminal"
+            set spikeBounds to bounds of window id \(windowB)
+            if bounds of window id \(windowA) is not spikeBounds then return 0
+            return count (windows whose bounds is spikeBounds)
+        end tell
+        """
+        : "tell application \"iTerm2\" to return count of tabs of window id \(windowB)"
+    let tabs = Int(osascript(["-e", source]).message) ?? 0
+    guard tabs == 2, app == .terminal || windowA == windowB else {
+        fail("The spike window does not hold exactly tabs A and B, so minimizing it could take other tabs along.")
     }
 }
 
@@ -361,7 +385,9 @@ func seconds(_ duration: Duration) -> Double {
 }
 
 func median(_ values: [Double]) -> Double {
-    values.isEmpty ? 0 : values[values.count / 2]
+    guard !values.isEmpty else { return 0 }
+    let middle = values.count / 2
+    return values.count.isMultiple(of: 2) ? (values[middle - 1] + values[middle]) / 2 : values[middle]
 }
 
 func format(_ value: Double) -> String {

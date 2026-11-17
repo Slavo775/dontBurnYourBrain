@@ -3,12 +3,21 @@
 # "dontburn-spike <App> B", in Terminal or iTerm2. Each tab runs start-tab.sh,
 # which writes the handle a hook in that tab would see to <folder>/<app>-A and
 # <folder>/<app>-B. Then the handles are checked against the terminal's own
-# AppleScript. Never types into a tab.
+# AppleScript. iTerm2 starts start-tab.sh as the tab's command. Terminal's
+# "do script" types the start command, with Return, into the new tab it opened.
+# Nothing else is typed, and never into a tab the script did not open.
 # Usage: open-tabs.sh terminal|iterm2 <folder>
 set -euo pipefail
 usage="usage: open-tabs.sh terminal|iterm2 <folder>"
 app=${1:?$usage}
 dir=${2:?$usage}
+case "$app" in
+terminal | iterm2) ;;
+*)
+    echo "$usage" >&2
+    exit 2
+    ;;
+esac
 case "$dir" in
 *[!A-Za-z0-9._/-]*)
     echo "The folder path may hold only letters, digits and . _ / -" >&2
@@ -44,10 +53,6 @@ on run argv
 	end tell
 end run
 EOF
-    ;;
-*)
-    echo "$usage" >&2
-    exit 2
     ;;
 esac
 

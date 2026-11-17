@@ -8,7 +8,7 @@ Card #6. Throwaway code that answers one question: can a command bring forward t
 | `focus-terminal.applescript` | The focus command for Terminal. Takes the tab's tty (`/dev/ttysNNN` or `ttysNNN`), finds the tab, un-minimizes its window when needed, brings it to the front and activates Terminal |
 | `open-tabs.sh` | Opens one spike window with two tabs, A and B, in iTerm2 or Terminal. Each tab starts `start-tab.sh`, and the handles it wrote are checked against the terminal's own AppleScript |
 | `start-tab.sh` | Runs inside a spike tab. Writes the tab's `tty`, its shell's pid and `ITERM_SESSION_ID`, as a hook in that tab would see them, sets the tab's title, then leaves a plain shell (`bash --noprofile --norc`) in the tab |
-| `focus-check.swift` | Reads the three signals, runs the measured run and the scripted awkward cases, and runs one focus for a hand step. Run it with `swift`, nothing to build |
+| `focus-check.swift` | Runs the measured run, the scripted awkward cases, and one focus for a hand step, and reads the three signals after each. Run it with `swift`, nothing to build |
 
 Run either focus command on its own with `osascript Spikes/terminal-focus/focus-iterm2.applescript <UUID>` or `osascript Spikes/terminal-focus/focus-terminal.applescript /dev/ttysNNN`. Both read only the tty or the unique ID of other tabs, never a name, a title or what a tab shows. When no tab matches, they change nothing and exit with status 1 and the message `no Terminal tab has the tty …` or `no iTerm2 session has the unique ID …`.
 
@@ -36,7 +36,7 @@ iterm2-A: ITERM_SESSION_ID w…:XXXXXXXX-…, tty /dev/ttysNNN. AppleScript's tt
 terminal-A: tty /dev/ttysNNN, held by 1 Terminal tab(s) by AppleScript
 ```
 
-`$DIR/iterm2-A`, `$DIR/terminal-A` and the B files hold the handles. To reuse spike windows that are already open, set `DIR` to the folder that holds their files instead.
+`$DIR/iterm2-A`, `$DIR/terminal-A` and the B files hold the handles. To reuse spike windows that are already open, set `DIR` to the folder that holds their files instead. `focus-check.swift` refuses a stale folder before it touches any tab. In Terminal, the shell pid recorded with each tty must still hold that tty, because a tty goes to the next tab once its tab closes. In both apps, AppleScript must still find tabs A and B.
 
 Two things about the windows:
 
@@ -48,13 +48,13 @@ Two things about the windows:
 After each focus command, `focus-check.swift` reads three independent signals, again and again for up to 3 seconds. The attempt is right only when all three agree:
 
 1. **The frontmost app**, from LaunchServices (`lsappinfo front`), is the terminal.
-2. **The terminal's AppleScript** says it is frontmost, and the selected tab of its front window holds the target handle.
+2. **The terminal's AppleScript** says it is frontmost, and the selected tab of its front window holds the target handle. In Terminal a tab is a window of its own, so signal 3 checks the tab too. In iTerm2 the window server sees only the window, so which tab shows inside it rests on iTerm2's own `current session` alone.
 3. **The window server's order** (`CGWindowListCopyWindowInfo`, on-screen windows only): the topmost normal window (layer 0) over the front window's spot belongs to the terminal, and its window number is the front window's AppleScript `id`. Both apps use the window server's number as their AppleScript window `id`, so the two can be matched. It is the topmost window over that spot, not the topmost window of all: with several displays, a window on another display, or a window an app parks outside every display, can be higher in the list without covering anything.
 
-Before each attempt the other spike tab is selected and the other terminal app is put in front, because the Focus button will be clicked while the user works elsewhere. Each line prints which signal said what, with tabs named A, B or other, never a handle:
+Before each attempt the other spike tab is selected and the other terminal app is put in front, because the Focus button will be clicked while the user works elsewhere. The run stops when that starting state isn't reached within 3 seconds, and every line prints it as `from=`. Each line also prints which signal said what, with tabs named A, B or other, never a handle:
 
 ```
-A 1/10 iterm2 → A: RIGHT exit=0 focus=0.260s agree=0.431s readings=1 front=iterm2 script=frontmost,tab A,window spike server=iterm2,window same
+A 1/10 from=terminal,tab B iterm2 → A: RIGHT exit=0 focus=0.268s agree=0.438s readings=1 front=iterm2 script=frontmost,tab A,window spike server=iterm2,window same
 ```
 
 `focus` is the wall time of the focus command, `osascript` included. `agree` runs from the start of the focus command to the end of the first reading at which all three signals agreed. One reading takes about 0.16 seconds, so `readings=1` means the tab was already in front when the command returned.
@@ -79,8 +79,8 @@ swift Spikes/terminal-focus/focus-check.swift case terminal minimized "$DIR"
 swift Spikes/terminal-focus/focus-check.swift case terminal gone "$DIR"
 ```
 
-- `minimized` selects tab B, minimizes the spike window by AppleScript (`miniaturized`, in both dictionaries), puts the other app in front, and focuses tab A.
-- `gone` focuses a handle no tab holds (`/dev/ttys999` in Terminal, a random UUID in iTerm2) and compares the three signals before and after. No tab is closed for it.
+- `minimized` selects tab B, minimizes the spike window by AppleScript (`miniaturized`, in both dictionaries), puts the other app in front, and focuses tab A. Minimizing a window takes all of its tabs along, so it first checks that the spike window holds only tabs A and B. In iTerm2 the window must have two tabs. In Terminal exactly two AppleScript windows, A and B, must share the spike window's bounds. That guards against a setting such as "Prefer tabs: Always" having put the spike tabs into a window with other tabs. Never change System Settings to test it.
+- `gone` focuses a handle no tab holds (`/dev/ttys999` in Terminal, a random UUID in iTerm2) and compares the three signals before and after. In Terminal it first checks that no tab holds `/dev/ttys999`. No tab is closed for it.
 
 By hand, one person at the Mac. Each step runs `swift Spikes/terminal-focus/focus-check.swift focus <app> A "$DIR" 5`. It waits 5 seconds, so you can click a window of an app that is neither Terminal nor iTerm2 (an empty spot on the desktop works), then focuses tab A and prints one result line and the `order:` line. Look at what the screen does, and judge "jump" or "no jump".
 
@@ -101,20 +101,29 @@ A pid that has exited gives an empty tty, so the check says "gone". iTerm2's uni
 
 ## Results
 
-Measured on macOS 27.2 with three displays, iTerm2 3.7.7 and Terminal 2.15, sent from scripts started in Terminal. Two spike sessions in two tabs of one window per app. The measured run was done twice. The first time the window server signal took the topmost window of all, and both apps had 20 of 20. Then a window another app parks outside every display came up and made every attempt look wrong, so the signal changed to the topmost window over the target's spot. The table gives the second run, made with the code in this folder.
+Measured on macOS 27.2 with three displays, iTerm2 3.7.7 and Terminal 2.15, sent from scripts started in Terminal. Two spike sessions in two tabs of one window per app.
+
+The measured run was done three times per app, with 20 of 20 each time:
+
+1. The first time, the window server signal took the topmost window of all. Then a window that another app parks outside every display came up and made every attempt look wrong, so the signal changed to the topmost window over the target's spot.
+2. The second run used that signal.
+3. The third run used the code in this folder, which adds the checks on stale handles and on the starting state.
+
+The table gives the third run for the measured run and the gone case, and the second run for the minimized case, which was not repeated.
 
 | | iTerm2 | Terminal |
 |---|---|---|
 | Measured run: right tab, all three signals agree | **20 of 20**: 10 of 10 to A, 10 of 10 to B | **20 of 20**: 10 of 10 to A, 10 of 10 to B |
-| Focus command, wall time | median 0.265 s, worst 0.332 s | median 0.204 s, worst 0.268 s |
-| Signals agree | median 0.433 s, worst 0.494 s. At the first reading every time | median 0.362 s, worst 0.433 s. At the first reading every time |
+| Focus command, wall time | median 0.265 s, worst 0.269 s | median 0.264 s, worst 0.334 s |
+| Signals agree | median 0.431 s, worst 0.440 s. At the first reading every time | median 0.424 s, worst 0.491 s. At the first reading every time |
 | Minimized | **Works**, 3 of 3. The window comes back from the Dock with the restore animation, which the command waits for: median 0.85 s, worst 0.87 s | **Works**, 3 of 3. The same: median 0.81 s, worst 0.82 s |
 | Hidden (owner, by hand) | **Works.** iTerm2 came back with tab A | **Works.** Terminal came back by itself after the 5 seconds, with tab A |
 | Another Space (owner, by eye) | **Works with a visible jump.** The screen slid to Desktop 2 with tab A selected. The window was not pulled over | **Works with a visible jump.** The same |
 | Full screen (owner, by eye) | **Works with a visible jump.** The view slid to the window's full-screen space with tab A | **Works with a visible jump.** The same |
 | The tab no longer exists | **Changes nothing**, 3 of 3. Exit 1, `no iTerm2 session has the unique ID …`, after 0.20 s | **Changes nothing**, 3 of 3. Exit 1, `no Terminal tab has the tty …`, after 0.20 s |
-| Which windows `activate` raises | All of them: 2 of 2 on-screen iTerm2 windows were covered by no other app's window, the target on top | All of them: 3 of 3 on-screen Terminal windows were covered by no other app's window, the target on top |
+| After the run, which on-screen windows of the app no other app's window covers | 2 of 2, the target on top | 3 of 3, the target on top |
 
+- The last row suggests that `activate` brings every window of the app forward, not only the target, because the other app was in front just before. It is not proven: `order:` counts only after the run, and with three displays a window can be uncovered without having been raised. Comparing the covered windows before and after would settle it.
 - `osascript` itself starts in about 0.04 s, so most of a focus is Apple Events.
 - "When switching to an application, switch to a Space with open windows for the application" was on: `defaults read com.apple.dock workspaces-auto-swoosh` finds no key, which means on. The Space and full-screen results depend on it.
 - No permission prompt came up. Every Apple Event was sent by `osascript` or `focus-check.swift`, both started from Terminal, so macOS counted them as Terminal's.
