@@ -166,6 +166,6 @@ Merged from the three "Still open" lists, keeping those a phase 3 task depends o
 11. The events of "Move to background and exit", which keeps a session alive without a terminal, and the `resume`, `clear` and `compact` sources of `SessionStart` ([card #5](claude-hook.md#for-card-8)).
 12. Whether `workflow` and `teammate` entries look as Claude Code's documentation says ([card #5](claude-hook.md#for-card-8)).
 13. A split pane in iTerm2 ([card #6](terminal-focus.md#for-card-8)).
-14. Settings, Sessions, "Terminals" in [design.md](../spec/design.md#sessions) and the prototype show an "Allow" for VS Code and Cursor, which need no permission. What should their rows show?
+14. Settings, Sessions in [design.md](../spec/design.md#sessions) and the prototype: "Terminals" shows an "Allow" for VS Code and Cursor, which need no permission, and each profile has its own "Install hook" button, though one install reaches every profile that shares the settings file ([card #5](claude-hook.md#rules-for-phase-3s-installer)). What should these show?
 
 Left open, with no phase 3 task depending on them: whether `activate` raises every window of the terminal, and another Space with the Space setting off ([card #6](terminal-focus.md#for-card-8)).
