@@ -16,14 +16,15 @@ The Mac the agents work on is the one the maintainer uses every day, for more th
 - Run only the Dev build. It has its own bundle identifier, its own data folder, its own settings and its own permissions. See [releases.md](releases.md).
 - Never open, copy or change the data of the copy the maintainer uses daily.
 - Anything that deletes or rewrites data runs against a throwaway store: in memory, or in a temporary folder that is removed afterwards.
+- Look at a temporary folder before removing it, and remove it by its literal path. Claude Code refuses a recursive delete of a variable such as `rm -rf "$WORK"`.
 - Screenshots come from the Dev build with the seeded sample data.
 
 **Claude Code profiles and other tools**
 
 - The maintainer's Claude Code profile folders are off limits. Do not list them, read them or write to them unless the task says so and he has said yes in this session.
 - Hook experiments start in a scratch project, through that project's own settings file. A real profile is changed only after his yes, one profile at a time, with a backup of the settings file and an uninstall that has been tested.
-- When a profile's settings file is changed: add only this app's own entries, keep every other key and its formatting, and prove that uninstalling leaves the file identical to the backup.
 - Before changing a profile's settings file, check whether it is a symlink. If it is, stop and name the file it points to. Several profiles can share one file, so the maintainer's yes must name the file that is really written.
+- When a profile's settings file is changed: add only this app's own entries, keep every other key and its formatting, and prove that uninstalling leaves the file identical to the backup.
 - Session transcripts hold other people's work. Read structure, never copy content, and never into this repository.
 - Other repositories on the Mac are read-only.
 
@@ -33,7 +34,7 @@ The Mac the agents work on is the one the maintainer uses every day, for more th
 - Never reset permissions, change System Settings or edit login items.
 - AppleScript that drives a terminal or an editor runs only in the tasks that are about it.
 - Type by script only into a tab or window you opened yourself. Send the text, check the input line through the terminal's own AppleScript, then send Return on its own. Terminal's `do script` always adds Return, so never send a slash command with it. An unexpected menu or dialog gets Escape and a report, never a choice.
-- An AppleScript call that fails with error −1712 means a dialog is open on screen. Retry once, then stop and report it.
+- An AppleScript call that fails with error −1712 (an Apple event timeout) usually means a dialog is open on screen. Retry once, then stop and report it.
 
 **Git**
 

@@ -65,4 +65,4 @@ These were learned in the reference flow before this project started. All are `a
 
 - **What happened:** on card #5 (PR #8), Claude Code's safety check refused an agent's `rm -rf "$WORK"`, and nothing ran. The folder was then removed by its literal path.
 - **Root cause:** no rule said how an agent removes the temporary folders the rules ask for.
-- **Proposed change:** one rule in `testing.md`, "The clock and the data".
+- **Proposed change:** one rule in `safety-and-privacy.md`, "Builds and data", which every role reads.
