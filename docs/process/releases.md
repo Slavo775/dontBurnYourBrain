@@ -4,7 +4,7 @@ How the app is versioned, and how a development build and the maintainer's daily
 
 ## Versions
 
-- **One place.** `MARKETING_VERSION` in `project.yml` is the version for humans, such as `0.3.0`. Nothing in the code repeats it. The app reads it from its bundle, and the hook tool gets it baked in at build time.
+- **One place.** `MARKETING_VERSION` in `project.yml` is the version for humans, such as `0.3.0`. Nothing in the code repeats it. The app reads it from its bundle, and the hook tool from the Info.plist built into its binary.
 - **`main` carries the version being worked towards.** After `v0.1.0` is released, `main` moves to `0.2.0`.
 - **Which number moves:**
 

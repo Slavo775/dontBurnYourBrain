@@ -104,7 +104,7 @@ Someone who clones this repository has no access to the maintainer's Trello boar
 
 ## Who may change the agents and the rules
 
-That is said in [../../rules/README.md](../../rules/README.md) under "Who changes this folder", and how a change is made is in [../../rules/roles/leader.md](../../rules/roles/leader.md) under "Changing the flow". It covers `rules/`, `.claude/agents/` and `.claude/skills/`, and the owner is asked twice: before the change is written and again at the merge.
+That is said in [../../rules/README.md](../../rules/README.md) under "Who changes the rules", with the paths it covers, and how a change is made is in [../../rules/roles/leader.md](../../rules/roles/leader.md) under "Changing the flow". The owner is asked twice: before the change is written and again at the merge.
 
 ## Not part of the flow yet
 
