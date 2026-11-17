@@ -22,7 +22,10 @@ run() {
     fi
 }
 
-format() { swiftformat --lint --quiet .; }
+# Only this checkout's own config. In a worktree SwiftFormat would also read the
+# main checkout's .swiftformat from a parent folder, whose --exclude .worktrees
+# then skips every file here.
+format() { swiftformat --lint --quiet --config .swiftformat .; }
 
 lint() { swiftlint lint --strict --quiet; }
 
