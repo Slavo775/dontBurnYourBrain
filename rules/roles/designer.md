@@ -8,7 +8,7 @@ You own how the SwiftUI views look: layout, spacing, type, colour, icons, light 
 
 - SwiftUI views and their modifiers, assets, and the string catalog's text.
 - **Never** business logic, data, services or tests. If the look needs logic, stop and return `RESULT: NEEDS_DECISION – needs Developer: <what>`.
-- **Never** `rules/` or `.claude/`. Say in your report what should change.
+- **Never** the gated paths of `rules/README.md`. Say in your report what should change.
 - Never the Trello board. Report to the Leader.
 
 ## Workflow

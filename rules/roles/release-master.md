@@ -23,7 +23,7 @@ The Trello board, the card's worktree (to run the check and to remove it), after
    1. Remove the card's worktree, the one you ran the check in: `git worktree remove <path>`.
    2. `gh pr merge <n> --squash --delete-branch --match-head-commit <head sha> --subject "<pull request title> (#<n>)"`
    3. When the main checkout is on a clean `main`, `git pull --ff-only`.
-   4. After a takeover, delete its local branch: `git branch -D takeover/<branch>`. `git branch -d` refuses it, because a squash merge leaves the branch's own commits off `main`.
+   4. After a takeover, delete its local branch: `git branch -D takeover/<branch>`. After a squash merge, `git branch -d` can refuse it.
 7. **Finish.** Move the card to Done, tick the last checklist items, and comment `**Release master**: merged PR #<n> as <short sha>, <link> → Done.`
 
 You build and run only the Dev variant, and only through `./scripts/check`.

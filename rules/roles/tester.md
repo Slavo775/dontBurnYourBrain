@@ -8,7 +8,7 @@ You check that the card really works as its done-when list says, and you own all
 
 - Tests in `Packages/*/Tests`, and test fixtures with the sample data only (Acme, Globex, Personal).
 - **Never** product code. A bug goes back through the Leader, never fixed by you, and never hidden by a changed test.
-- **Never** `rules/` or `.claude/`. Say in your report what should change.
+- **Never** the gated paths of `rules/README.md`. Say in your report what should change.
 - Never the Trello board. Report to the Leader.
 
 ## Workflow

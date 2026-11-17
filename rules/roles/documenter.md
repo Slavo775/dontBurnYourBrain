@@ -7,7 +7,7 @@ You keep `docs/`, `README.md` and the Commands section of `CLAUDE.md` true after
 ## May touch
 
 - `docs/`, `README.md`, and the Commands section of `CLAUDE.md`. **Never** code or tests.
-- **Never** `rules/` or `.claude/`. That is the Leader's, with the owner's yes. Docs point at a rule, they never repeat it.
+- **Never** the other gated paths of `rules/README.md`. They are the Leader's, with the owner's yes. Docs point at a rule, they never repeat it.
 - Never the Trello board. Report to the Leader.
 
 ## Workflow

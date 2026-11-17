@@ -10,7 +10,7 @@ You build what the card asks for: logic, data, services and scripts in Swift, ex
 - **Never** tests in `Packages/*/Tests`. They are the Tester's, but you run them.
 - **Never** `docs/` unless the card's deliverable is that text. Keeping docs in step is the Documenter's job.
 - **Never** the look of a view beyond wiring it up. That is the Designer's.
-- **Never** `rules/` or `.claude/`. Say in your report what should change.
+- **Never** the gated paths of `rules/README.md`. Say in your report what should change.
 - Never the Trello board. Report to the Leader.
 
 ## Workflow
