@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ block finished" : {
+
+    },
     "%@, paused" : {
 
     },
@@ -13,6 +16,12 @@
     "%lld min" : {
 
     },
+    "5 minutes before a block ends" : {
+
+    },
+    "5 minutes left" : {
+
+    },
     "A workspace is one area of work, such as one client." : {
 
     },
@@ -23,6 +32,9 @@
 
     },
     "Add a workspace in Settings to start a block." : {
+
+    },
+    "Allow notifications to hear when a block or break ends" : {
 
     },
     "Archive" : {
@@ -40,7 +52,19 @@
     "Back" : {
 
     },
+    "Back to %@." : {
+
+    },
+    "Back to work." : {
+
+    },
+    "Block finished" : {
+
+    },
     "Break" : {
+
+    },
+    "Break is over" : {
 
     },
     "Cancel" : {
@@ -97,6 +121,12 @@
     "Nothing running, %@ untracked" : {
 
     },
+    "Notification" : {
+
+    },
+    "Notifications are off for %@. Allow them in System Settings → Notifications." : {
+
+    },
     "Ochre" : {
 
     },
@@ -107,6 +137,9 @@
 
     },
     "On a break, then back to %@" : {
+
+    },
+    "Open" : {
 
     },
     "Orange" : {
@@ -142,6 +175,9 @@
     "Slate" : {
 
     },
+    "Sound (%@)" : {
+
+    },
     "Start" : {
 
     },
@@ -160,7 +196,16 @@
     "Teal" : {
 
     },
+    "The %@ block ends soon." : {
+
+    },
+    "The block ends soon." : {
+
+    },
     "The data could not be opened" : {
+
+    },
+    "Time to stop or start the next one." : {
 
     },
     "Today: %@ tracked" : {
@@ -169,7 +214,13 @@
     "Unnamed" : {
 
     },
-    "Version" : {
+    "Version %@" : {
+
+    },
+    "When a block ends" : {
+
+    },
+    "When a break ends" : {
 
     },
     "Workspace" : {

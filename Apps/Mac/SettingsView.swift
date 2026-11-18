@@ -1,6 +1,7 @@
 import DontBurnCore
 import SwiftData
 import SwiftUI
+import UserNotifications
 
 /// The Settings window: General and Workspaces for now.
 struct SettingsView: View {
@@ -31,17 +32,76 @@ struct SettingsView: View {
     }
 }
 
-/// The General tab. Nothing to set yet, so it names the app and its version.
+/// The General tab: the alerts' switches, and the app's version at the bottom.
 private struct GeneralPane: View {
+    @State private var isNotificationRefused = false
+
     var body: some View {
         Form {
-            LabeledContent("Version", value: Bundle.main.version)
+            AlertSection("When a block ends", kind: .blockEnd)
+            AlertSection("When a break ends", kind: .breakEnd)
+            AlertSection("5 minutes before a block ends", kind: .warning)
+            if isNotificationRefused {
+                Section {
+                    HStack {
+                        let app = Bundle.main.displayName
+                        Label(
+                            "Notifications are off for \(app). Allow them in System Settings → Notifications.",
+                            systemImage: "exclamationmark.triangle",
+                        )
+                        Spacer()
+                        Button("Open") {
+                            // Only the pane. The app never changes the setting itself.
+                            NSWorkspace.shared.open(Self.notificationSettings)
+                        }
+                    }
+                }
+            }
+            Section {
+                Text("Version \(Bundle.main.version)")
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+            }
         }
-        // The same right-aligned labels as the Workspaces form.
-        .formStyle(.columns)
-        .padding(.horizontal, 28)
-        .padding(.vertical, 26)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .formStyle(.grouped)
+        .task { await readPermission() }
+        // Back from System Settings, the note follows the new answer. A task,
+        // since the answer comes asynchronously and `onReceive` cannot wait.
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            Task { await readPermission() }
+        }
+    }
+
+    /// The Notifications pane of System Settings.
+    private static let notificationSettings = URL(
+        string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension",
+    ) ?? URL(fileURLWithPath: "/System/Applications/System Settings.app")
+
+    private func readPermission() async {
+        let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+        isNotificationRefused = status == .denied
+    }
+}
+
+/// One alert's two switches: its notification and its sound.
+private struct AlertSection: View {
+    let title: LocalizedStringKey
+    let kind: AlertKind
+    @AppStorage private var notifies: Bool
+    @AppStorage private var plays: Bool
+
+    init(_ title: LocalizedStringKey, kind: AlertKind) {
+        self.title = title
+        self.kind = kind
+        _notifies = AppStorage(wrappedValue: AlertSettings.standard.notifications.contains(kind), kind.notificationKey)
+        _plays = AppStorage(wrappedValue: AlertSettings.standard.sounds.contains(kind), kind.soundKey)
+    }
+
+    var body: some View {
+        Section(title) {
+            Toggle("Notification", isOn: $notifies)
+            Toggle("Sound (\(kind.soundName))", isOn: $plays)
+        }
     }
 }
 
