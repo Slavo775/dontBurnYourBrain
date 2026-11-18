@@ -151,6 +151,12 @@ public enum SchemaV1: VersionedSchema {
         public var sourceRaw = TimeEntrySource.timer.rawValue
         /// A free note.
         public var note = ""
+        /// How long the entry is planned to last, in minutes, or `nil` when it
+        /// has no planned length.
+        ///
+        /// Set on break entries, so a break ends at the right moment even after
+        /// the app was restarted.
+        public var plannedMinutes: Int?
 
         /// The workspace the entry belongs to.
         public var workspace: Workspace?

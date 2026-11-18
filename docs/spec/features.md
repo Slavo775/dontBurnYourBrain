@@ -46,6 +46,10 @@ Must = needed for the app to be worth opening daily. Should = planned, later pha
 - Exactly one running entry at a time, across all devices
 - A time entry has one kind: work, break or meeting
 - Pausing ends the entry and resuming starts a new one, so history is always a list of real intervals
+- Timer entries never overlap. Starting a block or switching first ends whatever is running, at the same moment, and after the clock moves back a new entry starts after the latest timer entry. Overlaps with manual and calendar entries are handled when those arrive
+- A block keeps counting down during a break, and a break never runs past the end of its block. A paused block never runs out: its end moves later for as long as the pause lasts
+- When the Mac sleeps or the app quits during a block, the block still ends at its planned time, and the time in between counts as worked. Idle detection refines this in phase 2
+- An action that does not fit the moment, such as Pause with nothing running, is refused and changes nothing
 - Idle detection: after 10 minutes without input the app asks whether to keep or discard that time
 - Jira rounding happens only in the review screen, never in stored data. The default step is 15 minutes and each workspace can set its own
 - The hours you send to Jira can differ from the hours tracked. The app keeps both numbers and shows the difference
