@@ -12,6 +12,7 @@ import SwiftUI
 @MainActor
 final class StatusItemController: NSObject, NSWindowDelegate {
     private let countdown: Countdown
+    private let mainWindow: MainWindowController
     private let navigation = PanelNavigation()
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
@@ -34,10 +35,13 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         return panel
     }()
 
-    private lazy var menu = NSHostingMenu(rootView: StatusItemMenu(countdown: countdown))
+    private lazy var menu = NSHostingMenu(rootView: StatusItemMenu(countdown: countdown) { [weak self] in
+        self?.mainWindow.show()
+    })
 
-    init(countdown: Countdown) {
+    init(countdown: Countdown, mainWindow: MainWindowController) {
         self.countdown = countdown
+        self.mainWindow = mainWindow
         super.init()
         if let button = statusItem.button {
             button.target = self
@@ -108,7 +112,8 @@ final class StatusItemController: NSObject, NSWindowDelegate {
     /// adds 15 minutes and S switches. In a list of workspaces, 1 to 9 start
     /// the workspace on that key. With nothing running, ⌘N opens the custom
     /// block form, where Return starts and Escape goes back. Elsewhere Escape
-    /// closes. Returns whether the key was used.
+    /// closes. ⌘O closes the panel and opens the window. Returns whether the
+    /// key was used.
     ///
     /// A held key acts once. Repeats would extend again and again, pause and
     /// resume into near-empty entries, or start block after block.
@@ -125,6 +130,13 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         let modifiers = event.modifierFlags.intersection([.command, .control, .option])
         if modifiers == .command, event.charactersIgnoringModifiers?.lowercased() == "n" {
             return openCustomBlock(event)
+        }
+        if modifiers == .command, event.charactersIgnoringModifiers?.lowercased() == "o" {
+            if !event.isARepeat {
+                closePanel()
+                mainWindow.show()
+            }
+            return true
         }
         guard modifiers.isEmpty else { return false }
         if isIdle, navigation.page == .customBlock {
@@ -222,9 +234,10 @@ private final class KeyPanel: NSPanel {
 }
 
 /// The right-click menu: the timer's actions while a block runs, then the
-/// first three workspaces to start, then Settings and Quit.
+/// first three workspaces to start, then the window, Settings and Quit.
 struct StatusItemMenu: View {
     let countdown: Countdown
+    let openWindow: () -> Void
 
     var body: some View {
         let state = countdown.state
@@ -254,6 +267,8 @@ struct StatusItemMenu: View {
             }
             Divider()
         }
+        Button("Open the window", action: openWindow)
+            .keyboardShortcut("o")
         OpenSettingsButton()
         Divider()
         Button("Quit \(Bundle.main.displayName)") {

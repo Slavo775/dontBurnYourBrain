@@ -1,7 +1,16 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ %@ is removed for good." : {
+
+    },
+    "%@ (archived)" : {
+
+    },
     "%@ block finished" : {
+
+    },
+    "%@–now" : {
 
     },
     "%@, paused" : {
@@ -31,7 +40,13 @@
     "A workspace is one area of work, such as one client." : {
 
     },
+    "Add" : {
+
+    },
     "Add 15 minutes" : {
+
+    },
+    "Add a note" : {
 
     },
     "Add a workspace" : {
@@ -40,7 +55,16 @@
     "Add a workspace in Settings to start a block." : {
 
     },
+    "Add an entry by hand with the + button." : {
+
+    },
+    "Add entry" : {
+
+    },
     "Allow notifications to hear when a block or break ends" : {
+
+    },
+    "An entry can't reach into the future." : {
 
     },
     "Archive" : {
@@ -79,6 +103,9 @@
     "Choose a workspace" : {
 
     },
+    "Choose a workspace." : {
+
+    },
     "Color" : {
 
     },
@@ -88,7 +115,28 @@
     "Custom block" : {
 
     },
+    "Day" : {
+
+    },
     "Default block" : {
+
+    },
+    "Delete" : {
+
+    },
+    "Delete this entry?" : {
+
+    },
+    "Delete…" : {
+
+    },
+    "Edit entry" : {
+
+    },
+    "Edit…" : {
+
+    },
+    "End" : {
 
     },
     "End block" : {
@@ -97,7 +145,13 @@
     "End break" : {
 
     },
+    "Entries can't be shown or changed right now." : {
+
+    },
     "General" : {
+
+    },
+    "History" : {
 
     },
     "Indigo" : {
@@ -106,7 +160,16 @@
     "It leaves every menu, and its history stays. You can restore it from the Archived list." : {
 
     },
+    "It would overlap another entry, %@." : {
+
+    },
+    "Kind" : {
+
+    },
     "Length" : {
+
+    },
+    "Meeting" : {
 
     },
     "Name" : {
@@ -115,10 +178,16 @@
     "New workspace" : {
 
     },
+    "Next day" : {
+
+    },
     "No number key" : {
 
     },
     "No workspaces yet" : {
+
+    },
+    "Note" : {
 
     },
     "Nothing running" : {
@@ -127,10 +196,16 @@
     "Nothing running, %@ untracked" : {
 
     },
+    "Nothing tracked" : {
+
+    },
     "Notification" : {
 
     },
     "Notifications are off for %@. Allow them in System Settings → Notifications." : {
+
+    },
+    "OK" : {
 
     },
     "Ochre" : {
@@ -148,6 +223,9 @@
     "Open" : {
 
     },
+    "Open the window" : {
+
+    },
     "Orange" : {
 
     },
@@ -155,6 +233,9 @@
 
     },
     "Paused" : {
+
+    },
+    "Previous day" : {
 
     },
     "Quick start" : {
@@ -170,6 +251,12 @@
 
     },
     "Resume" : {
+
+    },
+    "Running" : {
+
+    },
+    "Save" : {
 
     },
     "Settings…" : {
@@ -211,10 +298,34 @@
     "The data could not be opened" : {
 
     },
+    "The end must be after the start." : {
+
+    },
+    "The entries could not be read" : {
+
+    },
+    "The entry could not be saved." : {
+
+    },
+    "The entry was not deleted" : {
+
+    },
+    "This entry's block is still running. Only its note can change until the block ends." : {
+
+    },
+    "Time" : {
+
+    },
     "Time to stop or start the next one." : {
 
     },
+    "Today" : {
+
+    },
     "Today: %@ tracked" : {
+
+    },
+    "Total" : {
 
     },
     "Unnamed" : {
@@ -239,6 +350,9 @@
 
     },
     "When a break ends, sound" : {
+
+    },
+    "Work" : {
 
     },
     "Workspace" : {
