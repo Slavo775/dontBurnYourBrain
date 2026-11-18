@@ -23,13 +23,21 @@ struct MenuBarItemLabel: View {
 /// under the menu bar's own appearance: the text and the outline take the
 /// label color of that appearance, and the dot the workspace color's light or
 /// dark value, on every display.
+///
+/// Sizes follow the prototype's menu bar tiles: a 10 pt dot, 6 pt to the
+/// text, and text at weight 500.
 enum MenuBarImage {
     private static var font: NSFont {
-        .monospacedDigitSystemFont(ofSize: NSFont.menuBarFont(ofSize: 0).pointSize, weight: .regular)
+        .monospacedDigitSystemFont(ofSize: NSFont.menuBarFont(ofSize: 0).pointSize, weight: .medium)
     }
 
-    private static let dotDiameter: CGFloat = 8
-    private static let gap: CGFloat = 5
+    private static let dotDiameter: CGFloat = 10
+    private static let gap: CGFloat = 6
+    private static let cupPointSize: CGFloat = 11
+    /// The widest a name may be drawn. Sixteen characters fit in ordinary
+    /// letters, and a name of wide letters is cut here, so the item never
+    /// crowds the menu bar on a notched display.
+    private static let maximumNameWidth: CGFloat = 116
 
     private enum Symbol {
         case dot(WorkspaceColor)
@@ -38,13 +46,14 @@ enum MenuBarImage {
     }
 
     static func image(for label: MenuBarLabel) -> NSImage {
-        let parts = parts(of: label)
-        let symbol = parts.symbol, text = parts.text
         let font = font
+        let parts = parts(of: label, font: font)
+        let symbol = parts.symbol, text = parts.text
         let attributes: [NSAttributedString.Key: Any] = [.font: font]
         let textSize = text.isEmpty ? .zero : (text as NSString).size(withAttributes: attributes)
-        let cup = NSImage(systemSymbolName: "cup.and.saucer.fill", accessibilityDescription: nil)?
-            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: font.pointSize, weight: .regular))
+        // The prototype's cup is drawn in outline, with steam above it.
+        let cup = NSImage(systemSymbolName: "cup.and.heat.waves", accessibilityDescription: nil)?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: cupPointSize, weight: .medium))
         let symbolSize = switch symbol {
         case .cup: cup?.size ?? .zero
         case .dot, .outline: NSSize(width: dotDiameter, height: dotDiameter)
@@ -102,14 +111,22 @@ enum MenuBarImage {
         }
     }
 
-    private static func parts(of label: MenuBarLabel) -> Parts {
+    private static func parts(of label: MenuBarLabel, font: NSFont) -> Parts {
         switch label {
         case let .running(name, color, time):
-            let text = name.isEmpty ? time : "\(name) \(time)"
-            return Parts(.dot(color), text, text)
+            let shown = fitted(name, font: font)
+            return Parts(
+                .dot(color),
+                shown.isEmpty ? time : "\(shown) \(time)",
+                name.isEmpty ? time : "\(name) \(time)",
+            )
         case let .paused(name, color):
-            let text = name.isEmpty ? String(localized: "paused") : String(localized: "\(name), paused")
-            return Parts(.dot(color), text, text)
+            let shown = fitted(name, font: font)
+            return Parts(
+                .dot(color),
+                shown.isEmpty ? String(localized: "paused") : String(localized: "\(shown), paused"),
+                name.isEmpty ? String(localized: "paused") : String(localized: "\(name), paused"),
+            )
         case let .onBreak(time?):
             return Parts(.cup, time, String(localized: "On a break, \(time) left"))
         case .onBreak(nil):
@@ -119,6 +136,20 @@ enum MenuBarImage {
         case .idle(nil):
             return Parts(.outline, "", String(localized: "Nothing running"))
         }
+    }
+
+    /// `name` cut at the end until it fits ``maximumNameWidth``.
+    private static func fitted(_ name: String, font: NSFont) -> String {
+        let attributes: [NSAttributedString.Key: Any] = [.font: font]
+        func width(_ text: String) -> CGFloat {
+            (text as NSString).size(withAttributes: attributes).width
+        }
+        guard width(name) > maximumNameWidth else { return name }
+        var kept = name.hasSuffix("…") ? String(name.dropLast()) : name
+        while !kept.isEmpty, width(kept + "…") > maximumNameWidth {
+            kept = String(kept.dropLast()).trimmingCharacters(in: .whitespaces)
+        }
+        return kept + "…"
     }
 }
 
