@@ -27,7 +27,7 @@ The app reads these arguments from the command line, so a check or a screenshot 
 | Argument | What it does |
 | --- | --- |
 | `-DontBurnFixedTime 2026-01-15T09:41:30+01:00` | Freezes the clock at that instant, shown in the Mac's time zone. The value needs seconds and an offset, `Z` or `±hh:mm`. A malformed value is ignored, and the clock runs live. |
-| `-DontBurnAppearance light` or `dark` | Sets the app's appearance for that launch. It does not reach the menu bar item or its menu, which follow the system. Any other value follows the system. |
+| `-DontBurnAppearance light` or `dark` | Sets the app's appearance for that launch, the compact panel included. It does not reach the menu bar item or its menu, which follow the system. Any other value follows the system. |
 | `-DontBurnSampleData YES` | Runs on a store in memory, seeded with Acme, Globex and Personal: 3 workspaces, 5 projects (Reading under Personal is not time tracked), 3 blocks and 5 entries. `true` and `1` work too. The store on disk is never opened. With `-DontBurnFixedTime`, the sample data is seeded around that time. |
 | `-DontBurnTimerState running` | Puts the sample timer into one state, for the menu bar item. Works only with `-DontBurnSampleData`, with or without `-DontBurnFixedTime`. Values: `running` (Acme, 1:24 left), `ending` (Acme, 3:27 left), `paused`, `break` (4:12 left), `idle`, `untracked` (0:15 untracked), `long-name` (Acme under a very long name), and `short` (a six-minute block from launch, to watch on the live clock). An unknown value, or one longer than 16 bytes, is ignored. |
 

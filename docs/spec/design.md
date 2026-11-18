@@ -74,7 +74,7 @@ How the first four states behave today:
 - The item redraws just after the shown digits change, and at least once a minute. At `0:00` the block or break is closed on the next tick.
 - A long workspace name is cut to 16 characters, "…" included, and never drawn wider than 116 pt.
 - Without a store the item shows the outline dot and never ticks.
-- The menu holds "Settings…" on ⌘ and comma, a divider, and "Quit" with the app's name, on ⌘Q.
+- A click, or VoiceOver's press, opens and closes the compact panel. A right-click or a Control-click opens the menu, described under [Right-click menu on the menu bar item](#right-click-menu-on-the-menu-bar-item).
 
 Phase 0 showed a plain clock here instead. Phase 1 replaced it.
 
@@ -82,15 +82,16 @@ Phase 0 showed a plain clock here instead. Phase 1 replaced it.
 
 Found while building the phase 0 clock and the phase 1 states. They hold for every state above.
 
-- The label is drawn as one image, not a `Text`. `MenuBarExtra` turns a `Text` label into a plain title and drops its font, so tabular figures survive only in an image. The image's accessibility description carries the same text, such as "On a break, 4:12 left", so VoiceOver reads it.
+- The item is an AppKit `NSStatusItem`, not SwiftUI's `MenuBarExtra`, because `MenuBarExtra` offers either a menu or a window on a click, not a panel on the click and a menu on the right-click.
+- The label is drawn as one image, so the dot, the name and the digits stay together, in tabular figures. (Under `MenuBarExtra`, a `Text` label lost its font, so an image was the only way.) The image's accessibility description, and the button's accessibility title, carry the same text, such as "On a break, 4:12 left", so VoiceOver reads it.
 - The image is not a template image. A template image is drawn in one color and would lose the workspace's dot. Instead it is drawn each time the menu bar draws it, in the menu bar's own appearance: the text and outline in the label color, the dot in the workspace color.
 - Because it is not a template image, the item does not get the menu bar's vibrancy, and it is not dimmed on an inactive display.
-- The label is updated by a `Timer`. A `TimelineView` inside a `MenuBarExtra` label kept the main thread busy and hung the app.
-- The item and its menu follow the menu bar's appearance, which follows the system. The app's own appearance does not reach them.
+- The label is updated by a `Timer`, which sets the item's image only when the label changes. A `TimelineView` inside a `MenuBarExtra` label kept the main thread busy and hung the app.
+- The item and its menu follow the menu bar's appearance, which follows the system. The app's own appearance does not reach them. It does reach the compact panel.
 - On a notched built-in display, the item can sit behind the hidden-items chevron when the menu bar is full.
-- While the menu is open on one display, the item's copy on another display stops updating until the menu closes.
-- Updating every second, as the phase 0 clock did, cost about 5 % of one core in the Debug build, mostly macOS redrawing the item's copy for each display and Space. The item now does that only while it shows seconds.
-- On macOS 26, the console shows "It's not legal to call -layoutSubtreeIfNeeded on a view which is already being laid out" once per launch. It comes from AppKit setting up the status item for each display (`-[NSSceneStatusItem _connectVariantViewScene:]` → `-[NSStatusItem _setDisplayIdentifier:]` → `-[NSWindow _setFrameCommon:display:fromServer:]` → `-[NSWindow _layoutViewTree]`), and it also appears with a plain SF Symbol label. It is not ours and needs no fix.
+- Under `MenuBarExtra`, while the menu was open on one display, the item's copy on another display stopped updating until the menu closed. This has not been checked again with `NSStatusItem`.
+- Updating every second, as the phase 0 clock did, cost about 5 % of one core in the Debug build, mostly macOS redrawing the item's copy for each display and Space. The item now does that only while it shows seconds. While the compact panel is open, the countdown ticks every second, but only the panel redraws.
+- Under `MenuBarExtra`, on macOS 26, the console showed "It's not legal to call -layoutSubtreeIfNeeded on a view which is already being laid out" once per launch. It came from AppKit setting up the status item for each display (`-[NSSceneStatusItem _connectVariantViewScene:]` → `-[NSStatusItem _setDisplayIdentifier:]` → `-[NSWindow _setFrameCommon:display:fromServer:]` → `-[NSWindow _layoutViewTree]`), and it also appeared with a plain SF Symbol label. It is not ours and needs no fix. This has not been checked again with `NSStatusItem`.
 
 ## Compact panel
 
@@ -112,13 +113,26 @@ What the actions do:
 | Action | Effect |
 |---|---|
 | **Pause** | The countdown stops and the running entry ends. The button becomes Resume, the digits dim, the menu bar says "paused". Resume starts a new entry, and the block ends later by the length of the pause. Pausing during a break ends the break, and Resume starts work |
-| **Break** | A break entry starts inside the block, with its own countdown, five minutes by default. The button becomes End break. When the break is over, work continues. The block still ends at its planned time, and a break that would run past it stops there |
+| **Break** | A break entry starts inside the block, with its own countdown, five minutes by default. The button becomes End break. When the break is over, work continues. The block still ends at its planned time, and a break that would run past it stops there. While the block is paused, Break is disabled in the button, the B key and the menu: resume first (the owner's decision) |
 | **+15 min** | Adds 15 minutes to the block |
 | **Switch** | Shows the quick start list under the title "Switch to", with a Back button. Choosing a workspace ends the current block and starts a new one for that workspace, at its default length |
 
 In the prototype the block's countdown stands still during a break. That is a shortcut of the drawing. The rule in [features.md](features.md) holds: a break is part of the block.
 
 End block is not among the four. It lives in the right-click menu and the command bar. It ends the running entry and the block now. When the block's time is up, the same happens at its planned end.
+
+How the panel behaves today, in phase 1:
+
+- It is a borderless panel under the menu bar item. It takes the keys as soon as it opens, without bringing the app to the front.
+- It shows the workspace dot and name, the countdown, one line ("left of 2:00", "Paused", or "On a break, then back to Acme"), the strip, the four actions, and the footer "Today: 1:42 tracked". The issue, the expand button, the needs-you strip, the next meeting and the sessions link come in later phases.
+- The countdown shows `h:mm` large and `:ss` small from one hour left on, and `m` with `:ss` below that. During a break the strip is filled in the muted color.
+- Keys: P pauses and resumes, B takes and ends a break, + adds 15 minutes, S opens Switch, Escape closes the panel. Each acts once per press, and a held key does not repeat. Keys with ⌘, ⌃ or ⌥ are ignored.
+- Switch lists every active workspace in the order from Settings, the running one included: the dot, the name and the default length. Back returns to the running block.
+- The panel closes on Escape, on a second click on the item, on a right-click, and when it loses focus, such as on a click elsewhere.
+- The countdown ticks every second only while the panel is open.
+- It follows the app's appearance, so `-DontBurnAppearance` reaches it. The item and its menu follow the system.
+- Today's tracked total counts work and meetings always, and a break only when its workspace counts breaks. Entries are clipped to today and to now.
+- With nothing running, or without a store, it shows only "Nothing running". The list of workspaces described below comes with the next card.
 
 ### Nothing is running
 
@@ -169,6 +183,8 @@ Opened with ⌥ Space from anywhere. About 580 pt wide, one text field, results 
 ### Right-click menu on the menu bar item
 
 Pause, Take a break, Add 15 minutes, End block. Then the quick start presets ("Start Acme for 2 h"). Then Focus the waiting session, and Open the window ⌘O.
+
+Opened with a right-click or a Control-click. In phase 1 it holds Pause or Resume, Take a break or End break, Add 15 minutes and End block while a block runs, each only when it fits the timer's state, then a divider, "Settings…" on ⌘ and comma, another divider, and "Quit" with the app's name, on ⌘Q. With nothing running it holds only Settings and Quit.
 
 ### Session switcher
 
