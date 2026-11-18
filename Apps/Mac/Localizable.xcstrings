@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@, paused" : {
+
+    },
     "%lld h" : {
 
     },
@@ -64,7 +67,19 @@
     "No workspaces yet" : {
 
     },
+    "Nothing running" : {
+
+    },
+    "Nothing running, %@ untracked" : {
+
+    },
     "Ochre" : {
+
+    },
+    "On a break" : {
+
+    },
+    "On a break, %@ left" : {
 
     },
     "Orange" : {
@@ -107,6 +122,9 @@
 
     },
     "Workspaces can't be shown or changed right now." : {
+
+    },
+    "paused" : {
 
     }
   },

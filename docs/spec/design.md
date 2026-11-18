@@ -67,18 +67,29 @@ The prototype draws five states as tiles. Its live panel shows a sixth, paused.
 | **Agent waiting** | Any state above plus an amber badge with the number of waiting sessions. The panel then opens with that session on top |
 | **Day off** | An icon and "Off". Out of office leaves nothing planned for today, or the user took the day off. Untracked time is not counted |
 
-**Until phase 1** the item is a plain clock: the current time with seconds, in the user's 12- or 24-hour format, updated on every whole second, also while its menu is open. The menu holds "Settings…" on ⌘ and comma, a divider, and "Quit" with the app's name, on ⌘Q. In 12-hour formats the item gets wider at 10:00 and when AM turns to PM. This is accepted, because phase 1 replaces the clock with the states above.
+How the first four states behave today:
+
+- Times left are rounded down. A block shows `h:mm` until less than five minutes are left, so the seconds start at `4:59`. A break always shows `m:ss`.
+- Untracked time counts from the end of the latest entry that ended today, else from the app's start, but never from before the start of today.
+- The item redraws just after the shown digits change, and at least once a minute. At `0:00` the block or break is closed on the next tick.
+- A long workspace name is cut to 16 characters, "…" included, and never drawn wider than 116 pt.
+- Without a store the item shows the outline dot and never ticks.
+- The menu holds "Settings…" on ⌘ and comma, a divider, and "Quit" with the app's name, on ⌘Q.
+
+Phase 0 showed a plain clock here instead. Phase 1 replaced it.
 
 ### Limits
 
-Found while building the phase 0 clock. They hold for every state above.
+Found while building the phase 0 clock and the phase 1 states. They hold for every state above.
 
-- The label is drawn as a template image. `MenuBarExtra` turns a `Text` label into a plain title and drops its font, so tabular figures survive only in an image. The image's accessibility description carries the same text, so VoiceOver reads it.
+- The label is drawn as one image, not a `Text`. `MenuBarExtra` turns a `Text` label into a plain title and drops its font, so tabular figures survive only in an image. The image's accessibility description carries the same text, such as "On a break, 4:12 left", so VoiceOver reads it.
+- The image is not a template image. A template image is drawn in one color and would lose the workspace's dot. Instead it is drawn each time the menu bar draws it, in the menu bar's own appearance: the text and outline in the label color, the dot in the workspace color.
+- Because it is not a template image, the item does not get the menu bar's vibrancy, and it is not dimmed on an inactive display.
 - The label is updated by a `Timer`. A `TimelineView` inside a `MenuBarExtra` label kept the main thread busy and hung the app.
 - The item and its menu follow the menu bar's appearance, which follows the system. The app's own appearance does not reach them.
 - On a notched built-in display, the item can sit behind the hidden-items chevron when the menu bar is full.
 - While the menu is open on one display, the item's copy on another display stops updating until the menu closes.
-- Updating every second costs about 5 % of one core in the Debug build, mostly macOS redrawing the item's copy for each display and Space.
+- Updating every second, as the phase 0 clock did, cost about 5 % of one core in the Debug build, mostly macOS redrawing the item's copy for each display and Space. The item now does that only while it shows seconds.
 - On macOS 26, the console shows "It's not legal to call -layoutSubtreeIfNeeded on a view which is already being laid out" once per launch. It comes from AppKit setting up the status item for each display (`-[NSSceneStatusItem _connectVariantViewScene:]` → `-[NSStatusItem _setDisplayIdentifier:]` → `-[NSWindow _setFrameCommon:display:fromServer:]` → `-[NSWindow _layoutViewTree]`), and it also appears with a plain SF Symbol label. It is not ours and needs no fix.
 
 ## Compact panel

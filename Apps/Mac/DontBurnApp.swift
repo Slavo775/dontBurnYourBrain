@@ -7,13 +7,16 @@ import SwiftUI
 struct DontBurnApp: App {
     private static let fixedTime = launchArgument("DontBurnFixedTime").flatMap(FixedTime.date(from:))
 
-    @State private var ticker = Ticker(fixedTime: Self.fixedTime)
+    @State private var countdown: Countdown
 
     /// The open store, or `nil` when it could not be opened.
     private let container: ModelContainer?
 
     init() {
-        container = Self.openStore(sampleData: SampleData.isRequested(by: Self.launchArgument("DontBurnSampleData")))
+        let sampleData = SampleData.isRequested(by: Self.launchArgument("DontBurnSampleData"))
+        let container = Self.openStore(sampleData: sampleData)
+        self.container = container
+        _countdown = State(initialValue: Countdown(container: container, fixedTime: Self.fixedTime))
         switch Self.launchArgument("DontBurnAppearance").flatMap(Appearance.init(rawValue:)) {
         case .light: NSApplication.shared.appearance = NSAppearance(named: .aqua)
         case .dark: NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
@@ -39,6 +42,10 @@ struct DontBurnApp: App {
     /// The sample set in memory with `-DontBurnSampleData YES`, otherwise the
     /// store on disk in the folder named after the bundle identifier.
     ///
+    /// With the sample set, `-DontBurnTimerState <scenario>` also puts the
+    /// timer into one of the ``TimerScenario`` states. It is ignored without
+    /// the sample set, so it never changes the store on disk.
+    ///
     /// The sample data never touches the store on disk. A store that cannot be
     /// opened is logged, and the app keeps running without one.
     private static func openStore(sampleData: Bool) -> ModelContainer? {
@@ -46,7 +53,12 @@ struct DontBurnApp: App {
         do {
             if sampleData {
                 let container = try ModelStore.inMemory()
-                try SampleData.seed(into: container.mainContext, now: fixedTime ?? .now)
+                let now = fixedTime ?? .now
+                try SampleData.seed(into: container.mainContext, now: now)
+                if let scenario = TimerScenario(launchArgument: launchArgument("DontBurnTimerState")) {
+                    try scenario.apply(to: container.mainContext, now: now)
+                    log.info("Put the sample timer into the \(scenario.rawValue) state")
+                }
                 let count = try container.mainContext.fetchCount(FetchDescriptor<Workspace>())
                 log.info("Opened the sample data in memory, \(count) workspaces")
                 return container
@@ -77,7 +89,7 @@ struct DontBurnApp: App {
             }
             .keyboardShortcut("q")
         } label: {
-            ClockLabel(ticker: ticker)
+            MenuBarItemLabel(countdown: countdown)
         }
         Settings {
             SettingsView(container: container)

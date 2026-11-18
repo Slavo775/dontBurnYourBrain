@@ -5,11 +5,16 @@ import SwiftUI
 extension WorkspaceColor {
     /// The palette color, with its light and dark value from `docs/spec/design.md`.
     var color: Color {
+        Color(nsColor: nsColor)
+    }
+
+    /// The palette color for AppKit drawing, resolved for the appearance it is drawn in.
+    var nsColor: NSColor {
         let (light, dark) = hexValues
-        return Color(nsColor: NSColor(name: nil) { appearance in
+        return NSColor(name: nil) { appearance in
             let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
             return NSColor(hex: isDark ? dark : light)
-        })
+        }
     }
 
     /// The color's name, for VoiceOver.
