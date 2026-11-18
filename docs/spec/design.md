@@ -126,12 +126,12 @@ How the panel behaves today, in phase 1:
 - It is a borderless panel under the menu bar item. It takes the keys as soon as it opens, without bringing the app to the front.
 - It shows the workspace dot and name, the countdown, one line ("left of 2:00", "Paused", or "On a break, then back to Acme"), the strip, the four actions, and the footer "Today: 1:42 tracked". The issue, the expand button, the needs-you strip, the next meeting and the sessions link come in later phases.
 - The countdown shows `h:mm` large and `:ss` small from one hour left on, and `m` with `:ss` below that. During a break the strip is filled in the muted color.
-- Keys: P pauses and resumes, B takes and ends a break, + adds 15 minutes, S opens Switch, Escape closes the panel. 1 to 9 start a workspace in the "Nothing running" list and in Switch. ⌘N opens the custom block form. In the form, Return or keypad Enter starts, and Escape goes back to the list instead of closing the panel. Each key acts once per press, and a held key does not repeat. ⌘N is the only key with ⌘, ⌃ or ⌥ that is taken; the others are ignored.
+- Keys: P pauses and resumes, B takes and ends a break, + adds 15 minutes, S opens Switch, Escape closes the panel. 1 to 9 start a workspace in the "Nothing running" list and in Switch. ⌘N opens the custom block form. In the form, Return or keypad Enter starts, and Escape goes back to the list instead of closing the panel. Each key acts once per press, and a held key does not repeat. ⌘O closes the panel and opens [the window](#the-window). ⌘N and ⌘O are the only keys with ⌘, ⌃ or ⌥ that are taken, each with ⌘ alone; the others are ignored.
 - Switch uses the same rows as "Nothing running": every active workspace in the order from Settings, the running one included, with the dot, the name, the default length and the number key. Back returns to the running block.
 - The panel closes on Escape, on a second click on the item, on a right-click, and when it loses focus, such as on a click elsewhere.
 - The countdown ticks every second only while the panel is open.
 - It follows the app's appearance, so `-DontBurnAppearance` reaches it. The item and its menu follow the system.
-- Today's tracked total counts work and meetings always, and a break only when its workspace counts breaks. Entries are clipped to today and to now.
+- Today's tracked total counts work and meetings always, and a break only when its workspace counts breaks. Entries are clipped to today and to now. It is the window's Today total: the sum of each entry's whole minutes, rounded down per entry.
 - With nothing running, it shows the list described below. Without a store, it shows only "Nothing running", with no rows, no footer and no keys.
 - While the app asks for the notification permission, one line under the four actions says "Allow notifications to hear when a block or break ends". It goes away when the system prompt is answered, and never shows after a refusal.
 
@@ -195,7 +195,7 @@ Opened with ⌥ Space from anywhere. About 580 pt wide, one text field, results 
 
 Pause, Take a break, Add 15 minutes, End block. Then the quick start presets ("Start Acme for 2 h"). Then Focus the waiting session, and Open the window ⌘O.
 
-Opened with a right-click or a Control-click. In phase 1 it holds Pause or Resume, Take a break or End break, Add 15 minutes and End block while a block runs, each only when it fits the timer's state, then a divider. Then "Start Acme for 1 h" for the first three active workspaces at their default lengths, then a divider. While a block runs, picking one switches to that workspace. Then "Settings…" on ⌘ and comma, another divider, and "Quit" with the app's name, on ⌘Q. With nothing running it holds the start items, Settings and Quit. With no workspaces or no store, the start items are left out.
+Opened with a right-click or a Control-click. In phase 1 it holds Pause or Resume, Take a break or End break, Add 15 minutes and End block while a block runs, each only when it fits the timer's state, then a divider. Then "Start Acme for 1 h" for the first three active workspaces at their default lengths, then a divider. While a block runs, picking one switches to that workspace. Then "Open the window" on ⌘O, "Settings…" on ⌘ and comma, another divider, and "Quit" with the app's name, on ⌘Q. With nothing running it holds the start items, Open the window, Settings and Quit. With no workspaces or no store, the start items are left out.
 
 ### Session switcher
 
@@ -247,6 +247,25 @@ Below: "Tracked 5:00, going to Jira 5:00", and one button, "Send 2 worklogs (5:0
 - A task without a Jira issue stays out until one is chosen.
 - Nothing leaves until the button is pressed.
 - After sending, changing a number offers to update that worklog in Jira. Removing a row deletes the worklog there.
+
+### What phase 1 builds
+
+A list of the day's entries instead of the timeline, and corrections by hand. The rules live in `DayLog` and `EntryEditor` in `DontBurnCore`.
+
+- **Opening.** ⌘O in the compact panel closes the panel and opens the window, once per press. The right-click menu has "Open the window" on ⌘O. The app stays an accessory app with no Dock icon. The window follows `-DontBurnAppearance`.
+- **The sidebar** is 210 pt and holds Today and History only. Last week's totals come with the charts in phase 2, the timeline in phase 5, and Sessions and Jira review with their phases.
+- **A day** shows its total and one total per workspace: active ones in the order from Settings, then archived ones, each only when it has time that day. Below them a list with a column header: Time, Workspace with its dot, Kind, Length and Note.
+- **Lengths** are whole minutes, rounded down per entry, and every total is the sum of the rows.
+- **The running entry** reads "21:31–now" and counts up.
+- **An entry across midnight** shows on both days with its part, "23:30–0:00" and "0:00–0:30", and is stored once.
+- **Nothing on the day:** "Nothing tracked".
+- **Editing.** A click on a row edits it, and its context menu has Edit… and Delete…. The sheet has Start, End, Workspace, Kind and Note. Kind offers work and break, plus meeting for a meeting. The workspace picker lists the active workspaces, plus the entry's own one if it is archived. Changing the workspace clears the entry's project.
+- **Add (+)** stores a manual entry with no block. It starts as the latest free half hour before now on Today, and the latest free hour ending by 10:00 on an earlier day.
+- **Delete** asks once.
+- **Refusals.** Every change is checked, and a refused one shows its sentence in the `bad` color: no workspace, an end not after the start, an end in the future, or an overlap with another entry, the running one counted up to now.
+- **A running block's entries**, paused ones included, take only a note and cannot be deleted until the block ends, because the timer derives the block's end from the gaps between them. This is the owner's decision.
+- **History** opens on yesterday, with previous and next and a date picker that stops at yesterday. An earlier day takes the same corrections.
+- **Without a store** the window says "The data could not be opened".
 
 ## Out of office
 

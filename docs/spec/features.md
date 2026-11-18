@@ -46,7 +46,9 @@ Must = needed for the app to be worth opening daily. Should = planned, later pha
 - Exactly one running entry at a time, across all devices
 - A time entry has one kind: work, break or meeting
 - Pausing ends the entry and resuming starts a new one, so history is always a list of real intervals
-- Timer entries never overlap. Starting a block or switching first ends whatever is running, at the same moment, and after the clock moves back a new entry starts after the latest timer entry. Overlaps with manual and calendar entries are handled when those arrive
+- Timer entries never overlap. Starting a block or switching first ends whatever is running, at the same moment, and after the clock moves back a new entry starts after the latest timer entry. An entry added or changed by hand is refused when it would overlap any other entry, the running one counted up to now. Overlaps with calendar entries are handled when those arrive
+- An entry of a running block takes only a note, and cannot be deleted, until the block ends. The timer derives the block's end from the gaps between its entries
+- Tracked time is shown in whole minutes, rounded down per entry, and every total is the sum of those minutes. Stored entries keep their seconds
 - A block keeps counting down during a break, and a break never runs past the end of its block. A paused block never runs out: its end moves later for as long as the pause lasts
 - When the Mac sleeps or the app quits during a block, the block still ends at its planned time, and the time in between counts as worked. Idle detection refines this in phase 2
 - An action that does not fit the moment, such as Pause with nothing running, is refused and changes nothing
