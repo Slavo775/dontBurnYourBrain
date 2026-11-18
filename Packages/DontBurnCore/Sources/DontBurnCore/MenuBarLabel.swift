@@ -121,8 +121,8 @@ public enum MenuBarLabel: Equatable, Sendable {
         return line.prefix(maximumNameLength - 1).trimmingCharacters(in: .whitespaces) + "…"
     }
 
-    /// `h:mm` for whole minutes in `seconds`, rounded down.
-    static func hoursAndMinutes(_ seconds: TimeInterval) -> String {
+    /// `h:mm` for whole minutes in `seconds`, rounded down, such as `0:10`.
+    public static func hoursAndMinutes(_ seconds: TimeInterval) -> String {
         let minutes = max(0, Int(seconds / 60))
         return "\(minutes / 60):" + twoDigits(minutes % 60)
     }

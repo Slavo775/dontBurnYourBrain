@@ -63,6 +63,8 @@ extension Color {
     static let surface = Color(nsColor: NSColor(light: 0xFFFFFF, dark: 0x18201D))
     /// Buttons, rows, the empty part of the progress strip.
     static let sunken = Color(nsColor: NSColor(light: 0xE9EDEB, dark: 0x0C110F))
+    /// The face of a key shown beside a row, such as a number key.
+    static let keyBackground = Color(nsColor: NSColor(light: 0xF3F5F4, dark: 0x242E2B))
     /// Dividers and outlines.
     static let line = Color(nsColor: NSColor(light: 0xD3DAD7, dark: 0x2B3632))
     /// Text.
