@@ -22,7 +22,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 
 ### Launch arguments
 
-The app reads these arguments from the command line, so a check or a screenshot looks the same on every run. A value saved with `defaults write` is never used.
+The app reads these arguments from the command line, so a check or a screenshot looks the same on every run. A value saved with `defaults write` is never used. They work only in the Dev build. A Release build ignores all three: it runs a live clock, follows the system's appearance and opens the store on disk.
 
 | Argument | What it does |
 | --- | --- |
