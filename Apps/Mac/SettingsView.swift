@@ -25,7 +25,9 @@ struct SettingsView: View {
                 }
             }
         }
-        .frame(minWidth: 640, minHeight: 420)
+        // One fixed size for every tab, the prototype's 760 pt, so the window
+        // neither jumps between launches nor between tabs.
+        .frame(width: 760, height: 470)
     }
 }
 
@@ -35,7 +37,11 @@ private struct GeneralPane: View {
         Form {
             LabeledContent("Version", value: Bundle.main.version)
         }
-        .formStyle(.grouped)
+        // The same right-aligned labels as the Workspaces form.
+        .formStyle(.columns)
+        .padding(.horizontal, 28)
+        .padding(.vertical, 26)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 }
 

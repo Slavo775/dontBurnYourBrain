@@ -37,7 +37,7 @@ struct WorkspacesPane: View {
             } else {
                 HStack(spacing: 0) {
                     list
-                        .frame(width: 200)
+                        .frame(width: 220)
                     Divider()
                     detail
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -80,26 +80,38 @@ struct WorkspacesPane: View {
         }
         .listStyle(.sidebar)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            HStack(spacing: 0) {
-                Button(action: create) {
-                    Image(systemName: "plus")
-                        .frame(width: 24, height: 20)
-                }
-                .accessibilityLabel("Add a workspace")
-                Button {
-                    archiveCandidate = selected
-                } label: {
-                    Image(systemName: "minus")
-                        .frame(width: 24, height: 20)
-                }
-                .accessibilityLabel("Archive this workspace")
-                .disabled(selected.map(\.isArchived) ?? true)
-                Spacer()
+            VStack(spacing: 0) {
+                Divider()
+                bar
             }
-            .buttonStyle(.borderless)
-            .padding(6)
-            .background(.bar)
         }
+        // The sidebar material would otherwise run up under the tab bar.
+        .clipped()
+    }
+
+    /// + and − under the list.
+    private var bar: some View {
+        HStack(spacing: 0) {
+            Button(action: create) {
+                Image(systemName: "plus")
+                    .frame(width: 30, height: 26)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Add a workspace")
+            Button {
+                archiveCandidate = selected
+            } label: {
+                Image(systemName: "minus")
+                    .frame(width: 30, height: 26)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Archive this workspace")
+            .disabled(selected.map(\.isArchived) ?? true)
+            Spacer()
+        }
+        .buttonStyle(.borderless)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
     }
 
     @ViewBuilder
@@ -195,7 +207,7 @@ private struct WorkspaceForm: View {
     @FocusState private var isNameFocused: Bool
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 20) {
             if workspace.isArchived {
                 HStack {
                     Label("Archived", systemImage: "archivebox")
@@ -203,32 +215,55 @@ private struct WorkspaceForm: View {
                     Spacer()
                     Button("Restore", action: restore)
                 }
-                .padding([.horizontal, .top], 20)
             }
-            Form {
-                TextField("Name", text: $workspace.name)
-                    .focused($isNameFocused)
-                LabeledContent("Color") {
+            // The prototype's form: a 130 pt column of muted, right-aligned
+            // labels and 16 pt between rows. Later phases add Rhythm, Folders,
+            // Jira, Round to, Breaks and Calendar between Default block and
+            // Quick start.
+            Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 16, verticalSpacing: 16) {
+                GridRow {
+                    label("Name")
+                    TextField("Name", text: $workspace.name)
+                        .labelsHidden()
+                        .focused($isNameFocused)
+                }
+                GridRow {
+                    label("Color")
                     ColorSwatches(selection: $workspace.color)
                 }
-                Picker("Default block", selection: $workspace.defaultBlockMinutes) {
-                    ForEach(WorkspaceRoster.blockLengthChoices(including: workspace.defaultBlockMinutes), id: \.self) {
-                        Text(blockLength($0)).tag($0)
+                GridRow {
+                    label("Default block")
+                    Picker("Default block", selection: $workspace.defaultBlockMinutes) {
+                        ForEach(
+                            WorkspaceRoster.blockLengthChoices(including: workspace.defaultBlockMinutes),
+                            id: \.self,
+                        ) {
+                            Text(blockLength($0)).tag($0)
+                        }
                     }
+                    .labelsHidden()
+                    .fixedSize()
                 }
                 if !workspace.isArchived {
-                    LabeledContent("Quick start") {
-                        if let quickStartKey {
-                            Text("Shown on key \(quickStartKey)")
-                        } else {
-                            Text("No number key")
+                    GridRow {
+                        label("Quick start")
+                        Group {
+                            if let quickStartKey {
+                                Text("Shown on key \(quickStartKey)")
+                            } else {
+                                Text("No number key")
+                            }
                         }
+                        .foregroundStyle(.secondary)
                     }
                 }
             }
-            .formStyle(.grouped)
+            .controlSize(.large)
             .disabled(workspace.isArchived)
+            Spacer(minLength: 0)
         }
+        .padding(.horizontal, 28)
+        .padding(.vertical, 26)
         .onChange(of: workspace.name) { save() }
         .onChange(of: workspace.colorKey) { save() }
         .onChange(of: workspace.defaultBlockMinutes) { save() }
@@ -237,6 +272,12 @@ private struct WorkspaceForm: View {
             isNameFocused = true
             nameFocusRequest = nil
         }
+    }
+
+    private func label(_ title: LocalizedStringKey) -> some View {
+        Text(title)
+            .foregroundStyle(.secondary)
+            .frame(width: 130, alignment: .trailing)
     }
 
     /// A length such as `25 min`, `1 h` or `1 h 30`.
@@ -258,6 +299,8 @@ private struct ColorSwatches: View {
     @Binding var selection: WorkspaceColor
 
     var body: some View {
+        // 22 pt swatches 12 pt apart. The chosen one gets a 2 pt ring in its
+        // own color, 2 pt out, as in the prototype.
         HStack(spacing: 8) {
             ForEach(WorkspaceColor.allCases, id: \.self) { color in
                 Button {
@@ -265,19 +308,23 @@ private struct ColorSwatches: View {
                 } label: {
                     Circle()
                         .fill(color.color)
-                        .frame(width: 18, height: 18)
-                        .padding(3)
+                        .frame(width: 22, height: 22)
+                        .padding(2)
                         .overlay {
                             if color == selection {
-                                Circle().strokeBorder(.primary, lineWidth: 2)
+                                Circle().strokeBorder(color.color, lineWidth: 2)
+                                    .padding(-2)
                             }
                         }
+                        .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(color.name)
                 .accessibilityAddTraits(color == selection ? .isSelected : [])
             }
         }
+        // Line the row label up with the middle of the swatches.
+        .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 4 }
     }
 }
 
@@ -321,7 +368,7 @@ private struct NoWorkspacesView: View {
     if let container = ModelContainer.sample {
         WorkspacesPane()
             .modelContainer(container)
-            .frame(width: 640, height: 420)
+            .frame(width: 760, height: 470)
     }
 }
 
@@ -330,6 +377,6 @@ private struct NoWorkspacesView: View {
     if let container = try? ModelStore.inMemory() {
         WorkspacesPane()
             .modelContainer(container)
-            .frame(width: 640, height: 420)
+            .frame(width: 760, height: 470)
     }
 }
