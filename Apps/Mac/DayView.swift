@@ -107,7 +107,7 @@ struct DayView: View {
             VStack(alignment: .leading, spacing: 0) {
                 DayTotals(log: log)
                     .padding()
-                Divider()
+                Color.line.frame(height: 1)
                 if log.items.isEmpty {
                     ContentUnavailableView(
                         "Nothing tracked",
@@ -115,22 +115,32 @@ struct DayView: View {
                         description: Text("Add an entry by hand with the + button."),
                     )
                 } else {
-                    List(log.items) { item in
-                        Button {
-                            form = .edit(item.entry)
-                        } label: {
-                            EntryRow(item: item)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .contextMenu {
-                            Button("Edit…") { form = .edit(item.entry) }
-                            Button("Delete…", role: .destructive) { deleting = item.entry }
-                                .disabled(EntryEditor.isNoteOnly(item.entry))
+                    List {
+                        Section {
+                            ForEach(log.items) { item in
+                                Button {
+                                    form = .edit(item.entry)
+                                } label: {
+                                    EntryRow(item: item)
+                                        .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .listRowSeparatorTint(Color.line)
+                                .contextMenu {
+                                    Button("Edit…") { form = .edit(item.entry) }
+                                    Button("Delete…", role: .destructive) { deleting = item.entry }
+                                        .disabled(EntryEditor.isNoteOnly(item.entry))
+                                }
+                            }
+                        } header: {
+                            EntryColumns.header
                         }
                     }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
                 }
             }
+            .navigationSubtitle(day.formatted(.dateTime.weekday(.wide).day().month(.wide)))
         } else {
             ContentUnavailableView("The entries could not be read", systemImage: "exclamationmark.triangle")
         }
@@ -155,18 +165,18 @@ private struct DayTotals: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 20) {
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text("Total")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.muted)
                 Text(MenuBarLabel.hoursAndMinutes(log.total))
-                    .font(.title2.monospacedDigit())
+                    .font(.title2.weight(.semibold).monospacedDigit())
             }
             ForEach(log.totals) { total in
-                VStack(alignment: .leading) {
+                VStack(alignment: .leading, spacing: 2) {
                     WorkspaceName(workspace: total.workspace)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.muted)
                     Text(MenuBarLabel.hoursAndMinutes(total.tracked))
-                        .font(.title3.monospacedDigit())
+                        .font(.title3.weight(.semibold).monospacedDigit())
                 }
             }
             Spacer()
@@ -179,27 +189,52 @@ private struct EntryRow: View {
     let item: DayLog.Item
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: EntryColumns.spacing) {
             (item.isRunning ? Text("\(timeOfDay(item.start)) – now") : Text(verbatim: timeRange(item.start, item.end)))
                 .monospacedDigit()
-                .frame(width: 130, alignment: .leading)
-            if let workspace = item.entry.workspace {
-                WorkspaceName(workspace: workspace)
-                    .frame(width: 120, alignment: .leading)
+                .frame(width: EntryColumns.time, alignment: .leading)
+            Group {
+                if let workspace = item.entry.workspace {
+                    WorkspaceName(workspace: workspace)
+                }
             }
+            .frame(width: EntryColumns.workspace, alignment: .leading)
             Text(item.entry.kind.name)
-                .foregroundStyle(.secondary)
-                .frame(width: 70, alignment: .leading)
+                .foregroundStyle(Color.muted)
+                .frame(width: EntryColumns.kind, alignment: .leading)
             Text(MenuBarLabel.hoursAndMinutes(item.length))
+                .fontWeight(.semibold)
                 .monospacedDigit()
-                .foregroundStyle(item.counts ? .primary : .secondary)
-                .frame(width: 50, alignment: .trailing)
+                .foregroundStyle(item.counts ? Color.ink : Color.muted)
+                .frame(width: EntryColumns.length, alignment: .trailing)
             Text(item.entry.note)
                 .lineLimit(1)
-                .foregroundStyle(.secondary)
-            Spacer()
+                .foregroundStyle(Color.muted)
+            Spacer(minLength: 0)
         }
-        .padding(.vertical, 2)
+        .frame(minHeight: 30)
+    }
+}
+
+/// The list's column widths and its header, after the prototype's History table.
+private enum EntryColumns {
+    static let spacing: CGFloat = 16
+    static let time: CGFloat = 130
+    static let workspace: CGFloat = 130
+    static let kind: CGFloat = 70
+    static let length: CGFloat = 50
+
+    static var header: some View {
+        HStack(spacing: spacing) {
+            Text("Time").frame(width: time, alignment: .leading)
+            Text("Workspace").frame(width: workspace, alignment: .leading)
+            Text("Kind").frame(width: kind, alignment: .leading)
+            Text("Length").frame(width: length, alignment: .trailing)
+            Text("Note")
+            Spacer(minLength: 0)
+        }
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(Color.muted)
     }
 }
 

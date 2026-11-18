@@ -24,6 +24,8 @@ final class MainWindowController {
         )
         window.title = Bundle.main.displayName
         window.isReleasedWhenClosed = false
+        // The title bar shows the surface beneath it, as in the prototype.
+        window.titlebarAppearsTransparent = true
         window.collectionBehavior.insert(.moveToActiveSpace)
         window.contentViewController = NSHostingController(
             rootView: MainWindowView(container: container, fixedTime: fixedTime, onChange: onChange),
@@ -70,25 +72,33 @@ struct MainWindowView: View {
     var body: some View {
         NavigationSplitView {
             List(selection: $page) {
-                Label("Today", systemImage: "calendar").tag(WindowPage.today)
-                Label("History", systemImage: "clock.arrow.circlepath").tag(WindowPage.history)
+                // The prototype's icons: a clock for Today, bars for History.
+                Label("Today", systemImage: "clock").tag(WindowPage.today)
+                Label("History", systemImage: "chart.bar").tag(WindowPage.history)
             }
             .navigationSplitViewColumnWidth(210)
+            .scrollContentBackground(.hidden)
+            .background(Color.sunken)
         } detail: {
-            if let context = container?.mainContext {
-                switch page {
-                case .history:
-                    DayView(context: context, fixedTime: fixedTime, isHistory: true, onChange: onChange)
-                default:
-                    DayView(context: context, fixedTime: fixedTime, isHistory: false, onChange: onChange)
+            Group {
+                if let context = container?.mainContext {
+                    switch page {
+                    case .history:
+                        DayView(context: context, fixedTime: fixedTime, isHistory: true, onChange: onChange)
+                    default:
+                        DayView(context: context, fixedTime: fixedTime, isHistory: false, onChange: onChange)
+                    }
+                } else {
+                    ContentUnavailableView(
+                        "The data could not be opened",
+                        systemImage: "exclamationmark.triangle",
+                        description: Text("Entries can't be shown or changed right now."),
+                    )
                 }
-            } else {
-                ContentUnavailableView(
-                    "The data could not be opened",
-                    systemImage: "exclamationmark.triangle",
-                    description: Text("Entries can't be shown or changed right now."),
-                )
             }
+            .foregroundStyle(Color.ink)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.surface)
         }
     }
 }

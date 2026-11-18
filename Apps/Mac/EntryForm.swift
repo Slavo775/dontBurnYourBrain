@@ -60,8 +60,11 @@ struct EntryForm: View {
         VStack(spacing: 0) {
             Form {
                 if isNoteOnly {
-                    Text("This entry's block is still running. Only its note can change until the block ends.")
-                        .foregroundStyle(.secondary)
+                    Label(
+                        "This entry's block is still running. Only its note can change until the block ends.",
+                        systemImage: "lock",
+                    )
+                    .foregroundStyle(Color.muted)
                 }
                 Group {
                     DatePicker("Start", selection: $draft.start, displayedComponents: [.date, .hourAndMinute])
@@ -84,10 +87,11 @@ struct EntryForm: View {
                     }
                 }
                 .disabled(isNoteOnly)
-                TextField("Note", text: $draft.note)
+                // A prompt, so the one field a running entry keeps reads as editable when empty.
+                TextField("Note", text: $draft.note, prompt: Text("Add a note"))
                 if let refusal {
                     Text(refusal)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Color.bad)
                 }
             }
             .formStyle(.grouped)

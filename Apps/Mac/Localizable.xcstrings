@@ -46,6 +46,9 @@
     "Add 15 minutes" : {
 
     },
+    "Add a note" : {
+
+    },
     "Add a workspace" : {
 
     },
@@ -308,6 +311,9 @@
 
     },
     "This entry's block is still running. Only its note can change until the block ends." : {
+
+    },
+    "Time" : {
 
     },
     "Time to stop or start the next one." : {
