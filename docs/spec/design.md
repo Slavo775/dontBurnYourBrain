@@ -74,6 +74,7 @@ How the first four states behave today:
 - The item redraws just after the shown digits change, and at least once a minute. At `0:00` the block or break is closed on the next tick.
 - A long workspace name is cut to 16 characters, "…" included, and never drawn wider than 116 pt.
 - Without a store the item shows the outline dot and never ticks.
+- The Dev build draws a small "DEV" 4 pt after the label, 9 pt bold, in the secondary label color, and VoiceOver reads ", Dev build" after the label, such as "Acme 1:23, Dev build". The marker makes the item about 25 pt wider, so on a notched display it is hidden sooner. The 116 pt limit for the name is the same. Release shows no marker.
 - A click, or VoiceOver's press, opens and closes the compact panel. A right-click or a Control-click opens the menu, described under [Right-click menu on the menu bar item](#right-click-menu-on-the-menu-bar-item).
 
 Phase 0 showed a plain clock here instead. Phase 1 replaced it.

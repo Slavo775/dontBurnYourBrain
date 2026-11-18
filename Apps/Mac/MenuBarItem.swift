@@ -31,6 +31,32 @@ enum MenuBarImage {
     /// crowds the menu bar on a notched display.
     private static let maximumNameWidth: CGFloat = 116
 
+    /// "DEV" after the label in the Dev build, so it is never taken for the
+    /// daily copy. Small and in the secondary color, so the item stays narrow.
+    private static let marker: String? = BuildInfo.current.variant == .dev ? String(localized: "DEV") : nil
+    private static var markerFont: NSFont {
+        .systemFont(ofSize: 9, weight: .bold)
+    }
+
+    private static let markerGap: CGFloat = 4
+
+    /// The marker's width with the gap before it, or 0 without a marker.
+    private static var markerWidth: CGFloat {
+        guard let marker else { return 0 }
+        return markerGap + (marker as NSString).size(withAttributes: [.font: markerFont]).width
+    }
+
+    /// Draws the marker `markerGap` after `left`, centered in `height`.
+    private static func drawMarker(after left: CGFloat, height: CGFloat) {
+        guard let marker else { return }
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: markerFont, .foregroundColor: NSColor.secondaryLabelColor,
+        ]
+        let size = (marker as NSString).size(withAttributes: attributes)
+        let origin = NSPoint(x: left + markerGap, y: (height - size.height) / 2)
+        (marker as NSString).draw(at: origin, withAttributes: attributes)
+    }
+
     private enum Symbol {
         case dot(WorkspaceColor)
         case outline
@@ -51,7 +77,8 @@ enum MenuBarImage {
         case .dot, .outline: NSSize(width: dotDiameter, height: dotDiameter)
         }
         let height = ceil(max(textSize.height, symbolSize.height))
-        let width = ceil(symbolSize.width + (text.isEmpty ? 0 : gap + textSize.width))
+        let labelWidth = symbolSize.width + (text.isEmpty ? 0 : gap + textSize.width)
+        let width = ceil(labelWidth + markerWidth)
 
         let image = NSImage(size: NSSize(width: width, height: height), flipped: false) { _ in
             // Resolved here, while the item is drawn, so it follows the menu bar.
@@ -83,10 +110,11 @@ enum MenuBarImage {
                     withAttributes: textAttributes,
                 )
             }
+            drawMarker(after: labelWidth, height: height)
             return true
         }
         // What VoiceOver reads, since the image is all the item shows.
-        image.accessibilityDescription = parts.spoken
+        image.accessibilityDescription = marker == nil ? parts.spoken : String(localized: "\(parts.spoken), Dev build")
         return image
     }
 

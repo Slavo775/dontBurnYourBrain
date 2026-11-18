@@ -47,7 +47,7 @@ Launch arguments that freeze the clock, set light or dark, load sample data or p
 
 No Apple developer account is needed. The build is signed to run locally.
 
-The Debug build is a separate app, "Don't Burn Your Brain Dev", with its own bundle identifier (`io.github.slavo775.dontburn.dev`). Its data, settings and permissions stay apart from a Release build on the same Mac.
+The Debug build is a separate app, "Don't Burn Your Brain Dev", with its own bundle identifier (`io.github.slavo775.dontburn.dev`). Its data, settings and permissions stay apart from a Release build on the same Mac. It shows "DEV" in the menu bar and has an orange icon. The maintainer installs his daily Release copy with `./scripts/install-release`, described in [docs/process/releases.md](docs/process/releases.md#on-the-mac).
 
 ## How work is done here
 

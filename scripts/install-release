@@ -1,0 +1,127 @@
+#!/bin/bash
+# Builds the Release variant from a clean main and installs it in /Applications,
+# beside the Dev build. Only the maintainer runs this. See docs/process/releases.md.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+fail() {
+    echo "install-release: $*" >&2
+    exit 1
+}
+
+[ -z "$(git status --porcelain)" ] || fail "the working tree is not clean. Commit or put the changes away first."
+branch=$(git symbolic-ref --quiet --short HEAD || true)
+[ "$branch" = main ] || fail "this is '${branch:-a detached HEAD}', not main. Releases are built from main only."
+
+# The build number is the commit count of main, which only grows. A shallow
+# clone counts too few, so it needs the full history first.
+if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
+    echo "The clone is shallow. Fetching the full history for the build number..."
+    # Without a remote, git fetch can succeed and leave the clone shallow, so ask again.
+    git fetch --unshallow || true
+    [ "$(git rev-parse --is-shallow-repository)" = false ] ||
+        fail "could not fetch the full history, so the build number would be wrong."
+fi
+build=$(git rev-list --count HEAD)
+
+# The Personal Team from Local.xcconfig, a line such as DEVELOPMENT_TEAM = ABCDE12345.
+team=""
+if [ -f Local.xcconfig ]; then
+    team=$(sed -n 's/^[[:space:]]*DEVELOPMENT_TEAM[[:space:]]*=[[:space:]]*\([A-Za-z0-9]*\).*/\1/p' Local.xcconfig | tail -n 1)
+fi
+signing=()
+if [ -n "$team" ]; then
+    signing=(DEVELOPMENT_TEAM="$team" CODE_SIGN_IDENTITY="Apple Development" -allowProvisioningUpdates)
+fi
+
+# Built outside the checkout and removed afterwards, so no second copy of the
+# daily app stays behind where LaunchServices could open it on real data.
+derived=$(mktemp -d "${TMPDIR:-/tmp}/dontburn-release.XXXXXX")
+staged=""
+cleanup() {
+    case "$derived" in
+    */dontburn-release.??????) rm -rf "$derived" ;;
+    esac
+    if [ -n "$staged" ] && [ -e "$staged" ]; then
+        rm -rf "$staged"
+    fi
+}
+trap cleanup EXIT
+
+echo "==> Building the Release variant, build $build"
+xcodegen generate --quiet
+# The version stays as project.yml has it. Only the build number is set here.
+xcodebuild -project DontBurn.xcodeproj -scheme DontBurn -configuration Release \
+    -derivedDataPath "$derived" CURRENT_PROJECT_VERSION="$build" ${signing[@]+"${signing[@]}"} build \
+    | if command -v xcbeautify >/dev/null; then xcbeautify --quiet; else cat; fi
+
+# The one app the build made, named by PRODUCT_NAME in project.yml.
+apps=("$derived"/Build/Products/Release/*.app)
+[ ${#apps[@]} -eq 1 ] && [ -d "${apps[0]}" ] || fail "the build did not make exactly one app."
+app=${apps[0]}
+# A value from an app's Info.plist, or nothing when the app or the key is missing.
+info() { plutil -extract "$1" raw -o - "$2/Contents/Info.plist" 2>/dev/null || true; }
+bundle_id=$(info CFBundleIdentifier "$app")
+[ -n "$bundle_id" ] || fail "the built app has no bundle identifier."
+name=$(info CFBundleDisplayName "$app")
+name=${name:-$bundle_id}
+target="/Applications/$(basename "$app")"
+
+# Never replace an app that is not ours.
+if [ -e "$target" ]; then
+    installed_id=$(info CFBundleIdentifier "$target")
+    [ "$installed_id" = "$bundle_id" ] || fail "$target belongs to '${installed_id:-an unknown app}', not $bundle_id. Nothing was changed."
+fi
+
+# Quit the running copy politely, by its bundle identifier. Never by force:
+# if it does not quit, stop and say so.
+if [ -n "$(lsappinfo find bundleid="$bundle_id")" ]; then
+    echo "==> Quitting the running $name"
+    echo "macOS may ask once to let this terminal control $name. Allow it so the app can be quit."
+    osascript -e "tell application id \"$bundle_id\" to quit" ||
+        fail "could not ask $name to quit, so nothing was changed. Allow this terminal to control $name in System Settings → Privacy & Security → Automation, or quit $name yourself, and run this again."
+    for _ in $(seq 1 20); do
+        [ -z "$(lsappinfo find bundleid="$bundle_id")" ] && break
+        sleep 0.5
+    done
+    [ -z "$(lsappinfo find bundleid="$bundle_id")" ] || fail "$name did not quit. Quit it yourself and run this again."
+fi
+
+# Copied next to the old app first, and the old app moved aside rather than
+# deleted, so a failure at any step leaves one working app in place. The EXIT
+# trap only ever removes the staged copy, never the old or the installed app.
+echo "==> Installing $target"
+staged="/Applications/.$(basename "$app").new"
+old="/Applications/.$(basename "$app").old"
+if [ -e "$old" ]; then
+    # A leftover of an earlier run: ours, or so broken it has no identifier.
+    old_id=$(info CFBundleIdentifier "$old")
+    [ -z "$old_id" ] || [ "$old_id" = "$bundle_id" ] || fail "$old belongs to '$old_id', not $bundle_id. Nothing was changed."
+    rm -rf "$old" || fail "could not remove the leftover $old. Nothing was changed."
+fi
+rm -rf "$staged"
+ditto "$app" "$staged" || fail "could not copy the app to /Applications. The installed app was not changed."
+moved_old=false
+if [ -e "$target" ]; then
+    mv "$target" "$old" || fail "could not move the installed app aside. It was not changed."
+    moved_old=true
+fi
+if ! mv "$staged" "$target"; then
+    if [ "$moved_old" = false ]; then
+        fail "could not move the new app into place at $target."
+    elif mv "$old" "$target"; then
+        fail "could not move the new app into place. The old app is back at $target."
+    else
+        fail "could not move the new app into place, nor the old app back. The old app is at $old: move it to $target yourself."
+    fi
+fi
+staged=""
+if [ "$moved_old" = true ] && ! rm -rf "$old"; then
+    echo "install-release: warning: the new app is installed, but the old one could not be removed. Remove $old yourself." >&2
+fi
+open "$target"
+
+echo "Installed $name $(info CFBundleShortVersionString "$target") ($(info CFBundleVersion "$target"))."
+if [ -z "$team" ]; then
+    echo "Signed to run locally: no DEVELOPMENT_TEAM in Local.xcconfig. macOS may ask for permissions again after each update."
+fi
