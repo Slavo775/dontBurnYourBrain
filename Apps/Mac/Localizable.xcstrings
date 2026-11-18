@@ -16,6 +16,9 @@
     "A workspace is one area of work, such as one client." : {
 
     },
+    "Add 15 minutes" : {
+
+    },
     "Add a workspace" : {
 
     },
@@ -31,6 +34,12 @@
     "Archived" : {
 
     },
+    "Back" : {
+
+    },
+    "Break" : {
+
+    },
     "Cancel" : {
 
     },
@@ -44,6 +53,12 @@
 
     },
     "Default block" : {
+
+    },
+    "End block" : {
+
+    },
+    "End break" : {
 
     },
     "General" : {
@@ -82,7 +97,16 @@
     "On a break, %@ left" : {
 
     },
+    "On a break, then back to %@" : {
+
+    },
     "Orange" : {
+
+    },
+    "Pause" : {
+
+    },
+    "Paused" : {
 
     },
     "Quick start" : {
@@ -97,6 +121,9 @@
     "Restore" : {
 
     },
+    "Resume" : {
+
+    },
     "Settings…" : {
 
     },
@@ -106,10 +133,22 @@
     "Slate" : {
 
     },
+    "Switch" : {
+
+    },
+    "Switch to" : {
+
+    },
+    "Take a break" : {
+
+    },
     "Teal" : {
 
     },
     "The data could not be opened" : {
+
+    },
+    "Today: %@ tracked" : {
 
     },
     "Unnamed" : {
@@ -122,6 +161,12 @@
 
     },
     "Workspaces can't be shown or changed right now." : {
+
+    },
+    "left of %@" : {
+
+    },
+    "min" : {
 
     },
     "paused" : {

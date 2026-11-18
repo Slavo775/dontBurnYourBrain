@@ -11,10 +11,7 @@ extension WorkspaceColor {
     /// The palette color for AppKit drawing, resolved for the appearance it is drawn in.
     var nsColor: NSColor {
         let (light, dark) = hexValues
-        return NSColor(name: nil) { appearance in
-            let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-            return NSColor(hex: isDark ? dark : light)
-        }
+        return NSColor(light: light, dark: dark)
     }
 
     /// The color's name, for VoiceOver.
@@ -41,7 +38,16 @@ extension WorkspaceColor {
     }
 }
 
-private extension NSColor {
+extension NSColor {
+    /// A color with a light and a dark hex value, resolved for the appearance it is drawn in.
+    convenience init(light: Int, dark: Int) {
+        self.init(name: nil) { appearance in
+            let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            return NSColor(hex: isDark ? dark : light)
+        }
+    }
+
+    /// An sRGB color from a hex value such as `0x0B6E5C`.
     convenience init(hex: Int) {
         self.init(
             srgbRed: CGFloat((hex >> 16) & 0xFF) / 255,
@@ -50,4 +56,17 @@ private extension NSColor {
             alpha: 1,
         )
     }
+}
+
+extension Color {
+    /// Panels and windows. The tokens are in "Colors and type", `docs/spec/design.md`.
+    static let surface = Color(nsColor: NSColor(light: 0xFFFFFF, dark: 0x18201D))
+    /// Buttons, rows, the empty part of the progress strip.
+    static let sunken = Color(nsColor: NSColor(light: 0xE9EDEB, dark: 0x0C110F))
+    /// Dividers and outlines.
+    static let line = Color(nsColor: NSColor(light: 0xD3DAD7, dark: 0x2B3632))
+    /// Text.
+    static let ink = Color(nsColor: NSColor(light: 0x16201D, dark: 0xE6ECE9))
+    /// Secondary text.
+    static let muted = Color(nsColor: NSColor(light: 0x5A6964, dark: 0x96A59F))
 }

@@ -7,7 +7,8 @@ import SwiftUI
 struct DontBurnApp: App {
     private static let fixedTime = launchArgument("DontBurnFixedTime").flatMap(FixedTime.date(from:))
 
-    @State private var countdown: Countdown
+    /// The menu bar item, its panel and its menu. Kept for the life of the app.
+    @State private var statusItem: StatusItemController
 
     /// The open store, or `nil` when it could not be opened.
     private let container: ModelContainer?
@@ -16,7 +17,8 @@ struct DontBurnApp: App {
         let sampleData = SampleData.isRequested(by: Self.launchArgument("DontBurnSampleData"))
         let container = Self.openStore(sampleData: sampleData)
         self.container = container
-        _countdown = State(initialValue: Countdown(container: container, fixedTime: Self.fixedTime))
+        let countdown = Countdown(container: container, fixedTime: Self.fixedTime)
+        _statusItem = State(initialValue: StatusItemController(countdown: countdown))
         switch Self.launchArgument("DontBurnAppearance").flatMap(Appearance.init(rawValue:)) {
         case .light: NSApplication.shared.appearance = NSAppearance(named: .aqua)
         case .dark: NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
@@ -81,16 +83,6 @@ struct DontBurnApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra {
-            OpenSettingsButton()
-            Divider()
-            Button("Quit \(Bundle.main.displayName)") {
-                NSApplication.shared.terminate(nil)
-            }
-            .keyboardShortcut("q")
-        } label: {
-            MenuBarItemLabel(countdown: countdown)
-        }
         Settings {
             SettingsView(container: container)
         }
