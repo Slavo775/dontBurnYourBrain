@@ -42,15 +42,33 @@ targets:
         # it, a build in the Xcode app sees no strings and deletes every key
         # from Localizable.xcstrings as unused.
         SWIFT_EMIT_LOC_STRINGS: YES
+        # The build phase below writes into the built Info.plist, which the
+        # script sandbox would refuse.
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
       configs:
         # The development build has its own identifier, so its data, settings
         # and permissions never mix with the daily copy.
         Debug:
           PRODUCT_BUNDLE_IDENTIFIER: io.github.slavo775.dontburn.dev
           APP_DISPLAY_NAME: "Don't Burn Your Brain Dev"
+          APP_VARIANT: Dev
+          # A tinted placeholder, so Dev is never taken for the daily copy.
+          ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon-Dev
         Release:
           PRODUCT_BUNDLE_IDENTIFIER: io.github.slavo775.dontburn
           APP_DISPLAY_NAME: "Don't Burn Your Brain"
+          APP_VARIANT: Release
+    postBuildScripts:
+      # The variant comes from APP_VARIANT. Dev also carries the short commit
+      # hash, read at build time; without git it carries none.
+      - name: Variant and commit
+        basedOnDependencyAnalysis: false
+        script: |
+          plist="$TARGET_BUILD_DIR/$INFOPLIST_PATH"
+          plutil -replace DontBurnVariant -string "$APP_VARIANT" "$plist"
+          if [ "$APP_VARIANT" = Dev ] && commit=$(git -C "$SRCROOT" rev-parse --short HEAD 2>/dev/null); then
+            plutil -replace DontBurnCommit -string "$commit" "$plist"
+          fi
 
   dontburn-hook:
     type: tool

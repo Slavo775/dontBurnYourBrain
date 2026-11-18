@@ -10,10 +10,13 @@
     "%@ block finished" : {
 
     },
-    "%@–now" : {
+    "%@, Dev build" : {
 
     },
     "%@, paused" : {
+
+    },
+    "%@–now" : {
 
     },
     "%lld h" : {
@@ -115,6 +118,9 @@
     "Custom block" : {
 
     },
+    "DEV" : {
+
+    },
     "Day" : {
 
     },
@@ -128,6 +134,9 @@
 
     },
     "Delete…" : {
+
+    },
+    "Dev" : {
 
     },
     "Edit entry" : {
@@ -247,6 +256,9 @@
     "Raspberry" : {
 
     },
+    "Release" : {
+
+    },
     "Restore" : {
 
     },
@@ -331,7 +343,10 @@
     "Unnamed" : {
 
     },
-    "Version %@" : {
+    "Version %@ (%@) · %@" : {
+
+    },
+    "Version %@ (%@) · %@ · %@" : {
 
     },
     "When a block ends" : {

@@ -58,7 +58,7 @@ private struct GeneralPane: View {
                 }
             }
             Section {
-                Text("Version \(Bundle.main.version)")
+                versionLine
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
             }
@@ -70,6 +70,17 @@ private struct GeneralPane: View {
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             Task { await readPermission() }
         }
+    }
+
+    /// Version, build and variant, such as "Version 0.1.0 (1) · Dev · 1a2b3c4".
+    /// The commit is shown only when the build carries one, which only Dev does.
+    private var versionLine: Text {
+        let bundle = Bundle.main
+        let variant = BuildVariant.current.name
+        if let commit = BuildVariant.commit {
+            return Text("Version \(bundle.shortVersion) (\(bundle.build)) · \(variant) · \(commit)")
+        }
+        return Text("Version \(bundle.shortVersion) (\(bundle.build)) · \(variant)")
     }
 
     /// The Notifications pane of System Settings.
@@ -139,11 +150,14 @@ struct OpenSettingsButton: View {
 }
 
 extension Bundle {
-    /// The version the bundle carries, such as `0.1.0 (1)`.
-    var version: String {
-        let short = object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
-        let build = object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
-        return "\(short) (\(build))"
+    /// The version the bundle carries, such as `0.1.0`.
+    var shortVersion: String {
+        object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+    }
+
+    /// The build number the bundle carries, such as `1`.
+    var build: String {
+        object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
     }
 }
 

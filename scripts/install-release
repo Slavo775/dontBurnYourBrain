@@ -1,0 +1,77 @@
+#!/bin/bash
+# Builds the Release variant from a clean main and installs it in /Applications,
+# beside the Dev build. Only the maintainer runs this. See docs/process/releases.md.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+fail() {
+    echo "install-release: $*" >&2
+    exit 1
+}
+
+[ -z "$(git status --porcelain)" ] || fail "the working tree is not clean. Commit or put the changes away first."
+branch=$(git symbolic-ref --quiet --short HEAD || true)
+[ "$branch" = main ] || fail "this is '${branch:-a detached HEAD}', not main. Releases are built from main only."
+
+# The build number is the commit count of main, which only grows. A shallow
+# clone counts too few, so it needs the full history first.
+if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
+    echo "The clone is shallow. Fetching the full history for the build number..."
+    # Without a remote, git fetch can succeed and leave the clone shallow, so ask again.
+    git fetch --unshallow || true
+    [ "$(git rev-parse --is-shallow-repository)" = false ] ||
+        fail "could not fetch the full history, so the build number would be wrong."
+fi
+build=$(git rev-list --count HEAD)
+
+# The Personal Team from Local.xcconfig, a line such as DEVELOPMENT_TEAM = ABCDE12345.
+team=""
+if [ -f Local.xcconfig ]; then
+    team=$(sed -n 's/^[[:space:]]*DEVELOPMENT_TEAM[[:space:]]*=[[:space:]]*\([A-Za-z0-9]*\).*/\1/p' Local.xcconfig | tail -n 1)
+fi
+signing=()
+if [ -n "$team" ]; then
+    signing=(DEVELOPMENT_TEAM="$team" CODE_SIGN_IDENTITY="Apple Development" -allowProvisioningUpdates)
+fi
+
+echo "==> Building the Release variant, build $build"
+xcodegen generate --quiet
+derived=DerivedData
+# The version stays as project.yml has it. Only the build number is set here.
+xcodebuild -project DontBurn.xcodeproj -scheme DontBurn -configuration Release \
+    -derivedDataPath "$derived" CURRENT_PROJECT_VERSION="$build" ${signing[@]+"${signing[@]}"} build \
+    | if command -v xcbeautify >/dev/null; then xcbeautify --quiet; else cat; fi
+
+app="$derived/Build/Products/Release/DontBurn.app"
+info() { /usr/libexec/PlistBuddy -c "Print :$1" "$2/Contents/Info.plist"; }
+bundle_id=$(info CFBundleIdentifier "$app")
+[ -n "$bundle_id" ] || fail "the built app has no bundle identifier."
+target="/Applications/$(basename "$app")"
+
+# Never replace an app that is not ours.
+if [ -e "$target" ]; then
+    installed_id=$(info CFBundleIdentifier "$target" 2>/dev/null || true)
+    [ "$installed_id" = "$bundle_id" ] || fail "$target belongs to '${installed_id:-an unknown app}', not $bundle_id. Nothing was changed."
+fi
+
+# Quit the running copy politely, by its bundle identifier. Never by force:
+# if it does not quit, stop and say so.
+if [ -n "$(lsappinfo find bundleid="$bundle_id")" ]; then
+    echo "==> Quitting the running $bundle_id"
+    osascript -e "tell application id \"$bundle_id\" to quit"
+    for _ in $(seq 1 20); do
+        [ -z "$(lsappinfo find bundleid="$bundle_id")" ] && break
+        sleep 0.5
+    done
+    [ -z "$(lsappinfo find bundleid="$bundle_id")" ] || fail "$bundle_id did not quit. Quit it yourself and run this again."
+fi
+
+echo "==> Installing $target"
+rm -rf "$target"
+ditto "$app" "$target"
+open "$target"
+
+echo "Installed $(info CFBundleDisplayName "$target") $(info CFBundleShortVersionString "$target") ($(info CFBundleVersion "$target"))."
+if [ -z "$team" ]; then
+    echo "Signed to run locally: no DEVELOPMENT_TEAM in Local.xcconfig. macOS may ask for permissions again after each update."
+fi
