@@ -26,8 +26,15 @@ struct DontBurnApp: App {
     ///
     /// Only the argument domain, so a value saved with `defaults write` never
     /// applies to every launch.
+    ///
+    /// Always `nil` outside the Debug configuration, so a Release build never
+    /// runs a frozen clock, a forced appearance or the sample data.
     private static func launchArgument(_ name: String) -> String? {
-        UserDefaults.standard.volatileDomain(forName: UserDefaults.argumentDomain)[name] as? String
+        #if DEBUG
+            UserDefaults.standard.volatileDomain(forName: UserDefaults.argumentDomain)[name] as? String
+        #else
+            nil
+        #endif
     }
 
     /// The sample set in memory with `-DontBurnSampleData YES`, otherwise the
