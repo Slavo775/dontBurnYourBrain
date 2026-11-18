@@ -221,22 +221,13 @@ private final class KeyPanel: NSPanel {
     }
 }
 
-/// The right-click menu: the timer's actions while a block runs, or the first
-/// three workspaces to start while nothing runs, then Settings and Quit.
+/// The right-click menu: the timer's actions while a block runs, then the
+/// first three workspaces to start, then Settings and Quit.
 struct StatusItemMenu: View {
     let countdown: Countdown
 
     var body: some View {
         let state = countdown.state
-        let starts = countdown.workspaces.prefix(WorkspaceRoster.menuStartCount)
-        if state == .idle, !starts.isEmpty {
-            ForEach(starts) { workspace in
-                Button("Start \(workspace.name) for \(blockLength(workspace.defaultBlockMinutes))") {
-                    countdown.start(workspace)
-                }
-            }
-            Divider()
-        }
         if state != .idle {
             Button(state == .paused ? "Resume" : "Pause") {
                 countdown.perform(.pauseOrResume)
@@ -250,6 +241,16 @@ struct StatusItemMenu: View {
             }
             Button("End block") {
                 countdown.endBlock()
+            }
+            Divider()
+        }
+        let starts = countdown.workspaces.prefix(WorkspaceRoster.menuStartCount)
+        if !starts.isEmpty {
+            // While a block runs, a start acts as a switch.
+            ForEach(starts) { workspace in
+                Button("Start \(workspace.name) for \(blockLength(workspace.defaultBlockMinutes))") {
+                    countdown.start(workspace)
+                }
             }
             Divider()
         }
