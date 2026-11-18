@@ -59,15 +59,17 @@ xcodebuild -project DontBurn.xcodeproj -scheme DontBurn -configuration Release \
 apps=("$derived"/Build/Products/Release/*.app)
 [ ${#apps[@]} -eq 1 ] && [ -d "${apps[0]}" ] || fail "the build did not make exactly one app."
 app=${apps[0]}
-info() { /usr/libexec/PlistBuddy -c "Print :$1" "$2/Contents/Info.plist"; }
+# A value from an app's Info.plist, or nothing when the app or the key is missing.
+info() { plutil -extract "$1" raw -o - "$2/Contents/Info.plist" 2>/dev/null || true; }
 bundle_id=$(info CFBundleIdentifier "$app")
 [ -n "$bundle_id" ] || fail "the built app has no bundle identifier."
 name=$(info CFBundleDisplayName "$app")
+name=${name:-$bundle_id}
 target="/Applications/$(basename "$app")"
 
 # Never replace an app that is not ours.
 if [ -e "$target" ]; then
-    installed_id=$(info CFBundleIdentifier "$target" 2>/dev/null || true)
+    installed_id=$(info CFBundleIdentifier "$target")
     [ "$installed_id" = "$bundle_id" ] || fail "$target belongs to '${installed_id:-an unknown app}', not $bundle_id. Nothing was changed."
 fi
 
@@ -85,18 +87,38 @@ if [ -n "$(lsappinfo find bundleid="$bundle_id")" ]; then
     [ -z "$(lsappinfo find bundleid="$bundle_id")" ] || fail "$name did not quit. Quit it yourself and run this again."
 fi
 
-# Copied next to the old app first, so a failed copy leaves the old app in place.
+# Copied next to the old app first, and the old app moved aside rather than
+# deleted, so a failure at any step leaves one working app in place. The EXIT
+# trap only ever removes the staged copy, never the old or the installed app.
 echo "==> Installing $target"
 staged="/Applications/.$(basename "$app").new"
+old="/Applications/.$(basename "$app").old"
+if [ -e "$old" ]; then
+    # A leftover of an earlier run: ours, or so broken it has no identifier.
+    old_id=$(info CFBundleIdentifier "$old")
+    [ -z "$old_id" ] || [ "$old_id" = "$bundle_id" ] || fail "$old belongs to '$old_id', not $bundle_id. Nothing was changed."
+    rm -rf "$old" || fail "could not remove the leftover $old. Nothing was changed."
+fi
 rm -rf "$staged"
 ditto "$app" "$staged" || fail "could not copy the app to /Applications. The installed app was not changed."
-rm -rf "$target"
+moved_old=false
+if [ -e "$target" ]; then
+    mv "$target" "$old" || fail "could not move the installed app aside. It was not changed."
+    moved_old=true
+fi
 if ! mv "$staged" "$target"; then
-    kept=$staged
-    staged=""
-    fail "could not move the new app into place. It is at $kept: move it to $target yourself."
+    if [ "$moved_old" = false ]; then
+        fail "could not move the new app into place at $target."
+    elif mv "$old" "$target"; then
+        fail "could not move the new app into place. The old app is back at $target."
+    else
+        fail "could not move the new app into place, nor the old app back. The old app is at $old: move it to $target yourself."
+    fi
 fi
 staged=""
+if [ "$moved_old" = true ] && ! rm -rf "$old"; then
+    echo "install-release: warning: the new app is installed, but the old one could not be removed. Remove $old yourself." >&2
+fi
 open "$target"
 
 echo "Installed $name $(info CFBundleShortVersionString "$target") ($(info CFBundleVersion "$target"))."
