@@ -140,7 +140,7 @@ public enum MenuBarLabel: Equatable, Sendable {
     /// Just after the instant when a countdown with `left` shown in whole
     /// steps of `step` seconds, rounded down, shows one step less. With
     /// nothing left, at once, so the end is settled.
-    private static func nextCountDown(left: TimeInterval, step: TimeInterval, after now: Date) -> Date {
+    static func nextCountDown(left: TimeInterval, step: TimeInterval, after now: Date) -> Date {
         let shownSteps = max(0, (left / step).rounded(.down))
         return now.addingTimeInterval(max(0, left - shownSteps * step) + redrawDelay)
     }

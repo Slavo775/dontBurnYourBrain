@@ -283,19 +283,19 @@ private struct WorkspaceForm: View {
             .foregroundStyle(.secondary)
             .frame(width: 130, alignment: .trailing)
     }
+}
 
-    /// A length such as `25 min`, `1 h` or `1 h 30`.
-    private func blockLength(_ minutes: Int) -> LocalizedStringKey {
-        let hours = minutes / 60
-        let rest = minutes % 60
-        if hours == 0 {
-            return "\(minutes) min"
-        }
-        if rest == 0 {
-            return "\(hours) h"
-        }
-        return "\(hours) h \(String(format: "%02d", rest))"
+/// A block length such as `25 min`, `1 h` or `1 h 30`.
+func blockLength(_ minutes: Int) -> LocalizedStringKey {
+    let hours = minutes / 60
+    let rest = minutes % 60
+    if hours == 0 {
+        return "\(minutes) min"
     }
+    if rest == 0 {
+        return "\(hours) h"
+    }
+    return "\(hours) h \(String(format: "%02d", rest))"
 }
 
 /// The six palette colors as round buttons, the chosen one ringed.

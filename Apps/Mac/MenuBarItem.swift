@@ -4,21 +4,13 @@ import os
 import SwiftData
 import SwiftUI
 
-/// The menu bar item: the state of the timer, drawn as one image.
-struct MenuBarItemLabel: View {
-    let countdown: Countdown
-
-    var body: some View {
-        Image(nsImage: MenuBarImage.image(for: countdown.label))
-    }
-}
-
 /// Draws a ``MenuBarLabel`` as the item's image.
 ///
-/// `MenuBarExtra` turns a `Text` label into a plain title and drops its font,
-/// so tabular figures, which keep the item's width steady as the digits
-/// change, survive only in an image. A template image is drawn in one color,
-/// which would lose the workspace's dot, so this image is not a template.
+/// One image keeps the dot, the name and the digits together, in tabular
+/// figures that keep the item's width steady as the digits change. (Under
+/// `MenuBarExtra`, a `Text` label lost its font, so an image was the only
+/// way.) A template image is drawn in one color, which would lose the
+/// workspace's dot, so this image is not a template.
 /// Instead it is drawn by a handler that runs each time the item is drawn,
 /// under the menu bar's own appearance: the text and the outline take the
 /// label color of that appearance, and the dot the workspace color's light or
@@ -153,41 +145,66 @@ enum MenuBarImage {
     }
 }
 
-/// The timer's state for the menu bar, renewed exactly when what it shows changes.
+/// The timer's state for the menu bar item and the panel, renewed exactly
+/// when what they show changes, and the one way the interface acts on the timer.
 ///
 /// Each tick settles the timer engine, so a block whose time is up closes and
-/// the item returns to the outline dot. A `TimelineView` in a `MenuBarExtra`
-/// label keeps the main thread busy updating the item from launch on, so the
-/// label ticks on a timer instead.
+/// the item returns to the outline dot. The item and the panel read the same
+/// settled state. While the panel is open the countdown ticks every second,
+/// and otherwise only as often as the item needs. A `TimelineView` in a menu
+/// bar label kept the main thread busy updating the item from launch on, so
+/// the countdown ticks on a timer instead.
 @MainActor
 @Observable
 final class Countdown {
-    private(set) var label = MenuBarLabel.idle(untracked: nil)
+    private(set) var label = MenuBarLabel.idle(untracked: nil) {
+        didSet {
+            if label != oldValue {
+                onLabelChange?(label)
+            }
+        }
+    }
+
+    /// What the panel shows, or `nil` when nothing runs or there is no store.
+    private(set) var panel: CompactPanel?
+
+    /// Whether the panel is open. While it is, the countdown ticks every second.
+    var isPanelOpen = false {
+        didSet {
+            if isPanelOpen != oldValue {
+                reschedule()
+            }
+        }
+    }
+
+    /// Called with the new label each time it changes.
+    @ObservationIgnored var onLabelChange: ((MenuBarLabel) -> Void)?
 
     private let context: ModelContext?
     private let appStart: Date
+    private let fixedTime: Date?
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var wakeObserver: (any NSObjectProtocol)?
     private let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "countdown")
 
     /// A countdown over the store in `container`, or the outline dot alone
-    /// when there is no store. With `fixedTime` it is computed once for that
-    /// instant and never ticks.
+    /// when there is no store. With `fixedTime` it is computed for that
+    /// instant, acts at that instant, and never ticks.
     init(container: ModelContainer?, fixedTime: Date?) {
         context = container?.mainContext
+        self.fixedTime = fixedTime
         appStart = fixedTime ?? .now
         let next = refresh(at: appStart)
         guard fixedTime == nil, context != nil else { return }
 
         let timer = Timer(fire: next, interval: MenuBarLabel.untrackedThreshold, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self else { return }
                 // The schedule runs on a clock that stops while the Mac sleeps,
                 // so every tick sets the next one from the wall clock again.
-                self.timer?.fireDate = self.refresh(at: .now)
+                self?.reschedule()
             }
         }
-        // Common modes, so it keeps ticking while the menu is open. The
+        // Common modes, so it keeps ticking while a menu is open. The
         // countdown lives as long as the app, so the timer is never invalidated.
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
@@ -195,17 +212,64 @@ final class Countdown {
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main,
         ) { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self else { return }
-                self.timer?.fireDate = self.refresh(at: .now)
+                self?.reschedule()
             }
         }
     }
 
-    /// Settles the timer at `now`, updates ``label``, and returns when to refresh next.
+    /// The timer's state, `.idle` when nothing runs or there is no store.
+    var state: TimerState {
+        panel?.state ?? .idle
+    }
+
+    /// The workspaces to switch to, in their order. Empty without a store.
+    var workspaces: [Workspace] {
+        guard let context else { return [] }
+        do {
+            return try WorkspaceRoster(context: context).activeWorkspaces()
+        } catch {
+            log.error("The workspaces could not be read: \(error.localizedDescription)")
+            return []
+        }
+    }
+
+    /// Takes `action` on the running block now.
+    func perform(_ action: QuickAction) {
+        act("take a quick action") { try action.perform(with: $0, at: $1) }
+    }
+
+    /// Ends the running block now and starts one for `workspace` at its default length.
+    func switchTo(_ workspace: Workspace) {
+        act("switch") { try $0.switchTo(workspace, at: $1) }
+    }
+
+    /// Ends the running block now.
+    func endBlock() {
+        act("end the block") { try $0.end(at: $1) }
+    }
+
+    /// Settles now, updates what the item and the panel show, and sets the next tick.
+    func reschedule() {
+        let next = refresh(at: fixedTime ?? .now)
+        timer?.fireDate = next
+    }
+
+    private func act(_ what: String, _ body: (TimerEngine, Date) throws -> Void) {
+        guard let context else { return }
+        do {
+            try body(TimerEngine(context: context), fixedTime ?? .now)
+        } catch {
+            log.error("Could not \(what): \(error.localizedDescription)")
+        }
+        reschedule()
+    }
+
+    /// Settles the timer at `now`, updates ``label`` and ``panel``, and returns when to refresh next.
     @discardableResult
     private func refresh(at now: Date) -> Date {
         guard let context else {
             label = .idle(untracked: nil)
+            panel = nil
             return now.addingTimeInterval(MenuBarLabel.untrackedThreshold)
         }
         do {
@@ -214,12 +278,17 @@ final class Countdown {
             let since = try MenuBarLabel.untrackedStart(
                 in: context, appStart: appStart, now: now, calendar: .current,
             )
-            let workspace = try engine.runningWorkspace()
-            label = MenuBarLabel(status: status, workspace: workspace, untrackedSince: since, at: now)
-            return MenuBarLabel.nextRedraw(status: status, untrackedSince: since, after: now)
+            let block = try engine.runningBlock()
+            label = MenuBarLabel(status: status, workspace: block?.workspace, untrackedSince: since, at: now)
+            let tracked = try CompactPanel.trackedToday(in: context, now: now, calendar: .current)
+            panel = CompactPanel(status: status, block: block, tracked: tracked)
+            let next = MenuBarLabel.nextRedraw(status: status, untrackedSince: since, after: now)
+            guard isPanelOpen, let tick = CompactPanel.nextRedraw(status: status, after: now) else { return next }
+            return min(next, tick)
         } catch {
             log.error("The timer could not be read: \(error.localizedDescription)")
             label = .idle(untracked: nil)
+            panel = nil
             return now.addingTimeInterval(60)
         }
     }
