@@ -69,4 +69,10 @@ extension Color {
     static let ink = Color(nsColor: NSColor(light: 0x16201D, dark: 0xE6ECE9))
     /// Secondary text.
     static let muted = Color(nsColor: NSColor(light: 0x5A6964, dark: 0x96A59F))
+    /// The hairline around a floating panel, from the prototype's `--m-shadow`.
+    static let ring = Color(nsColor: NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            ? NSColor.white.withAlphaComponent(0.09)
+            : NSColor(hex: 0x16201D).withAlphaComponent(0.07)
+    })
 }

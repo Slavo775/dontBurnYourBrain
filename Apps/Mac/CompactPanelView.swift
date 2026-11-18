@@ -37,6 +37,9 @@ struct CompactPanelView: View {
         .padding(20)
         .frame(width: 328, alignment: .leading)
         .background(Color.surface, in: .rect(cornerRadius: 16))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16).strokeBorder(Color.ring)
+        }
     }
 }
 
@@ -99,6 +102,7 @@ private struct RunningBlock: View {
                     Text(verbatim: "+15")
                         .font(.system(size: 16, weight: .semibold))
                         .monospacedDigit()
+                        .frame(height: 18)
                     Text("min")
                 }
             }
@@ -152,9 +156,9 @@ private struct QuickButtonStyle: ButtonStyle {
             .font(.system(size: 12, weight: .medium))
             .lineLimit(1)
             .frame(maxWidth: .infinity, minHeight: 64)
-            .background(Color.sunken, in: .rect(cornerRadius: 12))
+            .background(configuration.isPressed ? Color.line : Color.sunken, in: .rect(cornerRadius: 12))
             .contentShape(.rect(cornerRadius: 12))
-            .opacity(isEnabled ? (configuration.isPressed ? 0.6 : 1) : 0.45)
+            .opacity(isEnabled ? 1 : 0.45)
     }
 }
 
@@ -168,14 +172,17 @@ private struct SwitchList: View {
             Text("Switch to")
                 .font(.system(size: 15, weight: .semibold))
             Spacer()
-            Button("Back") {
+            Button {
                 navigation.isSwitching = false
+            } label: {
+                Text("Back")
+                    .font(.system(size: 13, weight: .medium))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.sunken, in: .rect(cornerRadius: 8))
+                    .contentShape(.rect(cornerRadius: 8))
             }
             .buttonStyle(.plain)
-            .font(.system(size: 13, weight: .medium))
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Color.sunken, in: .rect(cornerRadius: 8))
         }
         .frame(minHeight: 36)
 
@@ -187,14 +194,18 @@ private struct SwitchList: View {
                 } label: {
                     HStack(spacing: 12) {
                         WorkspaceDot(color: workspace.color)
-                        Text(workspace.name)
-                            .fontWeight(.semibold)
-                            .lineLimit(1)
-                        Text(blockLength(workspace.defaultBlockMinutes))
-                            .foregroundStyle(Color.muted)
+                        HStack(spacing: 4) {
+                            Text(workspace.name)
+                                .fontWeight(.semibold)
+                                .lineLimit(1)
+                            Text(blockLength(workspace.defaultBlockMinutes))
+                                .foregroundStyle(Color.muted)
+                                .fixedSize()
+                        }
                         Spacer(minLength: 0)
                     }
                     .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
                     .frame(maxWidth: .infinity, minHeight: 56)
                     .background(Color.sunken, in: .rect(cornerRadius: 12))
                     .contentShape(.rect(cornerRadius: 12))
