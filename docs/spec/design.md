@@ -99,14 +99,14 @@ What the actions do:
 
 | Action | Effect |
 |---|---|
-| **Pause** | The countdown stops and the running entry ends. The button becomes Resume, the digits dim, the menu bar says "paused". Resume starts a new entry, and the block ends later by the length of the pause |
-| **Break** | A break entry starts inside the block, with its own countdown, five minutes by default. The button becomes End break. When the break is over, work continues. The block still ends at its planned time |
+| **Pause** | The countdown stops and the running entry ends. The button becomes Resume, the digits dim, the menu bar says "paused". Resume starts a new entry, and the block ends later by the length of the pause. Pausing during a break ends the break, and Resume starts work |
+| **Break** | A break entry starts inside the block, with its own countdown, five minutes by default. The button becomes End break. When the break is over, work continues. The block still ends at its planned time, and a break that would run past it stops there |
 | **+15 min** | Adds 15 minutes to the block |
 | **Switch** | Shows the quick start list under the title "Switch to", with a Back button. Choosing a workspace ends the current block and starts a new one for that workspace, at its default length |
 
 In the prototype the block's countdown stands still during a break. That is a shortcut of the drawing. The rule in [features.md](features.md) holds: a break is part of the block.
 
-End block is not among the four. It lives in the right-click menu and the command bar.
+End block is not among the four. It lives in the right-click menu and the command bar. It ends the running entry and the block now. When the block's time is up, the same happens at its planned end.
 
 ### Nothing is running
 
