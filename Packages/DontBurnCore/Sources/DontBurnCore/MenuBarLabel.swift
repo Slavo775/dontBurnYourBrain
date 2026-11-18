@@ -18,7 +18,7 @@ public enum MenuBarLabel: Equatable, Sendable {
     /// in hours and minutes.
     case idle(untracked: String?)
 
-    /// From this much time left on, a running block shows minutes and seconds.
+    /// Below this much time left, a running block shows minutes and seconds.
     public static let secondsThreshold: TimeInterval = 5 * 60
     /// From this much time without a running entry on, the untracked time shows.
     public static let untrackedThreshold: TimeInterval = 15 * 60
@@ -26,6 +26,9 @@ public enum MenuBarLabel: Equatable, Sendable {
     public static let maximumNameLength = 16
     /// The longest wait between two redraws, so a change in the store shows within it.
     static let maximumRedrawInterval: TimeInterval = 60
+    /// How long after the instant the digits change the redraw is due, so a
+    /// timer that fires exactly on time already sees the new digits.
+    static let redrawDelay: TimeInterval = 0.001
 
     /// What the item shows for `status` at `now`.
     ///
@@ -33,9 +36,10 @@ public enum MenuBarLabel: Equatable, Sendable {
     /// runs. `untrackedSince` is where the untracked time starts, see
     /// ``untrackedStart(in:appStart:now:calendar:)``.
     ///
-    /// Times left count up to the next whole minute or second, so a two-hour
-    /// block starts at `2:00` and a running block never shows `0:00`.
-    /// Untracked time counts whole minutes.
+    /// Every time is rounded down to the whole minute or second, as in the
+    /// panel: a two-hour block shows `2:00` only at its first instant, then
+    /// `1:59`, and 5:00 left still shows `0:05`. A block or a break shows
+    /// `0:00` in its last second, until the next redraw settles it.
     public init(status: TimerStatus, workspace: Workspace?, untrackedSince: Date, at now: Date) {
         let name = Self.shortened(workspace?.name ?? "")
         let color = workspace?.color ?? .teal
@@ -46,12 +50,10 @@ public enum MenuBarLabel: Equatable, Sendable {
         case .paused:
             self = .paused(name: name, color: color)
         case .onBreak:
-            self = .onBreak(time: status.breakTimeLeft.map(Self.minutesAndSecondsLeft))
+            self = .onBreak(time: status.breakTimeLeft.map(Self.minutesAndSeconds))
         case .working:
             let left = status.blockTimeLeft ?? 0
-            let time = left <= Self.secondsThreshold
-                ? Self.minutesAndSecondsLeft(left)
-                : Self.hoursAndMinutes((left / 60).rounded(.up) * 60)
+            let time = left < Self.secondsThreshold ? Self.minutesAndSeconds(left) : Self.hoursAndMinutes(left)
             self = .running(name: name, color: color, time: time)
         }
     }
@@ -59,9 +61,11 @@ public enum MenuBarLabel: Equatable, Sendable {
     /// When what the item shows changes next after `now`, at the latest a minute after it.
     ///
     /// The instants line up with the block's or the break's end, so each
-    /// redraw lands exactly where the digits change: every minute while a
-    /// block has more than five minutes left, every second in the last five
-    /// minutes and during a break, and every minute of untracked time.
+    /// redraw lands just after the digits change: every minute while a block
+    /// has five minutes or more left, every second below five minutes and
+    /// during a break, and every minute of untracked time. When the block or
+    /// the break reaches its end, the redraw is due at once, so the next
+    /// settle closes it.
     public static func nextRedraw(status: TimerStatus, untrackedSince: Date, after now: Date) -> Date {
         let latest = now.addingTimeInterval(maximumRedrawInterval)
         let next: Date? = switch status.state {
@@ -73,7 +77,7 @@ public enum MenuBarLabel: Equatable, Sendable {
             status.breakTimeLeft.map { nextCountDown(left: $0, step: 1, after: now) }
         case .working:
             status.blockTimeLeft.map { left in
-                nextCountDown(left: left, step: left > secondsThreshold ? 60 : 1, after: now)
+                nextCountDown(left: left, step: left < secondsThreshold ? 1 : 60, after: now)
             }
         }
         return min(next ?? latest, latest)
@@ -123,9 +127,9 @@ public enum MenuBarLabel: Equatable, Sendable {
         return "\(minutes / 60):" + twoDigits(minutes % 60)
     }
 
-    /// `m:ss` for `seconds` left, counted up to the next whole second.
-    static func minutesAndSecondsLeft(_ seconds: TimeInterval) -> String {
-        let whole = max(0, Int(seconds.rounded(.up)))
+    /// `m:ss` for whole seconds in `seconds`, rounded down.
+    static func minutesAndSeconds(_ seconds: TimeInterval) -> String {
+        let whole = max(0, Int(seconds))
         return "\(whole / 60):" + twoDigits(whole % 60)
     }
 
@@ -133,12 +137,12 @@ public enum MenuBarLabel: Equatable, Sendable {
         value < 10 ? "0\(value)" : "\(value)"
     }
 
-    /// The instant when a countdown with `left` shown in steps of `step`
-    /// seconds, counted up, shows one step less.
+    /// Just after the instant when a countdown with `left` shown in whole
+    /// steps of `step` seconds, rounded down, shows one step less. With
+    /// nothing left, at once, so the end is settled.
     private static func nextCountDown(left: TimeInterval, step: TimeInterval, after now: Date) -> Date {
-        guard left > 0 else { return now.addingTimeInterval(1) }
-        let stepsAfter = (left / step).rounded(.up) - 1
-        return now.addingTimeInterval(left - stepsAfter * step)
+        let shownSteps = max(0, (left / step).rounded(.down))
+        return now.addingTimeInterval(max(0, left - shownSteps * step) + redrawDelay)
     }
 
     /// The next whole minute counted from `start`, or the untracked threshold
