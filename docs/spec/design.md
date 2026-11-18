@@ -133,6 +133,7 @@ How the panel behaves today, in phase 1:
 - It follows the app's appearance, so `-DontBurnAppearance` reaches it. The item and its menu follow the system.
 - Today's tracked total counts work and meetings always, and a break only when its workspace counts breaks. Entries are clipped to today and to now.
 - With nothing running, it shows the list described below. Without a store, it shows only "Nothing running", with no rows, no footer and no keys.
+- When notifications are refused, one line under the four actions says "Allow notifications to hear when a block or break ends".
 
 ### Nothing is running
 
@@ -151,7 +152,7 @@ What phase 1 builds:
 - "Custom block", ⌘N, opens a form with a Workspace picker, a Length picker and Start. The lengths are the fixed list Settings offers, preselected to the workspace's default, and again when the workspace changes. There is no typed length and no issue field yet. ⌘N works only with nothing running and at least one workspace.
 - Footer "Today: h:mm tracked".
 - No workspaces: the note "No workspaces yet" and a "Settings…" button that opens Settings.
-- When a block ends by itself, the panel returns to the list. The sound and the notification come later.
+- When a block ends by itself, the panel returns to the list, and the sound and the notification from [Sounds and notifications](#sounds-and-notifications) announce it.
 
 ## Expanded panel on the Mac
 
@@ -278,7 +279,7 @@ The order of the list is the order of the quick start presets and their number k
 
 #### What phase 1 builds
 
-The window has a fixed size of 760 × 470 pt and two tabs: General, which shows only the version, and Workspaces. The other tabs and rows arrive with their phases.
+The window has a fixed size of 760 × 470 pt and two tabs: General, with the alert switches described under [Sounds and notifications](#sounds-and-notifications) and the version at the bottom, and Workspaces. The other tabs and rows arrive with their phases.
 
 - **The list** is 220 pt wide, with + and − below it. Rows are reordered by dragging.
 - **The form** holds the name, the six swatches, a "Default block" pop-up and "Shown on key N". From the tenth workspace on, it says "No number key".
@@ -297,12 +298,39 @@ The prototype does not draw the Archived section, the empty state or the list of
 - **Other agents.** Codex is listed as "added later".
 - **Terminals.** iTerm2 and Terminal jump to the exact tab. VS Code and Cursor bring the window forward. Each shows whether macOS has allowed the app to control it, with an "Allow" button.
 
-## Sounds
+## Sounds and notifications
 
-- A soft chime when a focus interval ends
+- A soft chime when a focus interval ends (phase 2)
 - A different chime when a break ends
 - A longer tone when the block ends
-- A short tick when an agent needs you, which can be muted during focus
+- A short tick when an agent needs you, which can be muted during focus (phase 3)
+
+### What phase 1 builds
+
+Three alerts, each with a notification and a sound that can be switched off on their own:
+
+| Alert | Sound | Notification | On by default |
+|---|---|---|---|
+| A block ends | Submarine | "Acme block finished", "Time to stop or start the next one." | Yes |
+| A break ends | Glass | "Break is over", "Back to Acme." | Yes |
+| 5 minutes before a block ends | Purr | "5 minutes left", "The Acme block ends soon." | No |
+
+**Where the sounds come from.** They are the macOS system sounds in `/System/Library/Sounds`, played by name with `NSSound`. No sound file is in the repository, so no license is needed. The owner chose them. `AlertKind.soundName` in `Apps/Mac/AlertCenter.swift` records this.
+
+How it works:
+
+- The notifications are silent, because the app plays the sound itself. So the sound still plays when notifications are refused.
+- Notifications are scheduled ahead and replaced on every change of plan: start, pause, resume, extend, break, switch and end. Their ids are `<bundle id>.<kind>`. Pending ones survive quitting the app.
+- A paused block has no notification. A break cut off by the block's end gets only the block-end alert.
+- Ending, switching, pausing or ending a break by hand never plays a sound.
+- A sound is skipped when it comes more than 60 seconds late, for example after the Mac slept.
+- The rules live in `Alerts.swift` in `DontBurnCore` (`AlertKind`, `AlertSettings` and the plan).
+
+**Permission.** It is asked at the first block start, while macOS has not asked yet, and never at launch. While it is refused, the compact panel shows one line under the four actions. When it is allowed later in System Settings, the app picks it up at the next change of plan.
+
+**Settings → General** is a grouped form with three sections: When a block ends, When a break ends, and 5 minutes before a block ends. Each has a Notification switch and a "Sound (Name)" switch. The switches are stored in the defaults as `alert.<kind>.notification` and `alert.<kind>.sound`. When notifications are refused, a note says "Notifications are off for <app name>. Allow them in System Settings → Notifications." with an Open button, which only opens that pane. The version stays at the bottom, and the form scrolls when the note makes it taller than the window.
+
+**Without notifications** the timer and the sounds work, nothing is scheduled, and Settings shows the way back.
 
 ## Which phase builds what
 

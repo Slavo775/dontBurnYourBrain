@@ -83,7 +83,7 @@ How light and dark are checked is in "Checking a screen" of [../../rules/testing
 
 ### Permissions the Mac app will ask you for
 
-- **Notifications**, for timer and agent alerts
+- **Notifications**, for timer and agent alerts. Asked at the first block start, never at launch
 - **Automation**, once per terminal app, to select the right tab in Terminal and iTerm2. The permission belongs to the app that asks, so the Dev and the Release build each ask, because each is its own app. VS Code and Cursor needed none in phase 0, because the app reaches them through LaunchServices and sends them no Apple event
 - **Calendars**, to read meetings (phase 5)
 - **Launch at login**, optional
