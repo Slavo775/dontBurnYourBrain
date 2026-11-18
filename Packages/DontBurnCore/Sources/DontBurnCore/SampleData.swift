@@ -15,7 +15,8 @@ public enum SampleData {
     /// Inserts the sample set into `context` and saves it.
     ///
     /// Every block and entry is placed relative to `now`: finished entries in
-    /// the hours before it and planned blocks after it. Nothing is running.
+    /// the hours before it, one manual entry a day before it, and planned
+    /// blocks after it. Nothing is running.
     public static func seed(into context: ModelContext, now: Date) throws {
         func minutes(_ value: Int) -> Date {
             now.addingTimeInterval(TimeInterval(value * 60))
@@ -47,8 +48,12 @@ public enum SampleData {
         let meeting = TimeEntry(
             workspace: globex, start: minutes(-60), end: minutes(-30), kind: .meeting, source: .calendar,
         )
+        // A day earlier, so History has something to show. A day before
+        // `now` and more is always before today's midnight.
+        let day = 24 * 60
         let manual = TimeEntry(
-            workspace: acme, start: minutes(-300), end: minutes(-240), source: .manual, note: "Release checklist",
+            workspace: acme, start: minutes(-day - 300), end: minutes(-day - 240), source: .manual,
+            note: "Release checklist",
         )
         try manual.assign(mobileApp)
 

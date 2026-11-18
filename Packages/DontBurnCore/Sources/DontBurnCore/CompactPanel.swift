@@ -72,26 +72,11 @@ public struct CompactPanel: Equatable, Sendable {
     /// Today's tracked time up to `now`: every entry's part between the start
     /// of today and `now`, running ones included.
     ///
-    /// Work and meetings always count. A break counts only when its
-    /// workspace counts breaks (``SchemaV1/Workspace/breaksCount``).
+    /// The same total as the window's Today, see ``DayLog/total``. Work and
+    /// meetings always count. A break counts only when its workspace counts
+    /// breaks (``SchemaV1/Workspace/breaksCount``).
     public static func trackedToday(in context: ModelContext, now: Date, calendar: Calendar) throws -> TimeInterval {
-        let startOfToday = calendar.startOfDay(for: now)
-        // Only entries that reach into today, since this runs every second while the panel is open.
-        let entries = try context.fetch(FetchDescriptor<TimeEntry>(predicate: #Predicate { entry in
-            if let end = entry.end {
-                entry.start < now && end > startOfToday
-            } else {
-                entry.start < now
-            }
-        }))
-        return entries.reduce(0) { total, entry in
-            if entry.kind == .break, entry.workspace?.breaksCount == false {
-                return total
-            }
-            let start = max(entry.start, startOfToday)
-            let end = min(entry.end ?? now, now)
-            return total + max(0, end.timeIntervalSince(start))
-        }
+        try DayLog(day: now, in: context, now: now, calendar: calendar).total
     }
 
     /// `h:mm` and `:ss` from one hour on, `m` and `:ss` below it, rounded down.

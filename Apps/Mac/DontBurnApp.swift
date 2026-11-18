@@ -18,7 +18,10 @@ struct DontBurnApp: App {
         let container = Self.openStore(sampleData: sampleData)
         self.container = container
         let countdown = Countdown(container: container, fixedTime: Self.fixedTime, alerts: AlertCenter())
-        _statusItem = State(initialValue: StatusItemController(countdown: countdown))
+        let mainWindow = MainWindowController(container: container, fixedTime: Self.fixedTime) {
+            countdown.reschedule()
+        }
+        _statusItem = State(initialValue: StatusItemController(countdown: countdown, mainWindow: mainWindow))
         switch Self.launchArgument("DontBurnAppearance").flatMap(Appearance.init(rawValue:)) {
         case .light: NSApplication.shared.appearance = NSAppearance(named: .aqua)
         case .dark: NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
