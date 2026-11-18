@@ -41,12 +41,12 @@ For the Tester, and for a Developer or Designer who starts the app.
 - Screenshots come from the Dev build with the sample data, taken with `screencapture` and saved in `.worktrees/screenshots/<branch>/`, which git ignores. They are never committed. The verdict lists their paths, and the Leader shows them to the owner before Ready to merge.
 - **A screen test proves that the screen reacts.** It performs at least one real interaction, such as a click, typed text or a shortcut, and checks what changed.
 - **Interaction goes through the accessibility API**, on elements owned by the process ID you recorded, with `AXPress`. A mouse event is sent only after `AXUIElementCopyElementAtPosition` on `AXUIElementCreateSystemWide()`, at that exact point, returns an element whose `AXUIElementGetPid` is the recorded process ID. An error counts as not ours. The cursor is never moved, and nothing else is clicked. The maintainer's mouse is live, and a click aimed at coordinates lands in whatever app is there.
-- **Opening the menu bar menu and choosing Quit:**
+- **Reaching the menu bar item:**
   1. Find `MenuBarAgent`'s process ID with `NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.MenuBarAgent")`, and make its element with `AXUIElementCreateApplication`.
   2. Read its `AXWindows`: one window per display's menu bar. Go down `AXChildren` (one `AXGroup` per item, then the item). The app's item is the `AXButton` whose `AXUIElementGetPid` is the recorded process ID. Its `AXTitle` is the shown text. The app's entries on other displays are not `AXButton`s and are skipped. Search exactly these three levels, window → group → item, and never deeper: a deeper search reaches the app's own controls and presses them.
-  3. `AXPress` on the button opens the menu, even though the call returns -25204.
-  4. The menu's items now sit under `AXExtrasMenuBar` of the app's own element: `AXMenuBar`, `AXMenuBarItem`, `AXMenu`, then the `AXMenuItem`s. `AXPress` on Quit returns 0. Check with `ps -p <pid>` that the process is gone.
-- **When the item is hidden**, for example behind the menu bar's overflow chevron on a notched display, no such button is found and the app's `AXExtrasMenuBar` returns -25212. Never click the chevron. Stop the recorded process ID, and report the menu as not checked, never as a pass. To check it after all, the Leader asks the owner to make the item visible, and the check runs again.
+  3. The button offers only `AXPress`, which opens or closes the compact panel. The panel rule in "Running the Dev build" applies.
+- **The right-click menu cannot be opened through accessibility.** It opens only on a right or Control click, and the item offers no `AXShowMenu`. Never send a mouse event to the item. Report each of the menu's items, Quit among them, as not checked, never as a pass. Stop the app with `kill <pid>` on the recorded process ID, and check with `ps -p <pid>` that the process is gone.
+- **When the item is hidden**, for example behind the menu bar's overflow chevron on a notched display, no such button is found. Never click the chevron. Stop the recorded process ID, and report the item as not checked, never as a pass. To check it after all, the Leader asks the owner to make the item visible, and the check runs again.
 
 ## Spikes
 
