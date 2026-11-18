@@ -17,6 +17,9 @@ public struct WorkspaceRoster {
     /// How many workspaces get a quick start number key, 1 to 9.
     public static let quickStartKeyCount = 9
 
+    /// How many of the first active workspaces the menu bar item's menu offers to start.
+    public static let menuStartCount = 3
+
     private let context: ModelContext
 
     /// A roster working on the workspaces in `context`.
@@ -104,6 +107,14 @@ public struct WorkspaceRoster {
     /// counted from 0, or `nil` when it has none.
     public static func quickStartKey(at position: Int) -> Int? {
         (0 ..< quickStartKeyCount).contains(position) ? position + 1 : nil
+    }
+
+    /// The position, counted from 0, of the active workspace on quick start
+    /// number `key`, or `nil` when `key` is not one of 1 to 9.
+    ///
+    /// Whether a workspace sits at that position is for the caller to check.
+    public static func quickStartPosition(ofKey key: Int) -> Int? {
+        (1 ... quickStartKeyCount).contains(key) ? key - 1 : nil
     }
 
     /// The block lengths to offer when `minutes` is stored: the usual

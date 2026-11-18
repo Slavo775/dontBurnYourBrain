@@ -168,6 +168,15 @@ final class Countdown {
     /// What the panel shows, or `nil` when nothing runs or there is no store.
     private(set) var panel: CompactPanel?
 
+    /// The workspaces to start or switch to, in their order. Empty without a store.
+    ///
+    /// Stored and renewed on every refresh, so the panel follows a new order
+    /// or an archived workspace from Settings each time it opens.
+    private(set) var workspaces: [Workspace] = []
+
+    /// Today's tracked time, such as `0:10`, or `nil` without a store.
+    private(set) var trackedToday: String?
+
     /// Whether the panel is open. While it is, the countdown ticks every second.
     var isPanelOpen = false {
         didSet {
@@ -222,15 +231,9 @@ final class Countdown {
         panel?.state ?? .idle
     }
 
-    /// The workspaces to switch to, in their order. Empty without a store.
-    var workspaces: [Workspace] {
-        guard let context else { return [] }
-        do {
-            return try WorkspaceRoster(context: context).activeWorkspaces()
-        } catch {
-            log.error("The workspaces could not be read: \(error.localizedDescription)")
-            return []
-        }
+    /// Whether a store is open. Without one there is nothing to start.
+    var hasStore: Bool {
+        context != nil
     }
 
     /// Takes `action` on the running block now.
@@ -238,9 +241,10 @@ final class Countdown {
         act("take a quick action") { try action.perform(with: $0, at: $1) }
     }
 
-    /// Ends the running block now and starts one for `workspace` at its default length.
-    func switchTo(_ workspace: Workspace) {
-        act("switch") { try $0.switchTo(workspace, at: $1) }
+    /// Starts a block for `workspace` now, of `minutes` or its default length.
+    /// Whatever runs ends first, so this also switches.
+    func start(_ workspace: Workspace, minutes: Int? = nil) {
+        act("start a block") { try $0.start(workspace, minutes: minutes, at: $1) }
     }
 
     /// Ends the running block now.
@@ -270,6 +274,8 @@ final class Countdown {
         guard let context else {
             label = .idle(untracked: nil)
             panel = nil
+            workspaces = []
+            trackedToday = nil
             return now.addingTimeInterval(MenuBarLabel.untrackedThreshold)
         }
         do {
@@ -282,6 +288,8 @@ final class Countdown {
             label = MenuBarLabel(status: status, workspace: block?.workspace, untrackedSince: since, at: now)
             let tracked = try CompactPanel.trackedToday(in: context, now: now, calendar: .current)
             panel = CompactPanel(status: status, block: block, tracked: tracked)
+            trackedToday = MenuBarLabel.hoursAndMinutes(tracked)
+            workspaces = try WorkspaceRoster(context: context).activeWorkspaces()
             let next = MenuBarLabel.nextRedraw(status: status, untrackedSince: since, after: now)
             guard isPanelOpen, let tick = CompactPanel.nextRedraw(status: status, after: now) else { return next }
             return min(next, tick)
@@ -289,6 +297,8 @@ final class Countdown {
             log.error("The timer could not be read: \(error.localizedDescription)")
             label = .idle(untracked: nil)
             panel = nil
+            workspaces = []
+            trackedToday = nil
             return now.addingTimeInterval(60)
         }
     }

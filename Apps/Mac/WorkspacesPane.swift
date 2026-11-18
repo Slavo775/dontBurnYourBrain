@@ -285,17 +285,17 @@ private struct WorkspaceForm: View {
     }
 }
 
-/// A block length such as `25 min`, `1 h` or `1 h 30`.
-func blockLength(_ minutes: Int) -> LocalizedStringKey {
+/// A block length such as `25 min`, `1 h` or `1 h 30`, already localized.
+func blockLength(_ minutes: Int) -> String {
     let hours = minutes / 60
     let rest = minutes % 60
     if hours == 0 {
-        return "\(minutes) min"
+        return String(localized: "\(minutes) min")
     }
     if rest == 0 {
-        return "\(hours) h"
+        return String(localized: "\(hours) h")
     }
-    return "\(hours) h \(String(format: "%02d", rest))"
+    return String(localized: "\(hours) h \(String(format: "%02d", rest))")
 }
 
 /// The six palette colors as round buttons, the chosen one ringed.

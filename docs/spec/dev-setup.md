@@ -37,6 +37,8 @@ open DerivedData/Build/Products/Debug/DontBurn.app --args -DontBurnFixedTime 202
 
 Without `-DontBurnSampleData`, the Dev build keeps its data in `~/Library/Application Support/io.github.slavo775.dontburn.dev/DontBurn.store`. The folder is named after the bundle identifier, so the Release app's data is never touched.
 
+To start with an empty store on disk, such as for the "No workspaces yet" state, point the home folder at a new temporary folder: `open -g --env CFFIXED_USER_HOME=<temp folder> DerivedData/Build/Products/Debug/DontBurn.app`. The store is then created inside that folder. Remove the folder by its literal path when done.
+
 How light and dark are checked is in "Checking a screen" of [../../rules/testing.md](../../rules/testing.md).
 
 ## From web development to Apple development

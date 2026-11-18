@@ -126,13 +126,13 @@ How the panel behaves today, in phase 1:
 - It is a borderless panel under the menu bar item. It takes the keys as soon as it opens, without bringing the app to the front.
 - It shows the workspace dot and name, the countdown, one line ("left of 2:00", "Paused", or "On a break, then back to Acme"), the strip, the four actions, and the footer "Today: 1:42 tracked". The issue, the expand button, the needs-you strip, the next meeting and the sessions link come in later phases.
 - The countdown shows `h:mm` large and `:ss` small from one hour left on, and `m` with `:ss` below that. During a break the strip is filled in the muted color.
-- Keys: P pauses and resumes, B takes and ends a break, + adds 15 minutes, S opens Switch, Escape closes the panel. Each acts once per press, and a held key does not repeat. Keys with ⌘, ⌃ or ⌥ are ignored.
-- Switch lists every active workspace in the order from Settings, the running one included: the dot, the name and the default length. Back returns to the running block.
+- Keys: P pauses and resumes, B takes and ends a break, + adds 15 minutes, S opens Switch, Escape closes the panel. 1 to 9 start a workspace in the "Nothing running" list and in Switch. ⌘N opens the custom block form. In the form, Return or keypad Enter starts, and Escape goes back to the list instead of closing the panel. Each key acts once per press, and a held key does not repeat. ⌘N is the only key with ⌘, ⌃ or ⌥ that is taken; the others are ignored.
+- Switch uses the same rows as "Nothing running": every active workspace in the order from Settings, the running one included, with the dot, the name, the default length and the number key. Back returns to the running block.
 - The panel closes on Escape, on a second click on the item, on a right-click, and when it loses focus, such as on a click elsewhere.
 - The countdown ticks every second only while the panel is open.
 - It follows the app's appearance, so `-DontBurnAppearance` reaches it. The item and its menu follow the system.
 - Today's tracked total counts work and meetings always, and a break only when its workspace counts breaks. Entries are clipped to today and to now.
-- With nothing running, or without a store, it shows only "Nothing running". The list of workspaces described below comes with the next card.
+- With nothing running, it shows the list described below. Without a store, it shows only "Nothing running", with no rows, no footer and no keys.
 
 ### Nothing is running
 
@@ -142,6 +142,16 @@ How the panel behaves today, in phase 1:
 - Footer: "Today: 0:10 tracked".
 
 When the block ends, a sound plays, a notification appears and the panel returns to this view.
+
+What phase 1 builds:
+
+- Title "Nothing running", without "Free until".
+- One row per active workspace in the order from Settings: the dot, the name and the default length, without the last issue. The first nine get the keys 1 to 9. The list scrolls only with more than nine.
+- A click or a number key starts a block at the workspace's default length.
+- "Custom block", ⌘N, opens a form with a Workspace picker, a Length picker and Start. The lengths are the fixed list Settings offers, preselected to the workspace's default, and again when the workspace changes. There is no typed length and no issue field yet. ⌘N works only with nothing running and at least one workspace.
+- Footer "Today: h:mm tracked".
+- No workspaces: the note "No workspaces yet" and a "Settings…" button that opens Settings.
+- When a block ends by itself, the panel returns to the list. The sound and the notification come later.
 
 ## Expanded panel on the Mac
 
@@ -184,7 +194,7 @@ Opened with ⌥ Space from anywhere. About 580 pt wide, one text field, results 
 
 Pause, Take a break, Add 15 minutes, End block. Then the quick start presets ("Start Acme for 2 h"). Then Focus the waiting session, and Open the window ⌘O.
 
-Opened with a right-click or a Control-click. In phase 1 it holds Pause or Resume, Take a break or End break, Add 15 minutes and End block while a block runs, each only when it fits the timer's state, then a divider, "Settings…" on ⌘ and comma, another divider, and "Quit" with the app's name, on ⌘Q. With nothing running it holds only Settings and Quit.
+Opened with a right-click or a Control-click. In phase 1 it holds Pause or Resume, Take a break or End break, Add 15 minutes and End block while a block runs, each only when it fits the timer's state, then a divider. Then "Start Acme for 1 h" for the first three active workspaces at their default lengths, then a divider. While a block runs, picking one switches to that workspace. Then "Settings…" on ⌘ and comma, another divider, and "Quit" with the app's name, on ⌘Q. With nothing running it holds the start items, Settings and Quit. With no workspaces or no store, the start items are left out.
 
 ### Session switcher
 
@@ -302,7 +312,7 @@ The prototype does not draw the Archived section, the empty state or the list of
 | Compact panel: countdown, strip, four actions, quick start, custom block | 1 |
 | Settings: Workspaces (name, color, default block, order, archive) | 1 |
 | Window: Today as a list, simple history | 1 |
-| Right-click menu: the block actions | 1 |
+| Right-click menu: the block actions and the quick start items | 1 |
 | Break gaps in the strip, "break in", rhythm settings | 2 |
 | Command bar, the full right-click menu, week and month charts | 2 |
 | Needs-you strip, expanded panel, session switcher, Settings: Sessions, the amber badge | 3 |

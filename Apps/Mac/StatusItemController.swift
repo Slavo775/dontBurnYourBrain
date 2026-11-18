@@ -76,7 +76,7 @@ final class StatusItemController: NSObject, NSWindowDelegate {
     }
 
     private func openPanel() {
-        navigation.isSwitching = false
+        navigation.page = .main
         countdown.isPanelOpen = true
         if let content = panel.contentView {
             panel.setContentSize(content.fittingSize)
@@ -104,16 +104,74 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         panel.setFrameOrigin(NSPoint(x: left, y: top - size.height))
     }
 
-    /// P pauses and resumes, B takes and ends a break, + adds 15 minutes, S
-    /// switches, and Escape closes. Returns whether the key was used.
+    /// While a block runs: P pauses and resumes, B takes and ends a break, +
+    /// adds 15 minutes and S switches. In a list of workspaces, 1 to 9 start
+    /// the workspace on that key. With nothing running, ⌘N opens the custom
+    /// block form, where Return starts and Escape goes back. Elsewhere Escape
+    /// closes. Returns whether the key was used.
+    ///
+    /// A held key acts once. Repeats would extend again and again, pause and
+    /// resume into near-empty entries, or start block after block.
     private func handleKey(_ event: NSEvent) -> Bool {
+        let isIdle = countdown.panel == nil
         if event.keyCode == 53 {
-            closePanel()
+            if navigation.page == .customBlock {
+                navigation.page = .main
+            } else {
+                closePanel()
+            }
             return true
         }
-        guard event.modifierFlags.isDisjoint(with: [.command, .control, .option]),
-              let state = countdown.panel?.state, !navigation.isSwitching
+        let modifiers = event.modifierFlags.intersection([.command, .control, .option])
+        if modifiers == .command, event.charactersIgnoringModifiers?.lowercased() == "n" {
+            return openCustomBlock(event)
+        }
+        guard modifiers.isEmpty else { return false }
+        if isIdle, navigation.page == .customBlock {
+            return startCustomBlock(event)
+        }
+        if isIdle || navigation.page == .switching {
+            return quickStart(event)
+        }
+        return takeQuickAction(event)
+    }
+
+    /// ⌘N, only with nothing running and a workspace to start.
+    private func openCustomBlock(_ event: NSEvent) -> Bool {
+        guard countdown.panel == nil, navigation.page != .customBlock, !countdown.workspaces.isEmpty else {
+            return false
+        }
+        if !event.isARepeat {
+            navigation.openCustomBlock(countdown.workspaces)
+        }
+        return true
+    }
+
+    /// Return or the keypad's Enter, in the custom block form.
+    private func startCustomBlock(_ event: NSEvent) -> Bool {
+        guard event.keyCode == 36 || event.keyCode == 76 else { return false }
+        if !event.isARepeat {
+            navigation.startCustomBlock(with: countdown)
+        }
+        return true
+    }
+
+    /// 1 to 9, in a list of workspaces.
+    private func quickStart(_ event: NSEvent) -> Bool {
+        guard let key = event.characters.flatMap({ Int($0) }),
+              let position = WorkspaceRoster.quickStartPosition(ofKey: key),
+              countdown.workspaces.indices.contains(position)
         else { return false }
+        if !event.isARepeat {
+            navigation.page = .main
+            countdown.start(countdown.workspaces[position])
+        }
+        return true
+    }
+
+    /// P, B, + and S, while a block runs.
+    private func takeQuickAction(_ event: NSEvent) -> Bool {
+        guard let state = countdown.panel?.state else { return false }
         let action: QuickAction
         switch event.characters?.lowercased() {
         case "p": action = .pauseOrResume
@@ -121,13 +179,11 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         case "+": action = .extend
         case "s":
             if !event.isARepeat {
-                navigation.isSwitching = true
+                navigation.page = .switching
             }
             return true
         default: return false
         }
-        // A held key acts once. Repeats would extend again and again, or
-        // pause and resume into near-empty entries.
         if !event.isARepeat, action.isAvailable(in: state) {
             countdown.perform(action)
         }
@@ -165,7 +221,8 @@ private final class KeyPanel: NSPanel {
     }
 }
 
-/// The right-click menu: the timer's actions while a block runs, then Settings and Quit.
+/// The right-click menu: the timer's actions while a block runs, then the
+/// first three workspaces to start, then Settings and Quit.
 struct StatusItemMenu: View {
     let countdown: Countdown
 
@@ -184,6 +241,16 @@ struct StatusItemMenu: View {
             }
             Button("End block") {
                 countdown.endBlock()
+            }
+            Divider()
+        }
+        let starts = countdown.workspaces.prefix(WorkspaceRoster.menuStartCount)
+        if !starts.isEmpty {
+            // While a block runs, a start acts as a switch.
+            ForEach(starts) { workspace in
+                Button("Start \(workspace.name) for \(blockLength(workspace.defaultBlockMinutes))") {
+                    countdown.start(workspace)
+                }
             }
             Divider()
         }

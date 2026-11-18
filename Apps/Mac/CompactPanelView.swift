@@ -2,16 +2,9 @@ import DontBurnCore
 import SwiftData
 import SwiftUI
 
-/// Which view the panel shows. The panel's keys change it too, so it lives
-/// outside the view.
-@MainActor
-@Observable
-final class PanelNavigation {
-    var isSwitching = false
-}
-
-/// The compact panel: the running block and its four quick actions, or the
-/// list of workspaces to switch to.
+/// The compact panel: the running block and its four quick actions, the list
+/// of workspaces to switch to, or, when nothing runs, the quick start list and
+/// the custom block form.
 struct CompactPanelView: View {
     let countdown: Countdown
     let navigation: PanelNavigation
@@ -19,17 +12,20 @@ struct CompactPanelView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             if let panel = countdown.panel {
-                if navigation.isSwitching {
-                    SwitchList(countdown: countdown, navigation: navigation)
+                if navigation.page == .switching {
+                    WorkspaceList(title: "Switch to", countdown: countdown, navigation: navigation)
                 } else {
                     RunningBlock(panel: panel, countdown: countdown, navigation: navigation)
                 }
-                Footer(tracked: panel.trackedToday)
+            } else if navigation.page == .customBlock {
+                CustomBlockForm(countdown: countdown, navigation: navigation)
+            } else if countdown.hasStore, countdown.workspaces.isEmpty {
+                NoWorkspaces()
             } else {
-                // The view for when nothing runs is card 14. Until then, a title alone.
-                Text("Nothing running")
-                    .font(.system(size: 15, weight: .semibold))
-                    .frame(minHeight: 36)
+                WorkspaceList(title: "Nothing running", countdown: countdown, navigation: navigation)
+            }
+            if let tracked = countdown.panel?.trackedToday ?? countdown.trackedToday {
+                Footer(tracked: tracked)
             }
         }
         .font(.system(size: 13))
@@ -109,7 +105,7 @@ private struct RunningBlock: View {
             .buttonStyle(QuickButtonStyle())
             .accessibilityLabel("Add 15 minutes")
             QuickButton("Switch", symbol: "arrow.left.arrow.right") {
-                navigation.isSwitching = true
+                navigation.page = .switching
             }
         }
     }
@@ -162,61 +158,44 @@ private struct QuickButtonStyle: ButtonStyle {
     }
 }
 
-/// "Switch to": the workspaces, and Back to the running block.
-private struct SwitchList: View {
-    let countdown: Countdown
-    let navigation: PanelNavigation
+/// A panel title on the left, and an optional control on the right.
+struct PanelTitle<Trailing: View>: View {
+    let title: LocalizedStringKey
+    @ViewBuilder let trailing: Trailing
+
+    init(_ title: LocalizedStringKey, @ViewBuilder trailing: () -> Trailing) {
+        self.title = title
+        self.trailing = trailing()
+    }
 
     var body: some View {
         HStack {
-            Text("Switch to")
+            Text(title)
                 .font(.system(size: 15, weight: .semibold))
             Spacer()
-            Button {
-                navigation.isSwitching = false
-            } label: {
-                Text("Back")
-                    .font(.system(size: 13, weight: .medium))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color.sunken, in: .rect(cornerRadius: 8))
-                    .contentShape(.rect(cornerRadius: 8))
-            }
-            .buttonStyle(.plain)
+            trailing
         }
         .frame(minHeight: 36)
-
-        VStack(spacing: 8) {
-            ForEach(countdown.workspaces) { workspace in
-                Button {
-                    navigation.isSwitching = false
-                    countdown.switchTo(workspace)
-                } label: {
-                    HStack(spacing: 12) {
-                        WorkspaceDot(color: workspace.color)
-                        HStack(spacing: 4) {
-                            Text(workspace.name)
-                                .fontWeight(.semibold)
-                                .lineLimit(1)
-                            Text(blockLength(workspace.defaultBlockMinutes))
-                                .foregroundStyle(Color.muted)
-                                .fixedSize()
-                        }
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity, minHeight: 56)
-                    .background(Color.sunken, in: .rect(cornerRadius: 12))
-                    .contentShape(.rect(cornerRadius: 12))
-                }
-                .buttonStyle(.plain)
-            }
-        }
     }
 }
 
-private struct WorkspaceDot: View {
+struct PanelBackButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text("Back")
+                .font(.system(size: 13, weight: .medium))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.sunken, in: .rect(cornerRadius: 8))
+                .contentShape(.rect(cornerRadius: 8))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct WorkspaceDot: View {
     let color: WorkspaceColor
 
     var body: some View {
@@ -267,4 +246,29 @@ private extension Countdown {
 
 #Preview("Nothing running") {
     CompactPanelView(countdown: .preview(.idle), navigation: PanelNavigation())
+}
+
+#Preview("Custom block") {
+    let countdown = Countdown.preview(.idle)
+    let navigation = PanelNavigation()
+    navigation.openCustomBlock(countdown.workspaces)
+    return CompactPanelView(countdown: countdown, navigation: navigation)
+}
+
+#Preview("Switch to") {
+    let navigation = PanelNavigation()
+    navigation.page = .switching
+    return CompactPanelView(countdown: .preview(.running), navigation: navigation)
+}
+
+#Preview("No workspaces") {
+    // An empty store in memory: the panel leads to Settings.
+    CompactPanelView(
+        countdown: Countdown(container: try? ModelStore.inMemory(), fixedTime: .now),
+        navigation: PanelNavigation(),
+    )
+}
+
+#Preview("No store") {
+    CompactPanelView(countdown: Countdown(container: nil, fixedTime: .now), navigation: PanelNavigation())
 }
