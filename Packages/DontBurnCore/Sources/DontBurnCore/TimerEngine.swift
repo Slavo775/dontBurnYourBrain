@@ -87,6 +87,11 @@ public struct TimerEngine {
         return status(of: block, at: now)
     }
 
+    /// The running block's workspace, or `nil` when nothing runs. Call it after ``settle(at:)``.
+    public func runningWorkspace() throws -> Workspace? {
+        try runningBlocks().last?.workspace
+    }
+
     /// Starts a block for `workspace` with a running work entry.
     ///
     /// Whatever runs ends first, at the same instant. The new block starts at
