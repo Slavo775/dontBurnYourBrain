@@ -76,7 +76,14 @@ public struct CompactPanel: Equatable, Sendable {
     /// workspace counts breaks (``SchemaV1/Workspace/breaksCount``).
     public static func trackedToday(in context: ModelContext, now: Date, calendar: Calendar) throws -> TimeInterval {
         let startOfToday = calendar.startOfDay(for: now)
-        let entries = try context.fetch(FetchDescriptor<TimeEntry>(predicate: #Predicate { $0.start < now }))
+        // Only entries that reach into today, since this runs every second while the panel is open.
+        let entries = try context.fetch(FetchDescriptor<TimeEntry>(predicate: #Predicate { entry in
+            if let end = entry.end {
+                entry.start < now && end > startOfToday
+            } else {
+                entry.start < now
+            }
+        }))
         return entries.reduce(0) { total, entry in
             if entry.kind == .break, entry.workspace?.breaksCount == false {
                 return total
