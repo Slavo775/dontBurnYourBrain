@@ -78,3 +78,9 @@ These were learned in the reference flow before this project started. All are `a
 - **What happened:** on card #5 (PR #8), Claude Code's safety check refused an agent's `rm -rf "$WORK"`, and nothing ran. The folder was then removed by its literal path.
 - **Root cause:** no rule said how an agent removes the temporary folders the rules ask for.
 - **Proposed change:** one rule in `safety-and-privacy.md`, "Builds and data", which every role reads.
+
+## 2026-11-18 · Making the Dev app frontmost while testing · accepted
+
+- **What happened:** on card #11 (PR #23), the Tester made the Dev app frontmost with `NSRunningApplication.activate()` so it could type into the app by script. The owner's live keystrokes then landed in the app's name field and never reached the app the owner was using. The data was in memory only. In the same round, a menu helper that searched MenuBarAgent's accessibility tree too deeply pressed one of the app's own buttons and created a workspace in the Dev store. The store was restored from a backup.
+- **Root cause:** no rule said that an agent must not activate the app, even though typing with `CGEventPostToPid` and accessibility focus work without activating it. The app was also started with plain `open`, which brings it forward. "Checking a screen" names the path window → group → item, but it does not say that a deeper search finds the app's own controls.
+- **Proposed change:** in `testing.md`, the Dev build starts with `open -g`, and "Checking a screen" gets two rules: never make the app frontmost, with one exception for a control that brings it forward by design, such as Settings…, and search the menu bar exactly three levels deep.
