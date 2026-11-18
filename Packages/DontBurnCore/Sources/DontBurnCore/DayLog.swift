@@ -26,9 +26,11 @@ public struct DayLog {
             entry.persistentModelID
         }
 
-        /// The length of the part shown.
+        /// The length of the part shown in whole minutes, rounded down, as
+        /// seconds. The totals add these up, so a hand count of the rows
+        /// always matches them.
         public var length: TimeInterval {
-            max(0, end.timeIntervalSince(start))
+            (max(0, end.timeIntervalSince(start)) / 60).rounded(.down) * 60
         }
     }
 
@@ -36,7 +38,7 @@ public struct DayLog {
     public struct Total: Identifiable {
         /// The workspace, archived or not.
         public let workspace: Workspace
-        /// The counted time of its entries.
+        /// The sum of its counted items' ``Item/length``.
         public let tracked: TimeInterval
 
         /// The workspace's identifier.
@@ -52,7 +54,8 @@ public struct DayLog {
     /// The tracked time per workspace that has an entry on the day: active
     /// ones in their order, then archived ones.
     public let totals: [Total]
-    /// The day's tracked time over every workspace.
+    /// The day's tracked time over every workspace: the sum of the counted
+    /// items' ``Item/length``, so always whole minutes.
     public let total: TimeInterval
 
     /// The log of the day that contains `date`, read from `context` as it stands at `now`.

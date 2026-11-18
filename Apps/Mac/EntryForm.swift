@@ -139,18 +139,22 @@ struct EntryForm: View {
         }
     }
 
-    /// A work entry in the first active workspace: the half hour up to now on
-    /// today, or 9:00 to 10:00 on an earlier day.
+    /// A work entry in the first active workspace: the latest free half hour
+    /// up to now on today, or the latest free hour up to 10:00 on an earlier
+    /// day. When none is free, the half hour up to now or 9:00 to 10:00, which
+    /// saving then refuses with its reason.
     private static func newDraft(on day: Date, now: Date, context: ModelContext) -> EntryDraft {
         let calendar = Calendar.current
         // No workspace only leaves the picker empty, and saving then says to choose one.
         let workspace = (try? WorkspaceRoster(context: context).activeWorkspaces())?.first
-        if calendar.isDate(day, inSameDayAs: now) {
-            let end = calendar.dateInterval(of: .minute, for: now)?.start ?? now
-            return EntryDraft(start: end.addingTimeInterval(-30 * 60), end: end, workspace: workspace)
-        }
-        let start = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: day) ?? day
-        return EntryDraft(start: start, end: start.addingTimeInterval(3600), workspace: workspace)
+        let isToday = calendar.isDate(day, inSameDayAs: now)
+        let minutes = isToday ? 30 : 60
+        let end = isToday ? now : calendar.date(bySettingHour: 10, minute: 0, second: 0, of: day) ?? day
+        // A failed read only falls back to the plain default, which saving checks.
+        let free = try? EntryEditor(context: context)
+            .latestFreeStretch(minutes: minutes, endingBy: end, at: now, calendar: calendar)
+        let interval = free ?? DateInterval(start: end.addingTimeInterval(-TimeInterval(minutes) * 60), end: end)
+        return EntryDraft(start: interval.start, end: interval.end, workspace: workspace)
     }
 }
 

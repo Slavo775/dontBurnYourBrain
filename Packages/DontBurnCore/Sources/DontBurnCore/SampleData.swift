@@ -45,8 +45,10 @@ public enum SampleData {
         let pause = TimeEntry(workspace: acme, start: minutes(-130), end: minutes(-120), kind: .break, block: acmeBlock)
         let moreWork = TimeEntry(workspace: acme, start: minutes(-120), end: minutes(-90), block: acmeBlock)
         try moreWork.assign(webShop)
+        // Ends an hour before `now`, so no ``TimerScenario`` block, which
+        // starts at most an hour before it, overlaps the meeting.
         let meeting = TimeEntry(
-            workspace: globex, start: minutes(-60), end: minutes(-30), kind: .meeting, source: .calendar,
+            workspace: globex, start: minutes(-90), end: minutes(-60), kind: .meeting, source: .calendar,
         )
         // A day earlier, so History has something to show. A day before
         // `now` and more is always before today's midnight.

@@ -137,7 +137,37 @@ public struct EntryEditor {
         guard draft.workspace != nil else { throw EntryChangeError.noWorkspace }
         guard draft.end > draft.start else { throw EntryChangeError.endNotAfterStart }
         guard draft.end <= now else { throw EntryChangeError.inFuture }
-        let start = draft.start, end = draft.end
+        if let other = try firstOverlap(from: draft.start, to: draft.end, excluding: entry, at: now) {
+            throw EntryChangeError.overlaps(start: other.start, end: other.end)
+        }
+    }
+
+    /// The latest stretch of `minutes` that ends on a whole minute, no later
+    /// than `end` and `now`, and overlaps no entry, or `nil` when a hundred
+    /// steps back find none. The default for a new entry.
+    ///
+    /// Each step that hits an entry moves the end back to that entry's
+    /// start, so a running block pushes the stretch to before its first entry.
+    public func latestFreeStretch(
+        minutes: Int, endingBy end: Date, at now: Date, calendar: Calendar,
+    ) throws -> DateInterval? {
+        var end = min(end, now)
+        for _ in 0 ..< 100 {
+            end = calendar.dateInterval(of: .minute, for: end)?.start ?? end
+            let start = end.addingTimeInterval(-TimeInterval(minutes) * 60)
+            guard let other = try firstOverlap(from: start, to: end, excluding: nil, at: now) else {
+                return DateInterval(start: start, end: end)
+            }
+            end = other.start
+        }
+        return nil
+    }
+
+    /// The earliest-starting entry other than `entry` that overlaps `start` to
+    /// `end`, with a running one's end at `now`.
+    private func firstOverlap(
+        from start: Date, to end: Date, excluding entry: TimeEntry?, at now: Date,
+    ) throws -> (start: Date, end: Date)? {
         let candidates = try context.fetch(FetchDescriptor<TimeEntry>(
             predicate: #Predicate { other in
                 if let otherEnd = other.end {
@@ -151,8 +181,9 @@ public struct EntryEditor {
         for other in candidates where other.persistentModelID != entry?.persistentModelID {
             let otherEnd = other.end ?? max(now, other.start)
             if other.start < otherEnd, other.start < end, otherEnd > start {
-                throw EntryChangeError.overlaps(start: other.start, end: otherEnd)
+                return (other.start, otherEnd)
             }
         }
+        return nil
     }
 }

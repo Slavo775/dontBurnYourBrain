@@ -190,7 +190,7 @@ private struct EntryRow: View {
 
     var body: some View {
         HStack(spacing: EntryColumns.spacing) {
-            (item.isRunning ? Text("\(timeOfDay(item.start)) – now") : Text(verbatim: timeRange(item.start, item.end)))
+            (item.isRunning ? Text("\(timeOfDay(item.start))–now") : Text(verbatim: timeRange(item.start, item.end)))
                 .monospacedDigit()
                 .frame(width: EntryColumns.time, alignment: .leading)
             Group {
@@ -254,9 +254,10 @@ struct WorkspaceName: View {
     }
 }
 
-/// `9:00 – 10:30` in the user's own format.
+/// `9:00–10:30` in the user's own format, times of day only. A part
+/// clipped at midnight reads `23:30–00:00`.
 func timeRange(_ start: Date, _ end: Date) -> String {
-    (start ..< max(start, end)).formatted(.interval.hour().minute())
+    "\(timeOfDay(start))–\(timeOfDay(end))"
 }
 
 /// `9:00` in the user's own format.
