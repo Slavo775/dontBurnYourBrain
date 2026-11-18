@@ -100,7 +100,18 @@ private struct AlertSection: View {
     var body: some View {
         Section(title) {
             Toggle("Notification", isOn: $notifies)
+                .accessibilityLabel(spoken.notification)
             Toggle("Sound (\(kind.soundName))", isOn: $plays)
+                .accessibilityLabel(spoken.sound)
+        }
+    }
+
+    /// What VoiceOver reads for each switch, so the three pairs can be told apart.
+    private var spoken: (notification: LocalizedStringKey, sound: LocalizedStringKey) {
+        switch kind {
+        case .blockEnd: ("When a block ends, notification", "When a block ends, sound")
+        case .breakEnd: ("When a break ends, notification", "When a break ends, sound")
+        case .warning: ("5 minutes before a block ends, notification", "5 minutes before a block ends, sound")
         }
     }
 }

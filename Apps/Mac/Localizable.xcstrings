@@ -19,6 +19,12 @@
     "5 minutes before a block ends" : {
 
     },
+    "5 minutes before a block ends, notification" : {
+
+    },
+    "5 minutes before a block ends, sound" : {
+
+    },
     "5 minutes left" : {
 
     },
@@ -220,7 +226,19 @@
     "When a block ends" : {
 
     },
+    "When a block ends, notification" : {
+
+    },
+    "When a block ends, sound" : {
+
+    },
     "When a break ends" : {
+
+    },
+    "When a break ends, notification" : {
+
+    },
+    "When a break ends, sound" : {
 
     },
     "Workspace" : {
