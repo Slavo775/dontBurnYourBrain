@@ -189,19 +189,27 @@ final class Countdown {
     /// Called with the new label each time it changes.
     @ObservationIgnored var onLabelChange: ((MenuBarLabel) -> Void)?
 
+    /// The sounds and the notifications, or `nil` when the countdown is frozen.
+    let alerts: AlertCenter?
+
     private let context: ModelContext?
     private let appStart: Date
     private let fixedTime: Date?
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var wakeObserver: (any NSObjectProtocol)?
+    @ObservationIgnored private var defaultsObserver: (any NSObjectProtocol)?
+    /// The status the last settle reported, and when. `nil` after a user's
+    /// action, so only a block or a break that runs out by itself plays a sound.
+    @ObservationIgnored private var settled: (status: TimerStatus, at: Date)?
     private let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "countdown")
 
     /// A countdown over the store in `container`, or the outline dot alone
     /// when there is no store. With `fixedTime` it is computed for that
-    /// instant, acts at that instant, and never ticks.
-    init(container: ModelContainer?, fixedTime: Date?) {
+    /// instant, acts at that instant, never ticks and gives no alerts.
+    init(container: ModelContainer?, fixedTime: Date?, alerts: AlertCenter? = nil) {
         context = container?.mainContext
         self.fixedTime = fixedTime
+        self.alerts = fixedTime == nil ? alerts : nil
         appStart = fixedTime ?? .now
         let next = refresh(at: appStart)
         guard fixedTime == nil, context != nil else { return }
@@ -219,6 +227,14 @@ final class Countdown {
         self.timer = timer
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main,
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.reschedule()
+            }
+        }
+        // A switch changed in Settings replans the notifications at once.
+        defaultsObserver = NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification, object: nil, queue: .main,
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 self?.reschedule()
@@ -245,6 +261,8 @@ final class Countdown {
     /// Whatever runs ends first, so this also switches.
     func start(_ workspace: Workspace, minutes: Int? = nil) {
         act("start a block") { try $0.start(workspace, minutes: minutes, at: $1) }
+        // The first start asks for the permission to notify, never the launch.
+        alerts?.askPermissionIfUndetermined()
     }
 
     /// Ends the running block now.
@@ -265,6 +283,7 @@ final class Countdown {
         } catch {
             log.error("Could not \(what): \(error.localizedDescription)")
         }
+        settled = nil
         reschedule()
     }
 
@@ -285,6 +304,7 @@ final class Countdown {
                 in: context, appStart: appStart, now: now, calendar: .current,
             )
             let block = try engine.runningBlock()
+            announce(status, workspace: block?.workspace?.name ?? "", at: now)
             label = MenuBarLabel(status: status, workspace: block?.workspace, untrackedSince: since, at: now)
             let tracked = try CompactPanel.trackedToday(in: context, now: now, calendar: .current)
             panel = CompactPanel(status: status, block: block, tracked: tracked)
@@ -295,12 +315,24 @@ final class Countdown {
             return min(next, tick)
         } catch {
             log.error("The timer could not be read: \(error.localizedDescription)")
+            settled = nil
             label = .idle(untracked: nil)
             panel = nil
             workspaces = []
             trackedToday = nil
             return now.addingTimeInterval(60)
         }
+    }
+
+    /// Plays the sound of an alert whose moment passed since the last settle,
+    /// and replans the pending notifications.
+    private func announce(_ status: TimerStatus, workspace: String, at now: Date) {
+        defer { settled = (status, now) }
+        guard let alerts else { return }
+        if let settled, let kind = AlertKind.due(from: settled.status, at: settled.at, to: status, at: now) {
+            alerts.play(kind)
+        }
+        alerts.schedule(PlannedAlert.plan(for: status, workspace: workspace, settings: alerts.settings, at: now))
     }
 }
 

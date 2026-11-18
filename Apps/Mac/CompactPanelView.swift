@@ -24,6 +24,13 @@ struct CompactPanelView: View {
             } else {
                 WorkspaceList(title: "Nothing running", countdown: countdown, navigation: navigation)
             }
+            if countdown.panel != nil, countdown.alerts?.isAskingPermission == true {
+                // Below the actions, so they keep their places.
+                Text("Allow notifications to hear when a block or break ends")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             if let tracked = countdown.panel?.trackedToday ?? countdown.trackedToday {
                 Footer(tracked: tracked)
             }
