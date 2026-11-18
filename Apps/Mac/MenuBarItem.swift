@@ -33,7 +33,7 @@ enum MenuBarImage {
 
     /// "DEV" after the label in the Dev build, so it is never taken for the
     /// daily copy. Small and in the secondary color, so the item stays narrow.
-    private static let marker: String? = BuildVariant.current == .dev ? String(localized: "DEV") : nil
+    private static let marker: String? = BuildInfo.current.variant == .dev ? String(localized: "DEV") : nil
     private static var markerFont: NSFont {
         .systemFont(ofSize: 9, weight: .bold)
     }
