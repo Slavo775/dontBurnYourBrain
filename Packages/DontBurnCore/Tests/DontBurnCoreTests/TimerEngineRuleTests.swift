@@ -230,11 +230,56 @@ import Testing
 
     try desk.engine.start(desk.globex, at: at(29))
 
-    // Open defect in PR #22: start raises its time only past the entries of
-    // running blocks, so the new block begins at 09:29 inside the ended one.
-    // When it is fixed this known issue stops being recorded and the test fails:
-    // remove the wrapper then.
-    withKnownIssue("start overlaps the entries of a block that has just ended") {
-        try expectHistoryKeepsRules(desk.context)
-    }
+    #expect(try blocks(desk.context).last?.plannedStart == at(30))
+    try expectHistoryKeepsRules(desk.context)
+}
+
+@Test func `a start earlier than the end of a block whose time was up does not overlap it`() throws {
+    let desk = try Desk()
+    try desk.engine.start(desk.acme, at: nine)
+    #expect(try desk.engine.settle(at: at(90)) == .idle)
+
+    #expect(throws: TimerEngineError.notAllowed(.idle)) { try desk.engine.switchTo(desk.globex, at: at(50)) }
+    try desk.engine.start(desk.globex, at: at(50))
+
+    #expect(try blocks(desk.context).last?.plannedStart == at(60))
+    #expect(try entries(desk.context).last?.start == at(60))
+    try expectHistoryKeepsRules(desk.context)
+}
+
+@Test func `a resume earlier than the latest timer entry begins after it`() throws {
+    let desk = try Desk()
+    try desk.engine.start(desk.acme, at: nine)
+    try desk.engine.pause(at: at(20))
+    desk.context.insert(TimeEntry(workspace: desk.acme, start: at(20), end: at(40)))
+
+    try desk.engine.resume(at: at(35))
+
+    #expect(try entries(desk.context).last?.start == at(40))
+    #expect(try entries(desk.context).last?.end == nil)
+}
+
+@Test func `an extension that would overflow the length is refused and changes nothing`() throws {
+    let desk = try Desk()
+    try desk.engine.start(desk.acme, at: nine)
+
+    #expect(throws: TimerEngineError.invalidMinutes) { try desk.engine.extend(by: Int.max, at: at(10)) }
+
+    #expect(try blocks(desk.context).first?.plannedMinutes == 60)
+    #expect(try desk.engine.settle(at: at(10)).plannedEnd == at(60))
+}
+
+@Test func `a future manual or calendar entry does not push the timer's start or resume later`() throws {
+    let desk = try Desk()
+    let meeting = TimeEntry(workspace: desk.acme, start: at(120), end: at(150), kind: .meeting, source: .calendar)
+    desk.context.insert(meeting)
+    desk.context.insert(TimeEntry(workspace: desk.globex, start: at(200), end: at(230), source: .manual))
+
+    try desk.engine.start(desk.acme, at: nine)
+    #expect(try blocks(desk.context).first?.plannedStart == nine)
+    try desk.engine.pause(at: at(10))
+    try desk.engine.resume(at: at(15))
+
+    let timer = try entries(desk.context).filter { $0.source == .timer }
+    #expect(timer.map(\.start) == [nine, at(15)])
 }
