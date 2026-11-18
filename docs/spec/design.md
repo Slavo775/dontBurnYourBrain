@@ -67,7 +67,7 @@ The prototype draws five states as tiles. Its live panel shows a sixth, paused.
 | **Agent waiting** | Any state above plus an amber badge with the number of waiting sessions. The panel then opens with that session on top |
 | **Day off** | An icon and "Off". Out of office leaves nothing planned for today, or the user took the day off. Untracked time is not counted |
 
-**Until phase 1** the item is a plain clock: the current time with seconds, in the user's 12- or 24-hour format, updated on every whole second, also while its menu is open. The menu holds one item, "Quit" with the app's name, on ⌘Q. In 12-hour formats the item gets wider at 10:00 and when AM turns to PM. This is accepted, because phase 1 replaces the clock with the states above.
+**Until phase 1** the item is a plain clock: the current time with seconds, in the user's 12- or 24-hour format, updated on every whole second, also while its menu is open. The menu holds "Settings…" on ⌘ and comma, a divider, and "Quit" with the app's name, on ⌘Q. In 12-hour formats the item gets wider at 10:00 and when AM turns to PM. This is accepted, because phase 1 replaces the clock with the states above.
 
 ### Limits
 
@@ -237,6 +237,21 @@ A list on the left with + and −, the chosen workspace on the right:
 - its quick start key ("Shown on key 1")
 
 The order of the list is the order of the quick start presets and their number keys. Removing a workspace archives it: it leaves the menus and its history stays. A workspace without Jira never appears in Jira review.
+
+#### What phase 1 builds
+
+The window has a fixed size of 760 × 470 pt and two tabs: General, which shows only the version, and Workspaces. The other tabs and rows arrive with their phases.
+
+- **The list** is 220 pt wide, with + and − below it. Rows are reordered by dragging.
+- **The form** holds the name, the six swatches, a "Default block" pop-up and "Shown on key N". From the tenth workspace on, it says "No number key".
+- **The default block** is chosen from a fixed list: 25 min, 30 min, 45 min, 1 h, 1 h 30, 2 h, 3 h and 4 h. A stored value outside the list is kept and shown as an extra choice.
+- **+** creates "New workspace", then "New workspace 2" and so on, counting archived names too. It gets the first color no active workspace uses (key `a` when all six are used), 1 hour, and the last place. Its name is focused and selected.
+- **−** archives after one confirmation. Nothing deletes a workspace.
+- **Archived workspaces** sit in a collapsible "Archived" section under the list, with dimmed rows. Choosing one shows it read-only with a Restore button. Restore puts it last.
+- **No active workspaces:** a centered "No workspaces yet" with "Create a workspace", and below it the archived workspaces, if any, each with Restore.
+- **The store could not be opened:** the Workspaces tab says "The data could not be opened".
+
+The prototype does not draw the Archived section, the empty state or the list of block lengths. The owner chose the looks above. The rules live in `WorkspaceRoster` in `DontBurnCore`.
 
 ### Sessions
 

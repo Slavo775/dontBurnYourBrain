@@ -39,7 +39,7 @@ xcodebuild -project DontBurn.xcodeproj -scheme DontBurn -configuration Debug \
 # Run the tests of the shared package
 swift test --package-path Packages/DontBurnCore
 
-# Start the development build. It shows a clock in the menu bar, with a Quit item
+# Start the development build. It shows a clock in the menu bar, with Settings and Quit items
 open DerivedData/Build/Products/Debug/DontBurn.app
 ```
 
