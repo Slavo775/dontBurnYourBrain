@@ -17,7 +17,7 @@ How the app is versioned, and how a development build and the maintainer's daily
 
 - **The build number** is `CURRENT_PROJECT_VERSION`. It is `1` in development builds. The release script sets it to the number of commits on `main` (`git rev-list --count HEAD`, on a full clone). It only ever grows, which TestFlight requires.
 - **Mac and iPhone always share version and build**, because they share data through iCloud.
-- **The app says what is running.** Settings, General shows version, build and variant. The Dev build also shows the short commit hash.
+- **The app says what is running.** Settings, General shows version, build and variant: "Version 0.1.0 (1) · Dev · 1a2b3c4" in Dev, "Version 0.1.0 (412) · Release" in Release. Only Dev shows the short commit hash. The hook tool prints `dontburn-hook 0.1.0 (1)`.
 - **A release is a git tag** `vX.Y.Z` on `main`, annotated, with a section in `CHANGELOG.md` written from the Conventional Commits since the previous tag.
 
 ## Build variants
@@ -33,7 +33,19 @@ How the app is versioned, and how a development build and the maintainer's daily
 | Global shortcuts, launch at login | Off by default | On, as set by the user | On, as set by the user |
 | Gets updates from | Xcode | `./scripts/install-release`, later Sparkle | Sparkle's beta channel |
 
-Because the identifiers differ, macOS treats Dev and Release as two separate apps: separate data folders, settings, Keychain items, permissions and notifications. Both can sit in the menu bar at the same time. The Dev build has a tinted icon and shows "DEV" in its menu bar item, so the two are never confused.
+Because the identifiers differ, macOS treats Dev and Release as two separate apps: separate data folders, settings, Keychain items, permissions and notifications. Both can sit in the menu bar at the same time.
+
+### Telling Dev from Release
+
+- **The menu bar item.** Dev draws a small "DEV" after its label, and VoiceOver reads ", Dev build" after the label. Release shows nothing extra. See [Menu bar item](../spec/design.md#menu-bar-item).
+- **The icon.** Dev uses `AppIcon-Dev`, an orange placeholder in `Apps/Mac/Assets.xcassets`. Release has no icon yet.
+- **Settings, General**, as under [Versions](#versions).
+
+### How the build knows its variant
+
+- `project.yml` sets `APP_VARIANT` per configuration: `Dev` for Debug, `Release` for Release.
+- A build phase, "Variant and commit", writes it into the built Info.plist as `DontBurnVariant`. In Dev it also writes `DontBurnCommit`, the short git hash. Release, or a build without git, carries no `DontBurnCommit`.
+- `BuildInfo` in `DontBurnCore` reads the version, build, variant and commit from the bundle. A missing or unknown variant counts as Release.
 
 ### Everything with a name outside the app follows the bundle identifier
 
@@ -51,9 +63,16 @@ The hook tool sends to Release by default. `--target dev` or `DONTBURN_TARGET=de
 
 **Until phase 8, without a paid Apple developer account:**
 
-- `./scripts/install-release` builds the Release variant from a clean `main` and quits the running Release app politely, by its bundle identifier. It then replaces the app in `/Applications` and starts it again.
-- It signs with the maintainer's Personal Team when `Local.xcconfig` names one, and to run locally otherwise. With the local signature macOS may forget permissions after an update. The Personal Team avoids that.
-- The maintainer runs it when a version is tagged, or when he wants to try `main` in his daily copy.
+The maintainer runs `./scripts/install-release` when a version is tagged, or when he wants to try `main` in his daily copy (agents: see [../../rules/releases.md](../../rules/releases.md)). It:
+
+1. Refuses a dirty tree, a detached HEAD or any branch but `main`. A shallow clone fetches its full history first, and the script stops if it stays shallow.
+2. Sets the build number to `git rev-list --count HEAD`. The version stays as `project.yml` has it.
+3. Runs `xcodegen generate` and builds Release into a temporary folder, removed when the script ends, so no second copy of the daily app is left in the checkout.
+4. Signs with the Personal Team when the git-ignored `Local.xcconfig` in the repository root has a line `DEVELOPMENT_TEAM = <team ID>`. Without it, the app is signed to run locally, and the script warns that macOS may ask for permissions again after each update. The Personal Team avoids that.
+5. Refuses to replace an app in `/Applications` that has another bundle identifier, or none.
+6. Quits the running Release app politely, by its bundle identifier, and waits up to 10 seconds. It never forces. The first time, macOS asks to let the terminal control the app (Automation). Denied, the script stops, changes nothing, and points to System Settings → Privacy & Security → Automation.
+7. Swaps the app safely: the new app is copied to `/Applications/.DontBurn.app.new`, the old one is moved to `.DontBurn.app.old`, and the new one is moved into place. If that move fails, the old app is moved back. Then `.old` is removed, with only a warning if that fails.
+8. Opens the app and prints its name, version and build.
 
 **From phase 8:**
 
