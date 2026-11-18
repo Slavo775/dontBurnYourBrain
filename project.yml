@@ -68,6 +68,9 @@ targets:
           plutil -replace DontBurnVariant -string "$APP_VARIANT" "$plist"
           if [ "$APP_VARIANT" = Dev ] && commit=$(git -C "$SRCROOT" rev-parse --short HEAD 2>/dev/null); then
             plutil -replace DontBurnCommit -string "$commit" "$plist"
+          else
+            # Never leave a hash from an earlier build behind.
+            plutil -remove DontBurnCommit "$plist" 2>/dev/null || true
           fi
 
   dontburn-hook:
