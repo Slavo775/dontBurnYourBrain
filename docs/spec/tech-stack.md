@@ -57,7 +57,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 | Entity | Key fields | Synced |
 | --- | --- | --- |
 | **Workspace** | name, color, sort order, archived flag, default block minutes, focus preset, rounding step, whether breaks count, folder paths that belong to it, linked Jira site, calendar | Yes |
-| **Project** | name, workspace, optional Jira project key | Yes |
+| **Project** | name, workspace, sort order, archived flag, whether its time is tracked, optional Jira project key | Yes |
 | **TimeBlock** | workspace, planned start, planned minutes, focus preset, state (planned, running, done, cancelled) | Yes |
 | **TimeEntry** | start, end, kind (work, break, meeting), workspace, project, block, issue link, note, source (timer, manual, calendar) | Yes |
 | **TimeOff** | start, end, workspace (empty means every workspace), source (calendar, manual), whether you worked anyway | Yes |
@@ -69,4 +69,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 
 CloudKit rules applied from the start: every property has a default or is optional, relationships are optional, no unique constraints, and fields are only ever added.
 
-Card 9 builds Workspace, TimeBlock and TimeEntry. The other entities arrive with their phases. The rules for the model are also in `CLAUDE.md`.
+Card 9 built Workspace, Project, TimeBlock and TimeEntry as `SchemaV1` in `DontBurnCore`, without the fields that belong to later phases (focus preset, folders, Jira, calendar, issue link). Their field names are fixed from now on, because sync cannot rename them. The other entities arrive with their phases. The rules for the model are also in `CLAUDE.md`.
+
+- **Delete rules:** deleting a workspace deletes its projects, blocks and entries. Deleting a project or a block keeps their entries and only clears the link.
+- **The project rule:** a block or entry names a project only through `assign(_:)`, and only a time-tracked project of its own workspace.

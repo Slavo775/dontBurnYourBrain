@@ -11,6 +11,7 @@ Must = needed for the app to be worth opening daily. Should = planned, later pha
 | Area | What it does | Priority | Phase |
 | --- | --- | --- | --- |
 | **Workspaces** | Any number of workspaces that you create, rename, recolor, reorder and archive yourself. Each has a color, a default block length and rhythm, its own rounding and break rules, the folders that belong to it, and optionally a Jira site and a calendar. Acme, Globex and Personal are sample data throughout this spec. | Must | 1 |
+| **Projects** | Each workspace holds its own projects, with a name, an order and an archive. A project's time can be switched off from tracking, for things you do but do not log. A block or entry names only a tracked project of its own workspace. The model arrives in phase 1, the screens to manage projects and their folders in phase 3, and the link to an issue tracker in phase 4. | Must | 1 to 4 |
 | **Time blocks** | "Next 2 hours: Acme." Countdown in the menu bar, pause, extend, switch workspace, end early. Each block is saved as time entries. | Must | 1 |
 | **Alerts** | System notification and sound when a block, focus interval or break ends. Optional warning 5 minutes before. Selectable sounds. | Must | 1 |
 | **Menu bar overview** | Menu bar shows workspace and remaining time. Click opens a compact panel with the current block and four quick actions. One more step expands it to sessions, the plan for today and totals. | Must | 1 |

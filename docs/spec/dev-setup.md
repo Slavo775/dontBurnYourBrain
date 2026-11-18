@@ -22,16 +22,19 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 
 ### Launch arguments
 
-The app reads two arguments from the command line, so a check or a screenshot looks the same on every run. A value saved with `defaults write` is never used.
+The app reads these arguments from the command line, so a check or a screenshot looks the same on every run. A value saved with `defaults write` is never used.
 
 | Argument | What it does |
 | --- | --- |
 | `-DontBurnFixedTime 2026-01-15T09:41:30+01:00` | Freezes the clock at that instant, shown in the Mac's time zone. The value needs seconds and an offset, `Z` or `±hh:mm`. A malformed value is ignored, and the clock runs live. |
 | `-DontBurnAppearance light` or `dark` | Sets the app's appearance for that launch. It does not reach the menu bar item or its menu, which follow the system. Any other value follows the system. |
+| `-DontBurnSampleData YES` | Runs on a store in memory, seeded with Acme, Globex and Personal: 3 workspaces, 5 projects (Reading under Personal is not time tracked), 3 blocks and 5 entries. `true` and `1` work too. The store on disk is never opened. With `-DontBurnFixedTime`, the sample data is seeded around that time. |
 
 ```sh
-open DerivedData/Build/Products/Debug/DontBurn.app --args -DontBurnFixedTime 2026-01-15T09:41:30+01:00 -DontBurnAppearance dark
+open DerivedData/Build/Products/Debug/DontBurn.app --args -DontBurnFixedTime 2026-01-15T09:41:30+01:00 -DontBurnAppearance dark -DontBurnSampleData YES
 ```
+
+Without `-DontBurnSampleData`, the Dev build keeps its data in `~/Library/Application Support/io.github.slavo775.dontburn.dev/DontBurn.store`. The folder is named after the bundle identifier, so the Release app's data is never touched.
 
 How light and dark are checked is in "Checking a screen" of [../../rules/testing.md](../../rules/testing.md).
 
