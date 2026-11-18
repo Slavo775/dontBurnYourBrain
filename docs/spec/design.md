@@ -79,6 +79,7 @@ Found while building the phase 0 clock. They hold for every state above.
 - On a notched built-in display, the item can sit behind the hidden-items chevron when the menu bar is full.
 - While the menu is open on one display, the item's copy on another display stops updating until the menu closes.
 - Updating every second costs about 5 % of one core in the Debug build, mostly macOS redrawing the item's copy for each display and Space.
+- On macOS 26, the console shows "It's not legal to call -layoutSubtreeIfNeeded on a view which is already being laid out" once per launch. It comes from AppKit setting up the status item for each display (`-[NSSceneStatusItem _connectVariantViewScene:]` → `-[NSStatusItem _setDisplayIdentifier:]` → `-[NSWindow _setFrameCommon:display:fromServer:]` → `-[NSWindow _layoutViewTree]`), and it also appears with a plain SF Symbol label. It is not ours and needs no fix.
 
 ## Compact panel
 
