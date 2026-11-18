@@ -133,7 +133,7 @@ How the panel behaves today, in phase 1:
 - It follows the app's appearance, so `-DontBurnAppearance` reaches it. The item and its menu follow the system.
 - Today's tracked total counts work and meetings always, and a break only when its workspace counts breaks. Entries are clipped to today and to now.
 - With nothing running, it shows the list described below. Without a store, it shows only "Nothing running", with no rows, no footer and no keys.
-- When notifications are refused, one line under the four actions says "Allow notifications to hear when a block or break ends".
+- While the app asks for the notification permission, one line under the four actions says "Allow notifications to hear when a block or break ends". It goes away when the system prompt is answered, and never shows after a refusal.
 
 ### Nothing is running
 
@@ -326,7 +326,7 @@ How it works:
 - A sound is skipped when it comes more than 60 seconds late, for example after the Mac slept.
 - The rules live in `Alerts.swift` in `DontBurnCore` (`AlertKind`, `AlertSettings` and the plan).
 
-**Permission.** It is asked at the first block start, while macOS has not asked yet, and never at launch. While it is refused, the compact panel shows one line under the four actions. When it is allowed later in System Settings, the app picks it up at the next change of plan.
+**Permission.** It is asked at the first block start, while macOS has not asked yet, and never at launch. While the system prompt is open, the compact panel shows one line under the four actions. After a refusal only the note in Settings → General remains. When it is allowed later in System Settings, the app picks it up at the next change of plan.
 
 **Settings → General** is a grouped form with three sections: When a block ends, When a break ends, and 5 minutes before a block ends. Each has a Notification switch and a "Sound (Name)" switch. The switches are stored in the defaults as `alert.<kind>.notification` and `alert.<kind>.sound`. When notifications are refused, a note says "Notifications are off for <app name>. Allow them in System Settings → Notifications." with an Open button, which only opens that pane. The version stays at the bottom, and the form scrolls when the note makes it taller than the window.
 
