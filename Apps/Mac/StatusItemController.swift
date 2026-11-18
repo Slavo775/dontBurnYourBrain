@@ -120,11 +120,15 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         case "b": action = .breakOrEndBreak
         case "+": action = .extend
         case "s":
-            navigation.isSwitching = true
+            if !event.isARepeat {
+                navigation.isSwitching = true
+            }
             return true
         default: return false
         }
-        if action.isAvailable(in: state) {
+        // A held key acts once. Repeats would extend again and again, or
+        // pause and resume into near-empty entries.
+        if !event.isARepeat, action.isAvailable(in: state) {
             countdown.perform(action)
         }
         return true
