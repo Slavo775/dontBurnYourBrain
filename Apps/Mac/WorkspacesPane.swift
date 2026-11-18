@@ -269,8 +269,12 @@ private struct WorkspaceForm: View {
         .onChange(of: workspace.defaultBlockMinutes) { save() }
         .onChange(of: nameFocusRequest, initial: true) {
             guard nameFocusRequest == workspace.id else { return }
-            isNameFocused = true
             nameFocusRequest = nil
+            // Not in this update: the form is being swapped in and the list's
+            // selection is changing, and focus set now ends on the sidebar
+            // outline. A turn later the field is in the window, takes focus
+            // and selects its text, so typing replaces the name.
+            Task { isNameFocused = true }
         }
     }
 
