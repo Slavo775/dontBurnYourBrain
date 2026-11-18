@@ -90,3 +90,9 @@ These were learned in the reference flow before this project started. All are `a
 - **What happened:** on card #14 (PR #28), the Tester reopened the compact panel several times during a block-end test while the maintainer was working. The sample block went "On a break" with no key sent by the Tester. A "b" the maintainer typed in another app most likely went to the panel, and that keystroke was lost from the app he was using. The data was the in-memory sample.
 - **Root cause:** by the card #13 design, the panel takes keys as soon as it opens, without bringing the app forward. "Running the Dev build" forbids making the app frontmost, but says nothing about the panel, which takes the keyboard without being frontmost.
 - **Proposed change:** one rule in `rules/testing.md`, "Running the Dev build", which the Tester, the Developer and the Designer all read.
+
+## 2026-11-18 · Screenshots by region · accepted
+
+- **What happened:** on card #16 (PR #31), the Tester twice took a region screenshot (`screencapture -R`) meant for the Dev app's window. Both times it captured whatever was on the maintainer's screen at those coordinates instead. The Tester deleted both files from its scratchpad at once and switched to `screencapture -l <window ID>`. Neither file reached the screenshots folder, the repository or the pull request.
+- **Root cause:** "Checking a screen" says to take screenshots with `screencapture`, but not how. A region is a place on the screen, not a window. The Dev app is never frontmost, so anything else can cover that region.
+- **Proposed change:** one rule in `rules/testing.md`, "Checking a screen", which the Tester, the Reviewer and the Designer read.
