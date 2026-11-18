@@ -1,7 +1,112 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%lld h" : {
+
+    },
+    "%lld h %@" : {
+
+    },
+    "%lld min" : {
+
+    },
+    "A workspace is one area of work, such as one client." : {
+
+    },
+    "Add a workspace" : {
+
+    },
+    "Archive" : {
+
+    },
+    "Archive this workspace" : {
+
+    },
+    "Archive “%@”?" : {
+
+    },
+    "Archived" : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Choose a workspace" : {
+
+    },
+    "Color" : {
+
+    },
+    "Create a workspace" : {
+
+    },
+    "Default block" : {
+
+    },
+    "General" : {
+
+    },
+    "Indigo" : {
+
+    },
+    "It leaves every menu, and its history stays. You can restore it from the Archived list." : {
+
+    },
+    "Name" : {
+
+    },
+    "New workspace" : {
+
+    },
+    "No number key" : {
+
+    },
+    "No workspaces yet" : {
+
+    },
+    "Ochre" : {
+
+    },
+    "Orange" : {
+
+    },
+    "Quick start" : {
+
+    },
     "Quit %@" : {
+
+    },
+    "Raspberry" : {
+
+    },
+    "Restore" : {
+
+    },
+    "Settings…" : {
+
+    },
+    "Shown on key %lld" : {
+
+    },
+    "Slate" : {
+
+    },
+    "Teal" : {
+
+    },
+    "The data could not be opened" : {
+
+    },
+    "Unnamed" : {
+
+    },
+    "Version" : {
+
+    },
+    "Workspaces" : {
+
+    },
+    "Workspaces can't be shown or changed right now." : {
 
     }
   },

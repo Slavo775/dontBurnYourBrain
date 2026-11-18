@@ -9,8 +9,7 @@ struct DontBurnApp: App {
 
     @State private var ticker = Ticker(fixedTime: Self.fixedTime)
 
-    /// The open store, or `nil` when it could not be opened. Nothing reads it
-    /// yet. It is opened at launch so the store's place is fixed from the start.
+    /// The open store, or `nil` when it could not be opened.
     private let container: ModelContainer?
 
     init() {
@@ -71,12 +70,17 @@ struct DontBurnApp: App {
 
     var body: some Scene {
         MenuBarExtra {
+            OpenSettingsButton()
+            Divider()
             Button("Quit \(Bundle.main.displayName)") {
                 NSApplication.shared.terminate(nil)
             }
             .keyboardShortcut("q")
         } label: {
             ClockLabel(ticker: ticker)
+        }
+        Settings {
+            SettingsView(container: container)
         }
     }
 }
