@@ -89,7 +89,8 @@ public struct TimerEngine {
 
     /// Starts a block for `workspace` with a running work entry.
     ///
-    /// Whatever runs ends first, at the same instant. The length is
+    /// Whatever runs ends first, at the same instant. The new block starts at
+    /// `now`, or after the latest timer entry when the clock moved back. The length is
     /// `minutes`, or the workspace's default length when `nil`. Throws
     /// ``TimerEngineError/invalidMinutes`` or a ``ProjectAssignmentError``
     /// before changing anything.
@@ -107,6 +108,7 @@ public struct TimerEngine {
             start = max(start, latestEnd(of: block) ?? start)
             block.state = .done
         }
+        start = try max(start, latestTimerEnd() ?? start)
         let block = TimeBlock(workspace: workspace, plannedStart: start, plannedMinutes: minutes, state: .running)
         context.insert(block)
         block.project = project
@@ -135,7 +137,7 @@ public struct TimerEngine {
     /// Starts a new work entry in the paused block. Allowed only while paused.
     public func resume(at now: Date) throws {
         let (block, _) = try current(at: now, allowed: [.paused])
-        begin(.work, in: block, at: max(now, latestEnd(of: block) ?? now))
+        try begin(.work, in: block, at: max(now, latestTimerEnd() ?? now))
         try context.save()
     }
 
@@ -158,10 +160,15 @@ public struct TimerEngine {
     }
 
     /// Adds `minutes` to the running block's planned length. Allowed while a block runs, paused or not.
+    ///
+    /// Throws ``TimerEngineError/invalidMinutes`` when `minutes` is zero or
+    /// less, or when the new length would not fit in an `Int`.
     public func extend(by minutes: Int = defaultExtendMinutes, at now: Date) throws {
         guard minutes > 0 else { throw TimerEngineError.invalidMinutes }
         let (block, _) = try current(at: now, allowed: [.working, .paused, .onBreak])
-        block.plannedMinutes += minutes
+        let (length, overflow) = block.plannedMinutes.addingReportingOverflow(minutes)
+        guard !overflow else { throw TimerEngineError.invalidMinutes }
+        block.plannedMinutes = length
         try context.save()
     }
 
@@ -206,6 +213,21 @@ public struct TimerEngine {
 
     private func latestEnd(of block: TimeBlock) -> Date? {
         block.entries?.compactMap(\.end).max()
+    }
+
+    /// The latest end among finished timer entries, in any block or none.
+    ///
+    /// Only the timer's own entries count: a manual or calendar entry may lie
+    /// in the future, such as a meeting later today, and must not push the
+    /// timer's start past it.
+    private func latestTimerEnd() throws -> Date? {
+        let timer = TimeEntrySource.timer.rawValue
+        var descriptor = FetchDescriptor<TimeEntry>(
+            predicate: #Predicate { $0.sourceRaw == timer && $0.end != nil },
+            sortBy: [SortDescriptor(\.end, order: .reverse)],
+        )
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first?.end
     }
 
     // MARK: - Derived times
