@@ -118,8 +118,9 @@ private struct StartRow<Content: View>: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            content
-            Spacer(minLength: 0)
+            // Its own stack, so a Spacer inside the content pushes to the row's edge.
+            HStack(spacing: 12) { content }
+                .frame(maxWidth: .infinity, alignment: .leading)
             if let key {
                 Text(verbatim: key)
                     .font(.system(size: 11, weight: .semibold))
@@ -168,6 +169,7 @@ struct CustomBlockForm: View {
                     }
                 }
                 .labelsHidden()
+                .buttonStyle(.borderless)
                 .fixedSize()
             }
             StartRow(key: nil) {
@@ -180,21 +182,15 @@ struct CustomBlockForm: View {
                     }
                 }
                 .labelsHidden()
+                .buttonStyle(.borderless)
                 .fixedSize()
             }
         }
 
-        Button {
+        Button("Start") {
             navigation.startCustomBlock(with: countdown)
-        } label: {
-            Text("Start")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color.surface)
-                .frame(maxWidth: .infinity, minHeight: 44)
-                .background(Color.ink, in: .rect(cornerRadius: 10))
-                .contentShape(.rect(cornerRadius: 10))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PanelWideButtonStyle())
         .disabled(navigation.customWorkspace == nil)
     }
 }
@@ -203,14 +199,35 @@ struct CustomBlockForm: View {
 struct NoWorkspaces: View {
     var body: some View {
         PanelTitle("Nothing running") {}
-        VStack(alignment: .leading, spacing: 4) {
+        // The prototype's note, as in its "Day off" panel.
+        VStack(alignment: .leading, spacing: 2) {
             Text("No workspaces yet")
                 .fontWeight(.semibold)
             Text("Add a workspace in Settings to start a block.")
+                .font(.system(size: 12))
                 .foregroundStyle(Color.muted)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.sunken, in: .rect(cornerRadius: 12))
         OpenSettingsButton()
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(PanelWideButtonStyle())
+    }
+}
+
+/// The prototype's wide dark button (`m-btn go wide`): ink on the surface,
+/// so the panel keeps the workspace colour as its only strong one.
+private struct PanelWideButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 14, weight: .medium))
+            .foregroundStyle(Color.surface)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .background(Color.ink.opacity(configuration.isPressed ? 0.8 : 1), in: .rect(cornerRadius: 10))
+            .contentShape(.rect(cornerRadius: 10))
+            .opacity(isEnabled ? 1 : 0.45)
     }
 }
