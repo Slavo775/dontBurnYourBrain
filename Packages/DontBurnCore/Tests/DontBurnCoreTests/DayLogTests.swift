@@ -230,3 +230,47 @@ private func hours(_ value: Double, from date: Date) -> Date {
     #expect(log.total == 7200)
     #expect(try DayLog(day: nine, in: desk.context, now: nine, calendar: utc).items.isEmpty)
 }
+
+// MARK: - Whole minutes
+
+@Test func `rows show whole minutes rounded down and every total is their sum`() throws {
+    let desk = try Desk()
+    // 39:50, 30:20 and 41:59 for Acme, 20:30 for Globex.
+    desk.context.insert(TimeEntry(workspace: desk.acme, start: at(-200), end: at(-200 + 39 + 50.0 / 60)))
+    desk.context.insert(TimeEntry(workspace: desk.acme, start: at(-150), end: at(-150 + 30 + 20.0 / 60)))
+    desk.context.insert(TimeEntry(workspace: desk.globex, start: at(-110), end: at(-110 + 20.5)))
+    desk.context.insert(TimeEntry(workspace: desk.acme, start: at(-60), end: at(-60 + 41 + 59.0 / 60)))
+    try desk.context.save()
+
+    let today = try DayLog(day: nine, in: desk.context, now: nine, calendar: utc)
+    let rows: [TimeInterval] = [39 * 60, 30 * 60, 20 * 60, 41 * 60]
+    let totals: [TimeInterval] = [110 * 60, 20 * 60]
+
+    #expect(today.items.map(\.length) == rows)
+    #expect(today.totals.map(\.tracked) == totals)
+    #expect(today.total == 130 * 60)
+    #expect(try CompactPanel.trackedToday(in: desk.context, now: nine, calendar: utc) == 130 * 60)
+}
+
+@Test func `a running entry counts in whole minutes up to now`() throws {
+    let desk = try Desk()
+    try desk.engine.start(desk.acme, minutes: 120, at: at(-30.25))
+
+    #expect(try DayLog(day: nine, in: desk.context, now: nine, calendar: utc).total == 30 * 60)
+    #expect(try DayLog(day: nine, in: desk.context, now: at(0.2), calendar: utc).total == 30 * 60)
+    #expect(try DayLog(day: nine, in: desk.context, now: at(0.8), calendar: utc).total == 31 * 60)
+}
+
+@Test(arguments: TimerScenario.allCases)
+func `no timer scenario on the sample data leaves overlapping entries`(scenario: TimerScenario) throws {
+    let container = try ModelStore.inMemory()
+    let context = ModelContext(container)
+    let now = Date(timeIntervalSince1970: 1_768_466_490)
+    try SampleData.seed(into: context, now: now)
+    try scenario.apply(to: context, now: now)
+
+    let all = try entries(context)
+    for (earlier, later) in zip(all, all.dropFirst()) {
+        #expect((earlier.end ?? now) <= later.start, "\(scenario.rawValue): entries overlap")
+    }
+}

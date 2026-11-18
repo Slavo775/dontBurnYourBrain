@@ -302,3 +302,65 @@ func `a change is refused when the end is not after the start, before the future
     #expect(EntryDraft(running, now: nine).end == nine)
     #expect(EntryDraft(finished, now: nine).end == at(-40))
 }
+
+// MARK: - The free default for a new entry
+
+private var gmt: Calendar {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = .gmt
+    return calendar
+}
+
+@Test func `with nothing tracked the free stretch ends now, on the whole minute before it`() throws {
+    let desk = try Desk()
+    let now = at(0.75)
+
+    let free = try EntryEditor(context: desk.context)
+        .latestFreeStretch(minutes: 30, endingBy: now, at: now, calendar: gmt)
+
+    #expect(free == DateInterval(start: at(-30), end: at(0)))
+}
+
+@Test func `the free stretch ends by the given end when that is before now`() throws {
+    let desk = try Desk()
+    let free = try EntryEditor(context: desk.context)
+        .latestFreeStretch(minutes: 60, endingBy: at(-600), at: nine, calendar: gmt)
+    #expect(free == DateInterval(start: at(-660), end: at(-600)))
+}
+
+@Test func `the free stretch steps back past the running block and every entry it hits`() throws {
+    let desk = try Desk()
+    // Work 08:00 to 08:20, a gap of ten minutes, work 08:30:30 to 08:40, and a block running since 08:40.
+    desk.context.insert(TimeEntry(workspace: desk.globex, start: at(-60), end: at(-40)))
+    desk.context.insert(TimeEntry(workspace: desk.globex, start: at(-29.5), end: at(-20)))
+    try desk.context.save()
+    try desk.engine.start(desk.acme, minutes: 120, at: at(-20))
+    let editor = EntryEditor(context: desk.context)
+
+    let short = try editor.latestFreeStretch(minutes: 5, endingBy: nine, at: nine, calendar: gmt)
+    let long = try editor.latestFreeStretch(minutes: 30, endingBy: nine, at: nine, calendar: gmt)
+
+    // 08:30:30 rounds down to 08:30, so the ten-minute gap fits five minutes.
+    #expect(short == DateInterval(start: at(-35), end: at(-30)))
+    #expect(long == DateInterval(start: at(-90), end: at(-60)))
+    let interval = try #require(long)
+    try editor.add(EntryDraft(start: interval.start, end: interval.end, workspace: desk.personal), at: nine)
+}
+
+@Test func `the free stretch gives up after a hundred steps`() throws {
+    let desk = try Desk()
+    // Back-to-back 40-minute entries up to now: each step skips exactly one.
+    for index in 1 ... 101 {
+        let end = at(Double(-40 * (index - 1)))
+        desk.context.insert(TimeEntry(workspace: desk.acme, start: end.addingTimeInterval(-2400), end: end))
+    }
+    try desk.context.save()
+    let editor = EntryEditor(context: desk.context)
+
+    #expect(try editor.latestFreeStretch(minutes: 30, endingBy: nine, at: nine, calendar: gmt) == nil)
+    let earlier = at(-40 * 2)
+    #expect(
+        try editor.latestFreeStretch(minutes: 30, endingBy: earlier, at: nine, calendar: gmt)
+            == DateInterval(start: at(-40 * 101 - 30), end: at(-40 * 101)),
+    )
+}
