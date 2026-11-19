@@ -110,8 +110,8 @@ struct WorkspaceList: View {
 }
 
 /// A sunken row: its content on the left and a key on the right. A ghost row
-/// is outlined instead of filled.
-private struct StartRow<Content: View>: View {
+/// is outlined instead of filled, for a quieter, secondary action.
+struct StartRow<Content: View>: View {
     let key: String?
     var isGhost = false
     @ViewBuilder let content: Content
