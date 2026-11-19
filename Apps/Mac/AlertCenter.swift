@@ -152,7 +152,8 @@ extension AlertKind {
 private extension PlannedAlert {
     /// What makes two plans the same notifications: the kind, the second and the workspace or none.
     var key: String {
-        "\(kind.rawValue) \(Int(date.timeIntervalSinceReferenceDate.rounded())) \(String(describing: workspace))"
+        // The rounded seconds stay a Double: a far date must not trap in a conversion to Int.
+        "\(kind.rawValue) \(date.timeIntervalSinceReferenceDate.rounded()) \(String(describing: workspace))"
     }
 
     /// The title and the body.

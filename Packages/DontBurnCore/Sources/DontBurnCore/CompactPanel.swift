@@ -98,7 +98,7 @@ public struct CompactPanel: Equatable, Sendable {
 
     /// `h:mm` and `:ss` from one hour on, `m` and `:ss` below it, rounded down.
     static func split(_ seconds: TimeInterval) -> (String, String) {
-        let whole = max(0, Int(seconds))
+        let whole = MenuBarLabel.wholeSeconds(seconds)
         let hours = whole / 3600, minutes = whole % 3600 / 60
         let large = hours > 0 ? "\(hours):" + twoDigits(minutes) : "\(minutes)"
         return (large, ":" + twoDigits(whole % 60))
@@ -174,15 +174,22 @@ public enum QuickAction: CaseIterable, Sendable {
     ///
     /// On a break with no block, End break ends it, with nothing after it, and
     /// +15 moves its end later. Throws ``TimerEngineError/notAllowed(_:)``
-    /// when the action is not available in the state at `now`. A break that
-    /// is over at `now` becomes `nil` first.
+    /// when the action is not available in the state at `now`, and
+    /// ``TimerEngineError/invalidMinutes`` when +15 would make the break
+    /// longer than ``IdleBreak/maximumLength``. A break that is over at `now`
+    /// becomes `nil` first.
     public func perform(with engine: TimerEngine, idleBreak: inout IdleBreak?, at now: Date) throws {
         idleBreak = try idleBreak?.running(beside: engine.settle(at: now), at: now)
         guard idleBreak != nil else { return try perform(with: engine, at: now) }
         guard isAvailable(in: .idleBreak) else { throw TimerEngineError.notAllowed(.idleBreak) }
         switch self {
         case .breakOrEndBreak: idleBreak = nil
-        case .extend: idleBreak?.extend(by: TimerEngine.defaultExtendMinutes)
+        case .extend:
+            let added = TimeInterval(TimerEngine.defaultExtendMinutes) * 60
+            guard let running = idleBreak,
+                  let longer = IdleBreak(start: running.start, end: running.end.addingTimeInterval(added))
+            else { throw TimerEngineError.invalidMinutes }
+            idleBreak = longer
         case .pauseOrResume: break
         }
     }

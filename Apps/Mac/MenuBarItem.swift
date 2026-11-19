@@ -9,8 +9,8 @@ import SwiftUI
 ///
 /// Each tick settles the timer engine, so a block whose time is up closes and
 /// the item returns to the outline dot. The item and the panel read the same
-/// settled state. Beside the engine it keeps the break with nothing running
-/// (``IdleBreak``) and the last break length, which no store holds. While
+/// settled state. Beside the engine it keeps the latest break with nothing
+/// running (``IdleBreak``) and the last break length, which no store holds. While
 /// the panel is open the countdown ticks every second, and otherwise only as
 /// often as the item needs. A `TimelineView` in a menu bar label kept the
 /// main thread busy updating the item from launch on, so the countdown ticks
@@ -65,7 +65,9 @@ final class Countdown {
     /// The status the last settle reported, and when. `nil` after a user's
     /// action, so only a block or a break that runs out by itself plays a sound.
     @ObservationIgnored private var settled: (status: TimerStatus, at: Date)?
-    /// The break with nothing running, or `nil`. The views read it through ``panel`` and ``label``.
+    /// The latest break with nothing running, still running or finished, or
+    /// `nil`. A finished one keeps the end it really had, where untracked time
+    /// starts. The views read it through ``panel`` and ``label``.
     @ObservationIgnored private var idleBreak: IdleBreak?
     /// Where the break with nothing running and the last break length are
     /// kept across launches, or `nil` to keep them in memory only.
@@ -79,9 +81,9 @@ final class Countdown {
     /// when there is no store. With `fixedTime` it is computed for that
     /// instant, acts at that instant, never ticks and gives no alerts.
     ///
-    /// `defaults` keeps the break with nothing running and the last break
-    /// length across launches. Without it, as for the sample data, both stay
-    /// in memory and start from `idleBreak` and the default length.
+    /// `defaults` keeps the latest break with nothing running and the last
+    /// break length across launches. Without it, as for the sample data, both
+    /// stay in memory and start from `idleBreak` and the default length.
     init(
         container: ModelContainer?,
         fixedTime: Date?,
@@ -143,15 +145,20 @@ final class Countdown {
 
     /// Takes `action` now, on the running block or the break with nothing running.
     func perform(_ action: QuickAction) {
-        act("take a quick action") { try action.perform(with: $0, idleBreak: &idleBreak, at: $1) }
+        act("take a quick action") { engine, now in
+            try changeBreak(with: engine, at: now) { try action.perform(with: engine, idleBreak: &$0, at: now) }
+        }
     }
 
     /// Starts a break of `minutes` now, inside the running block or with
     /// nothing running, and remembers the length for next time.
     func startBreak(minutes: Int) {
-        breakMinutes = minutes
-        act("start a break") {
-            try QuickAction.startBreak(minutes: minutes, with: $0, idleBreak: &idleBreak, at: $1)
+        act("start a break") { engine, now in
+            try changeBreak(with: engine, at: now) {
+                try QuickAction.startBreak(minutes: minutes, with: engine, idleBreak: &$0, at: now)
+            }
+            // Only a break that started moves the preselection.
+            breakMinutes = minutes
         }
         // Its end is announced too, so a first break asks as a first start does.
         alerts?.askPermissionIfUndetermined()
@@ -180,6 +187,18 @@ final class Countdown {
         timer?.fireDate = next
     }
 
+    /// Passes the break with nothing running at `now`, or `nil`, to `change`.
+    /// One that stops running there is kept as finished.
+    private func changeBreak(
+        with engine: TimerEngine,
+        at now: Date,
+        _ change: (inout IdleBreak?) throws -> Void,
+    ) throws {
+        var running = try idleBreak?.running(beside: engine.settle(at: now), at: now)
+        try change(&running)
+        idleBreak = running ?? idleBreak?.ended(at: now)
+    }
+
     private func act(_ what: String, _ body: (TimerEngine, Date) throws -> Void) {
         guard let context else { return }
         do {
@@ -204,16 +223,18 @@ final class Countdown {
         do {
             let engine = TimerEngine(context: context)
             let blockStatus = try engine.settle(at: now)
-            idleBreak = idleBreak?.running(beside: blockStatus, at: now)
-            let status = idleBreak?.status(at: now) ?? blockStatus
+            // Before anything is shown, so a damaged break never is.
+            let running = idleBreak?.running(beside: blockStatus, at: now)
+            idleBreak = running ?? idleBreak?.ended(at: now)
+            let status = running?.status(at: now) ?? blockStatus
             let since = try MenuBarLabel.untrackedStart(
-                in: context, appStart: appStart, now: now, calendar: .current,
+                in: context, appStart: appStart, now: now, calendar: .current, idleBreak: idleBreak,
             )
             let block = try engine.runningBlock()
             announce(status, workspace: block?.workspace?.name ?? "", at: now)
             label = MenuBarLabel(status: status, workspace: block?.workspace, untrackedSince: since, at: now)
             let tracked = try CompactPanel.trackedToday(in: context, now: now, calendar: .current)
-            panel = idleBreak.map { CompactPanel(idleBreak: $0, at: now, tracked: tracked) }
+            panel = running.map { CompactPanel(idleBreak: $0, at: now, tracked: tracked) }
                 ?? CompactPanel(status: status, block: block, tracked: tracked)
             trackedToday = MenuBarLabel.hoursAndMinutes(tracked)
             workspaces = try WorkspaceRoster(context: context).activeWorkspaces()
@@ -236,8 +257,8 @@ final class Countdown {
     private static let idleBreakStartKey = "break.idle.start"
     private static let idleBreakEndKey = "break.idle.end"
 
-    /// The break with nothing running kept in `defaults`, or `nil` when none
-    /// is kept or what is kept is damaged.
+    /// The latest break with nothing running kept in `defaults`, or `nil` when
+    /// none is kept or what is kept is damaged.
     private static func storedIdleBreak(in defaults: UserDefaults) -> IdleBreak? {
         guard let start = defaults.object(forKey: idleBreakStartKey) as? Date,
               let end = defaults.object(forKey: idleBreakEndKey) as? Date
@@ -245,20 +266,20 @@ final class Countdown {
         return IdleBreak(start: start, end: end)
     }
 
-    /// Keeps the break with nothing running and the last break length in the
-    /// defaults, writing only what changed.
+    /// Keeps the latest break with nothing running and the last break length
+    /// in the defaults, writing only what changed.
     private func saveBreaks() {
         guard let defaults else { return }
         if TimerEngine.breakLength(remembered: defaults.integer(forKey: Self.breakMinutesKey)) != breakMinutes {
             defaults.set(breakMinutes, forKey: Self.breakMinutesKey)
         }
-        guard Self.storedIdleBreak(in: defaults) != idleBreak else { return }
-        if let idleBreak {
-            defaults.set(idleBreak.start, forKey: Self.idleBreakStartKey)
-            defaults.set(idleBreak.end, forKey: Self.idleBreakEndKey)
-        } else {
-            defaults.removeObject(forKey: Self.idleBreakStartKey)
-            defaults.removeObject(forKey: Self.idleBreakEndKey)
+        // Against the raw values, so a damaged pair is removed and a kept one is not written again.
+        for (key, date) in [(Self.idleBreakStartKey, idleBreak?.start), (Self.idleBreakEndKey, idleBreak?.end)] {
+            let stored = defaults.object(forKey: key)
+            let isKept = date.map { stored as? Date == $0 } ?? (stored == nil)
+            if !isKept {
+                defaults.set(date, forKey: key)
+            }
         }
     }
 
