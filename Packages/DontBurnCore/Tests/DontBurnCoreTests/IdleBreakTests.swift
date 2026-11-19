@@ -87,6 +87,60 @@ func `the progress of a break with nothing running stays between zero and one`(
     }
 }
 
+// MARK: - Read back from outside, and once it stopped
+
+@Test func `a break with nothing running ending up to a day ahead runs, one ending later is taken as damaged`() throws {
+    let dayAhead = try #require(IdleBreak(start: nine, end: nine.addingTimeInterval(IdleBreak.maximumLength)))
+    let pastADay = try #require(IdleBreak(
+        start: nine.addingTimeInterval(1), end: nine.addingTimeInterval(IdleBreak.maximumLength + 1),
+    ))
+
+    #expect(dayAhead.running(beside: .idle, at: nine) == dayAhead)
+    #expect(pastADay.running(beside: .idle, at: nine) == nil)
+    #expect(pastADay.running(beside: .idle, at: nine.addingTimeInterval(1)) == pastADay)
+}
+
+@Test func `a break read back millions of years ahead neither runs nor counts as finished`() throws {
+    let far = Date(timeIntervalSinceReferenceDate: 1e15)
+    let damaged = try #require(IdleBreak(start: far, end: far.addingTimeInterval(3600)))
+
+    #expect(damaged.running(beside: .idle, at: nine) == nil)
+    #expect(damaged.ended(at: nine) == nil)
+}
+
+@Test func `a break with nothing running ended early finishes at that moment and keeps its start`() throws {
+    #expect(try idleBreak(0, 15).ended(at: at(5)) == idleBreak(0, 5))
+}
+
+@Test func `a break with nothing running that ran out keeps its planned end`() throws {
+    #expect(try idleBreak(0, 5).ended(at: at(5)) == idleBreak(0, 5))
+    #expect(try idleBreak(0, 5).ended(at: at(40)) == idleBreak(0, 5))
+}
+
+@Test func `a break with nothing running ended by a block finishes where the block starts`() throws {
+    let desk = try Desk()
+    var resting: IdleBreak?
+    try QuickAction.startBreak(minutes: 15, with: desk.engine, idleBreak: &resting, at: nine)
+    let started = try #require(resting)
+
+    try desk.engine.start(desk.globex, at: at(4))
+
+    #expect(try started.running(beside: desk.engine.settle(at: at(4)), at: at(4)) == nil)
+    #expect(try started.ended(at: at(4)) == idleBreak(0, 4))
+}
+
+@Test func `a break ending more than a day ahead is taken as damaged and does not finish`() throws {
+    let ahead = try #require(IdleBreak(start: at(60), end: at(60).addingTimeInterval(IdleBreak.maximumLength)))
+    #expect(ahead.ended(at: nine) == nil)
+}
+
+@Test func `a finished break read back after a restart stays finished with the same end`() throws {
+    let finished = try idleBreak(40, 50)
+    let readBack = try #require(IdleBreak(start: finished.start, end: finished.end))
+    #expect(readBack.running(beside: .idle, at: at(90)) == nil)
+    #expect(readBack.ended(at: at(90)) == finished)
+}
+
 // MARK: - Starting one
 
 @Test(arguments: TimerEngine.breakLengthChoices)
@@ -183,6 +237,26 @@ func `a break with nothing running of zero minutes or less, or longer than a day
     #expect(try resting == idleBreak(0, 35))
     #expect(try entries(desk.context).isEmpty)
     #expect(try blocks(desk.context).isEmpty)
+}
+
+@Test func `+15 on a break with nothing running is refused past a day, and the break stays as it was`() throws {
+    let desk = try Desk()
+    var resting: IdleBreak? = try idleBreak(0, 24 * 60 - 10)
+
+    #expect(throws: TimerEngineError.invalidMinutes) {
+        try QuickAction.extend.perform(with: desk.engine, idleBreak: &resting, at: at(60))
+    }
+
+    #expect(try resting == idleBreak(0, 24 * 60 - 10))
+}
+
+@Test func `+15 on a break with nothing running may reach exactly a day`() throws {
+    let desk = try Desk()
+    var resting: IdleBreak? = try idleBreak(0, 24 * 60 - 15)
+
+    try QuickAction.extend.perform(with: desk.engine, idleBreak: &resting, at: at(60))
+
+    #expect(try resting == idleBreak(0, 24 * 60))
 }
 
 @Test func `pausing a break with nothing running is refused and leaves it running`() throws {

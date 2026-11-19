@@ -147,6 +147,34 @@ func `nothing running redraws when the untracked time shows or its minute change
     }
 }
 
+// MARK: - Damaged times
+
+@Test func `whole seconds are zero for no number or a negative time, and capped at about 68 years`() {
+    #expect(MenuBarLabel.wholeSeconds(.nan) == 0)
+    #expect(MenuBarLabel.wholeSeconds(-.infinity) == 0)
+    #expect(MenuBarLabel.wholeSeconds(-5) == 0)
+    #expect(MenuBarLabel.wholeSeconds(0) == 0)
+    #expect(MenuBarLabel.wholeSeconds(59.9) == 59)
+    #expect(MenuBarLabel.wholeSeconds(TimeInterval(Int32.max)) == Int(Int32.max))
+    #expect(MenuBarLabel.wholeSeconds(TimeInterval(Int32.max) + 1) == Int(Int32.max))
+    #expect(MenuBarLabel.wholeSeconds(TimeInterval(Int.max) * 2) == Int(Int32.max))
+    #expect(MenuBarLabel.wholeSeconds(.infinity) == Int(Int32.max))
+}
+
+@Test func `a damaged time shows as zero or at its cap and never stops the app`() {
+    #expect(MenuBarLabel.hoursAndMinutes(1e300) == "596523:14")
+    #expect(MenuBarLabel.hoursAndMinutes(.nan) == "0:00")
+    #expect(MenuBarLabel.minutesAndSeconds(.infinity) == "35791394:07")
+    #expect(MenuBarLabel.minutesAndSeconds(-.infinity) == "0:00")
+    let endless = TimerStatus(state: .idleBreak, plannedEnd: nil, blockTimeLeft: nil, breakTimeLeft: 1e20)
+    #expect(label(endless) == .onBreak(time: "35791394:07"))
+    #expect(label(working(left: .infinity)) == .running(name: "Acme", color: .teal, time: "596523:14"))
+    for status in [endless, working(left: .infinity), working(left: .nan), onBreak(left: .nan)] {
+        let wait = redraw(status)
+        #expect(wait > 0 && wait <= 60, "\(status) waits \(wait)")
+    }
+}
+
 // MARK: - Where the untracked time starts
 
 @Test func `with no entry the untracked time starts at the app's start`() throws {

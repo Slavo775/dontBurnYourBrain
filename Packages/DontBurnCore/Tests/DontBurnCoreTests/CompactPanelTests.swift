@@ -33,6 +33,19 @@ func `the countdown shows hours and minutes from one hour on, minutes alone belo
     #expect(rest == small)
 }
 
+@Test func `a damaged countdown shows zero or its cap and never stops the app`() {
+    for value in [TimeInterval.nan, -.infinity, -1e300] {
+        let (clock, seconds) = CompactPanel.split(value)
+        #expect(clock == "0")
+        #expect(seconds == ":00")
+    }
+    for value in [TimeInterval.infinity, 1e20, TimeInterval(Int.max) * 2] {
+        let (clock, seconds) = CompactPanel.split(value)
+        #expect(clock == "596523:14")
+        #expect(seconds == ":07")
+    }
+}
+
 // MARK: - What the panel shows
 
 @Test func `nothing is shown while nothing runs`() throws {
