@@ -151,26 +151,31 @@ struct BreakLengthList: View {
 
         VStack(spacing: 8) {
             ForEach(Array(TimerEngine.breakLengthChoices.enumerated()), id: \.element) { position, minutes in
+                let isPreselected = minutes == countdown.breakMinutes
                 Button {
                     navigation.startBreak(minutes: minutes, with: countdown)
                 } label: {
-                    StartRow(key: "\(position + 1)") {
+                    StartRow(key: "\(position + 1)", isDefault: isPreselected) {
                         Text("\(minutes) min")
                             .fontWeight(.semibold)
                     }
                 }
                 .buttonStyle(.plain)
-                .accessibilityAddTraits(minutes == countdown.breakMinutes ? .isSelected : [])
+                .accessibilityLabel("\(minutes) minutes")
+                .accessibilityAddTraits(isPreselected ? .isSelected : [])
             }
         }
     }
 }
 
 /// A sunken row: its content on the left and a key on the right. A ghost row
-/// is outlined instead of filled, for a quieter, secondary action.
+/// is outlined instead of filled, for a quieter, secondary action. The default
+/// row, the one Return starts, gets a 2 pt ink outline and the Return key
+/// beside its own, so it stands out by shape, not by colour alone.
 struct StartRow<Content: View>: View {
     let key: String?
     var isGhost = false
+    var isDefault = false
     @ViewBuilder let content: Content
 
     var body: some View {
@@ -178,17 +183,16 @@ struct StartRow<Content: View>: View {
             // Its own stack, so a Spacer inside the content pushes to the row's edge.
             HStack(spacing: 12) { content }
                 .frame(maxWidth: .infinity, alignment: .leading)
-            if let key {
-                Text(verbatim: key)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color.muted)
-                    .padding(.horizontal, 6)
-                    .frame(minWidth: 22, minHeight: 22)
-                    .background(Color.keyBackground, in: .rect(cornerRadius: 6))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 6).strokeBorder(Color.line)
+            if isDefault || key != nil {
+                // Return to the left, so the number keys stay in one column.
+                HStack(spacing: 6) {
+                    if isDefault {
+                        KeyCap("↵")
                     }
-                    .accessibilityHidden(true)
+                    if let key {
+                        KeyCap(key)
+                    }
+                }
             }
         }
         .padding(.horizontal, 14)
@@ -196,11 +200,36 @@ struct StartRow<Content: View>: View {
         .frame(maxWidth: .infinity, minHeight: isGhost ? 44 : 56)
         .background(isGhost ? Color.clear : Color.sunken, in: .rect(cornerRadius: 12))
         .overlay {
-            if isGhost {
+            if isDefault {
+                RoundedRectangle(cornerRadius: 12).strokeBorder(Color.ink, lineWidth: 2)
+            } else if isGhost {
                 RoundedRectangle(cornerRadius: 12).strokeBorder(Color.line)
             }
         }
         .contentShape(.rect(cornerRadius: 12))
+    }
+}
+
+/// A key shown beside a row, such as a number key, as the prototype's `m-key`.
+/// VoiceOver skips it, because the row says what it does.
+private struct KeyCap: View {
+    let key: String
+
+    init(_ key: String) {
+        self.key = key
+    }
+
+    var body: some View {
+        Text(verbatim: key)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(Color.muted)
+            .padding(.horizontal, 6)
+            .frame(minWidth: 22, minHeight: 22)
+            .background(Color.keyBackground, in: .rect(cornerRadius: 6))
+            .overlay {
+                RoundedRectangle(cornerRadius: 6).strokeBorder(Color.line)
+            }
+            .accessibilityHidden(true)
     }
 }
 

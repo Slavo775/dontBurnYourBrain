@@ -28,6 +28,28 @@
     "%lld min" : {
 
     },
+    "%lld minutes" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld minute"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld minutes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "5 minutes before a block ends" : {
 
     },
@@ -193,6 +215,9 @@
     "Next day" : {
 
     },
+    "No block running" : {
+
+    },
     "No number key" : {
 
     },
@@ -227,9 +252,6 @@
 
     },
     "On a break, %@ left" : {
-
-    },
-    "On a break, nothing running" : {
 
     },
     "On a break, then back to %@" : {

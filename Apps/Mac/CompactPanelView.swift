@@ -58,7 +58,9 @@ private struct RunningBlock: View {
     var body: some View {
         HStack(spacing: 10) {
             if panel.state == .idleBreak {
+                // Muted, like the strip on a break: no workspace, so no strong colour.
                 Image(systemName: "cup.and.heat.waves")
+                    .foregroundStyle(Color.muted)
                     .accessibilityHidden(true)
                 Text("Break")
                     .font(.system(size: 15, weight: .semibold))
@@ -160,7 +162,7 @@ private struct RunningBlock: View {
         case let .leftOf(length): "left of \(length)"
         case .paused: "Paused"
         case let .onBreak(name): "On a break, then back to \(name)"
-        case .idleBreak: "On a break, nothing running"
+        case .idleBreak: "No block running"
         }
     }
 }
