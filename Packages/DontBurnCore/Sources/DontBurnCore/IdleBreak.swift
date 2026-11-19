@@ -60,28 +60,30 @@ public struct IdleBreak: Equatable, Sendable {
 
     /// This break while it still runs beside a timer that reports `status` at
     /// `now`, otherwise `nil`: it is over, a block runs, which always wins, or
-    /// its end lies more than ``maximumLength`` after `now`, which only a
-    /// damaged value does.
+    /// it is damaged at `now` (see ``ended(at:)``).
     public func running(beside status: TimerStatus, at now: Date) -> Self? {
-        guard status.state == .idle, !isOver(at: now), isWithinReach(of: now) else { return nil }
+        guard status.state == .idle, !isOver(at: now), isSound(at: now) else { return nil }
         return self
     }
 
     /// This break once it stopped running at `now`: ended at `now` when it
     /// would have run later, such as when ended by hand or by a block, or as
-    /// it is when it ran out. `nil` when its end lies more than
-    /// ``maximumLength`` after `now`, which only a damaged value does.
+    /// it is when it ran out. `nil` when it is damaged at `now`: it starts
+    /// after `now`, or ends more than ``maximumLength`` after it.
     ///
-    /// ponytail: a finished break is told from a running one only by its end,
-    /// so a clock moved back before that end runs it again until the end.
+    /// ponytail: a finished break is told from a running one only by its end.
+    /// After the clock moves back past its start it is dropped, and between
+    /// its start and its end it runs again until the end.
     public func ended(at now: Date) -> Self? {
-        guard isWithinReach(of: now) else { return nil }
+        guard isSound(at: now) else { return nil }
         var ended = self
-        ended.end = min(end, max(start, now))
+        ended.end = min(end, now)
         return ended
     }
 
-    private func isWithinReach(of now: Date) -> Bool {
-        end.timeIntervalSince(now) <= Self.maximumLength
+    /// Whether it started by `now` and ends at most ``maximumLength`` after it.
+    /// Anything else only a damaged value or a clock moved back gives.
+    private func isSound(at now: Date) -> Bool {
+        start <= now && end.timeIntervalSince(now) <= Self.maximumLength
     }
 }
