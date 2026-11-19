@@ -108,17 +108,19 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         panel.setFrameOrigin(NSPoint(x: left, y: top - size.height))
     }
 
-    /// While a block runs: P pauses and resumes, B takes and ends a break, +
-    /// adds 15 minutes, S switches and E ends the block. In a list of
-    /// workspaces, 1 to 9 start the workspace on that key. With nothing
-    /// running, ⌘N opens the custom block form, where Return starts and Escape
-    /// goes back. Elsewhere Escape closes. ⌘O closes the panel and opens the
-    /// window. Returns whether the key was used.
+    /// While a block runs: P pauses and resumes, B opens "Break for" while
+    /// working and ends a break, + adds 15 minutes, S switches and E ends the
+    /// block. On a break with nothing running, B ends it, + lengthens it and S
+    /// switches. In a list of workspaces, 1 to 9 start the workspace on that
+    /// key. In "Break for", 1 to 4 start a break of that length, and Return or
+    /// the keypad's Enter the preselected one. With nothing running, B opens
+    /// "Break for", and ⌘N the custom block form, where Return starts and
+    /// Escape goes back. Elsewhere Escape closes. ⌘O closes the panel and
+    /// opens the window. Returns whether the key was used.
     ///
     /// A held key acts once. Repeats would extend again and again, pause and
     /// resume into near-empty entries, or start block after block.
     private func handleKey(_ event: NSEvent) -> Bool {
-        let isIdle = countdown.panel == nil
         if event.keyCode == 53 {
             if navigation.page == .customBlock {
                 navigation.page = .main
@@ -139,8 +141,23 @@ final class StatusItemController: NSObject, NSWindowDelegate {
             return true
         }
         guard modifiers.isEmpty else { return false }
+        return handlePlainKey(event)
+    }
+
+    /// A key without ⌘, ⌃ or ⌥, on the page the panel shows.
+    private func handlePlainKey(_ event: NSEvent) -> Bool {
+        let isIdle = countdown.panel == nil
+        if navigation.page == .breakLength {
+            return startBreak(event)
+        }
         if isIdle, navigation.page == .customBlock {
             return startCustomBlock(event)
+        }
+        if isIdle, countdown.hasStore, event.characters?.lowercased() == "b" {
+            if !event.isARepeat {
+                navigation.page = .breakLength
+            }
+            return true
         }
         if isIdle || navigation.page == .switching {
             return quickStart(event)
@@ -148,9 +165,11 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         return takeQuickAction(event)
     }
 
-    /// ⌘N, only with nothing running and a workspace to start.
+    /// ⌘N, only with nothing running, outside "Break for", and a workspace to start.
     private func openCustomBlock(_ event: NSEvent) -> Bool {
-        guard countdown.panel == nil, navigation.page != .customBlock, !countdown.workspaces.isEmpty else {
+        guard countdown.panel == nil, navigation.page != .customBlock, navigation.page != .breakLength,
+              !countdown.workspaces.isEmpty
+        else {
             return false
         }
         if !event.isARepeat {
@@ -168,6 +187,22 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         return true
     }
 
+    /// 1 to 4, Return or the keypad's Enter, in "Break for".
+    private func startBreak(_ event: NSEvent) -> Bool {
+        let minutes: Int
+        if event.keyCode == 36 || event.keyCode == 76 {
+            minutes = countdown.breakMinutes
+        } else if let key = event.characters.flatMap({ Int($0) }), let length = TimerEngine.breakLength(onKey: key) {
+            minutes = length
+        } else {
+            return false
+        }
+        if !event.isARepeat {
+            navigation.startBreak(minutes: minutes, with: countdown)
+        }
+        return true
+    }
+
     /// 1 to 9, in a list of workspaces.
     private func quickStart(_ event: NSEvent) -> Bool {
         guard let key = event.characters.flatMap({ Int($0) }),
@@ -181,30 +216,38 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         return true
     }
 
-    /// P, B, +, S and E, while a block runs.
+    /// P, B, +, S and E, while a block or a break runs.
     private func takeQuickAction(_ event: NSEvent) -> Bool {
-        guard let state = countdown.panel?.state else { return false }
-        let action: QuickAction
-        switch event.characters?.lowercased() {
-        case "p": action = .pauseOrResume
-        case "b": action = .breakOrEndBreak
-        case "+": action = .extend
-        case "s":
-            if !event.isARepeat {
-                navigation.page = .switching
-            }
-            return true
-        case "e":
-            if !event.isARepeat {
-                countdown.endBlock()
-            }
-            return true
-        default: return false
-        }
-        if !event.isARepeat, action.isAvailable(in: state) {
-            countdown.perform(action)
+        guard let state = countdown.panel?.state, let key = event.characters?.lowercased(),
+              ["p", "b", "+", "s", "e"].contains(key)
+        else { return false }
+        if !event.isARepeat {
+            takeQuickAction(key, in: state)
         }
         return true
+    }
+
+    /// One of P, B, +, S and E in `state`. One the state does not offer does nothing.
+    private func takeQuickAction(_ key: String, in state: TimerState) {
+        let action: QuickAction
+        switch key {
+        case "p": action = .pauseOrResume
+        case "b" where QuickAction.canStartBreak(in: state):
+            navigation.page = .breakLength
+            return
+        case "b": action = .breakOrEndBreak
+        case "+": action = .extend
+        case "s" where !countdown.workspaces.isEmpty:
+            navigation.page = .switching
+            return
+        case "e" where state.hasBlock:
+            countdown.endBlock()
+            return
+        default: return
+        }
+        if action.isAvailable(in: state) {
+            countdown.perform(action)
+        }
     }
 
     // MARK: - NSWindowDelegate
@@ -238,8 +281,9 @@ private final class KeyPanel: NSPanel {
     }
 }
 
-/// The right-click menu: the timer's actions while a block runs, then the
-/// first three workspaces to start, then the window, Settings and Quit.
+/// The right-click menu: the timer's actions while a block or a break runs,
+/// or "Take a break" while nothing runs, then the first three workspaces to
+/// start, then the window, Settings and Quit.
 struct StatusItemMenu: View {
     let countdown: Countdown
     let openWindow: () -> Void
@@ -247,19 +291,30 @@ struct StatusItemMenu: View {
     var body: some View {
         let state = countdown.state
         if state != .idle {
-            Button(state == .paused ? "Resume" : "Pause") {
-                countdown.perform(.pauseOrResume)
+            if QuickAction.pauseOrResume.isAvailable(in: state) {
+                Button(state == .paused ? "Resume" : "Pause") {
+                    countdown.perform(.pauseOrResume)
+                }
             }
-            Button(state == .onBreak ? "End break" : "Take a break") {
-                countdown.perform(.breakOrEndBreak)
+            if state.isBreak {
+                Button("End break") {
+                    countdown.perform(.breakOrEndBreak)
+                }
+            } else {
+                BreakLengthMenu(countdown: countdown)
+                    .disabled(!QuickAction.canStartBreak(in: state))
             }
-            .disabled(!QuickAction.breakOrEndBreak.isAvailable(in: state))
             Button("Add 15 minutes") {
                 countdown.perform(.extend)
             }
-            Button("End block") {
-                countdown.endBlock()
+            if state.hasBlock {
+                Button("End block") {
+                    countdown.endBlock()
+                }
             }
+            Divider()
+        } else if countdown.hasStore {
+            BreakLengthMenu(countdown: countdown)
             Divider()
         }
         let starts = countdown.workspaces.prefix(WorkspaceRoster.menuStartCount)
@@ -280,5 +335,20 @@ struct StatusItemMenu: View {
             NSApplication.shared.terminate(nil)
         }
         .keyboardShortcut("q")
+    }
+}
+
+/// "Take a break", a submenu with the break's lengths.
+private struct BreakLengthMenu: View {
+    let countdown: Countdown
+
+    var body: some View {
+        Menu("Take a break") {
+            ForEach(TimerEngine.breakLengthChoices, id: \.self) { minutes in
+                Button("\(minutes) min") {
+                    countdown.startBreak(minutes: minutes)
+                }
+            }
+        }
     }
 }

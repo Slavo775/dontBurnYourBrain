@@ -97,6 +97,9 @@
     "Break" : {
 
     },
+    "Break for" : {
+
+    },
     "Break is over" : {
 
     },
@@ -226,6 +229,9 @@
     "On a break, %@ left" : {
 
     },
+    "On a break, nothing running" : {
+
+    },
     "On a break, then back to %@" : {
 
     },
@@ -287,6 +293,9 @@
 
     },
     "Start %@ for %@" : {
+
+    },
+    "Start a block when you're ready." : {
 
     },
     "Switch" : {

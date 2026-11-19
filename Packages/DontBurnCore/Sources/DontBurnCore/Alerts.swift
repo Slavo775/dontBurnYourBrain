@@ -4,7 +4,8 @@ import Foundation
 public enum AlertKind: String, CaseIterable, Sendable {
     /// A block ran to its planned end.
     case blockEnd
-    /// A break ran to its planned end, and work goes on.
+    /// A break ran to its planned end, and work goes on, or, after a break
+    /// with no block, nothing runs.
     case breakEnd
     /// A block has ``warningLead`` left.
     case warning
@@ -20,15 +21,19 @@ public enum AlertKind: String, CaseIterable, Sendable {
     /// `previous` is the status settled at `then`, `current` the one settled
     /// at `now`, with no action of the user in between. A block that ran out
     /// wins over a break that ended at the same time, and both over the
-    /// warning. A paused block never runs out, so it has none. A moment more
-    /// than ``maximumSoundDelay`` before `now` gives none.
+    /// warning. A paused block never runs out, so it has none. A break with
+    /// no block that ran out gives the break's end. A moment more than
+    /// ``maximumSoundDelay`` before `now` gives none.
     public static func due(from previous: TimerStatus, at then: Date, to current: TimerStatus, at now: Date) -> Self? {
-        guard previous.state == .working || previous.state == .onBreak, let end = previous.plannedEnd else {
-            return nil
-        }
         let earliest = max(then, now.addingTimeInterval(-maximumSoundDelay))
         func passed(_ moment: Date) -> Bool {
             moment > earliest && moment <= now
+        }
+        if previous.state == .idleBreak, let left = previous.breakTimeLeft {
+            return passed(then.addingTimeInterval(left)) && current.state == .idle ? .breakEnd : nil
+        }
+        guard previous.state == .working || previous.state == .onBreak, let end = previous.plannedEnd else {
+            return nil
         }
         if passed(end), current.state == .idle {
             return .blockEnd
@@ -70,23 +75,31 @@ public struct PlannedAlert: Equatable, Sendable {
     public let kind: AlertKind
     /// When it is shown.
     public let date: Date
-    /// The running block's workspace name, which the text names.
-    public let workspace: String
+    /// The running block's workspace name, which the text names, or `nil`
+    /// for the end of a break with no block.
+    public let workspace: String?
 
     /// The notifications that should be waiting for `status` at `now`, in the order of ``AlertKind``.
     ///
     /// While working or on a break: the block's end at its planned end, the
     /// warning ``AlertKind/warningLead`` before it while that lies ahead, and
     /// on a break the break's end, unless the break is clipped at the block's
-    /// end, which the block's end then announces alone. Paused or idle: none, since nothing
-    /// runs out. Only the kinds switched on in `settings` are planned. One
-    /// kind is planned at most once, so its notification can be replaced.
+    /// end, which the block's end then announces alone. On a break with no
+    /// block: the break's end alone, with no workspace. Paused or idle: none,
+    /// since nothing runs out. Only the kinds switched on in `settings` are
+    /// planned. One kind is planned at most once, so its notification can be replaced.
     public static func plan(
         for status: TimerStatus,
         workspace: String,
         settings: AlertSettings,
         at now: Date,
     ) -> [Self] {
+        if status.state == .idleBreak {
+            guard settings.notifications.contains(.breakEnd), let left = status.breakTimeLeft, left > 0 else {
+                return []
+            }
+            return [Self(kind: .breakEnd, date: now.addingTimeInterval(left), workspace: nil)]
+        }
         guard status.state == .working || status.state == .onBreak, let end = status.plannedEnd else { return [] }
         var dates: [AlertKind: Date] = [.blockEnd: end, .warning: end.addingTimeInterval(-AlertKind.warningLead)]
         if status.state == .onBreak, let left = status.breakTimeLeft, now.addingTimeInterval(left) < end {

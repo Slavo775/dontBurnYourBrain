@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-/// What the compact panel shows while a block runs, at one moment.
+/// What the compact panel shows while a block or a break runs, at one moment.
 ///
 /// The times are already formatted as digits. The app adds the words.
 public struct CompactPanel: Equatable, Sendable {
@@ -13,13 +13,15 @@ public struct CompactPanel: Equatable, Sendable {
         case paused
         /// A break is running, and work continues in the named workspace after it.
         case onBreak(returnTo: String)
+        /// A break is running with no block, and nothing runs after it.
+        case idleBreak
     }
 
-    /// The running block's workspace name, in full.
+    /// The running block's workspace name, in full, or empty on a break with no block.
     public let name: String
-    /// The running block's workspace color.
+    /// The running block's workspace color, or teal, unused, on a break with no block.
     public let color: WorkspaceColor
-    /// What the timer is doing: working, paused or on a break.
+    /// What the timer is doing: working, paused, or on a break with or without a block.
     public let state: TimerState
     /// The large part of the countdown: hours and minutes, such as `1:24`,
     /// or minutes alone, such as `24`, under an hour. On a break it counts the
@@ -29,7 +31,8 @@ public struct CompactPanel: Equatable, Sendable {
     public let seconds: String
     /// The line under the countdown.
     public let line: Line
-    /// How much of the block's planned length is used up, from 0 to 1.
+    /// How much of the block's planned length is used up, from 0 to 1, or
+    /// of the break's on a break with no block.
     public let progress: Double
     /// Today's tracked time in hours and minutes, such as `0:10`.
     public let trackedToday: String
@@ -58,12 +61,26 @@ public struct CompactPanel: Equatable, Sendable {
         trackedToday = MenuBarLabel.hoursAndMinutes(tracked)
     }
 
+    /// What the panel shows for `idleBreak`, the break with nothing running, at `now`.
+    ///
+    /// It names no workspace, and the countdown and the progress are the
+    /// break's. `tracked` is today's tracked time, which the break leaves alone.
+    public init(idleBreak: IdleBreak, at now: Date, tracked: TimeInterval) {
+        name = ""
+        color = .teal
+        state = .idleBreak
+        (clock, seconds) = Self.split(idleBreak.timeLeft(at: now))
+        line = .idleBreak
+        progress = idleBreak.progress(at: now)
+        trackedToday = MenuBarLabel.hoursAndMinutes(tracked)
+    }
+
     /// When the panel's seconds change next after `now`, or `nil` while
     /// nothing counts down: nothing runs, or the block is paused.
     public static func nextRedraw(status: TimerStatus, after now: Date) -> Date? {
         let left: TimeInterval? = switch status.state {
         case .idle, .paused: nil
-        case .onBreak: status.breakTimeLeft ?? status.blockTimeLeft
+        case .onBreak, .idleBreak: status.breakTimeLeft ?? status.blockTimeLeft
         case .working: status.blockTimeLeft
         }
         return left.map { MenuBarLabel.nextCountDown(left: $0, step: 1, after: now) }
@@ -96,21 +113,77 @@ public struct CompactPanel: Equatable, Sendable {
 /// right-click menu share. Switch and End block are separate, see
 /// ``TimerEngine/switchTo(_:project:at:)`` and ``TimerEngine/end(at:)``.
 public enum QuickAction: CaseIterable, Sendable {
-    /// Pause while working or on a break, Resume while paused.
+    /// Pause while working or on a break in a block, Resume while paused.
     case pauseOrResume
-    /// Take a break while working, End break on a break.
+    /// Take a break of the default length while working, End break on a
+    /// break, with or without a block. A break of a chosen length starts
+    /// through ``startBreak(minutes:with:idleBreak:at:)``.
     case breakOrEndBreak
-    /// Add ``TimerEngine/defaultExtendMinutes`` to the block.
+    /// Add ``TimerEngine/defaultExtendMinutes`` to the block, and on a break
+    /// to the break too, or to the break with no block alone.
     case extend
 
     /// Whether the action can be taken in `state`.
     ///
     /// A break cannot start while paused, because the engine starts a break
-    /// only from work. Nothing can be taken while nothing runs.
+    /// only from work. On a break with no block there is nothing to pause.
+    /// Nothing can be taken while nothing runs.
     public func isAvailable(in state: TimerState) -> Bool {
         switch (self, state) {
-        case (_, .idle), (.breakOrEndBreak, .paused): false
+        case (_, .idle), (.breakOrEndBreak, .paused), (.pauseOrResume, .idleBreak): false
         default: true
+        }
+    }
+
+    /// Whether a break of a chosen length can start in `state`: while
+    /// working, and while nothing runs. Not while paused, as before, and not
+    /// on a break, where Break ends the break instead.
+    public static func canStartBreak(in state: TimerState) -> Bool {
+        state == .working || state == .idle
+    }
+
+    /// Starts a break of `minutes` at `now`.
+    ///
+    /// While working, the engine starts it inside the block. While nothing
+    /// runs, `idleBreak` becomes a new break with no block, which nothing
+    /// stores. Throws ``TimerEngineError/invalidMinutes`` when `minutes` is
+    /// zero or less, or longer than ``IdleBreak/maximumLength`` with nothing
+    /// running, and ``TimerEngineError/notAllowed(_:)`` in any other state.
+    public static func startBreak(
+        minutes: Int,
+        with engine: TimerEngine,
+        idleBreak: inout IdleBreak?,
+        at now: Date,
+    ) throws {
+        guard minutes > 0 else { throw TimerEngineError.invalidMinutes }
+        let status = try engine.settle(at: now)
+        idleBreak = idleBreak?.running(beside: status, at: now)
+        let state = idleBreak == nil ? status.state : .idleBreak
+        guard canStartBreak(in: state) else { throw TimerEngineError.notAllowed(state) }
+        if state == .working {
+            try engine.startBreak(minutes: minutes, at: now)
+            return
+        }
+        let end = now.addingTimeInterval(TimeInterval(minutes) * 60)
+        guard let started = IdleBreak(start: now, end: end) else { throw TimerEngineError.invalidMinutes }
+        idleBreak = started
+    }
+
+    /// Takes the action at `now`: on `idleBreak` while it runs, otherwise on
+    /// the running block through `engine`, as ``perform(with:at:)``.
+    ///
+    /// On a break with no block, End break ends it, with nothing after it, and
+    /// +15 moves its end later. Throws ``TimerEngineError/notAllowed(_:)``
+    /// when the action is not available in the state at `now`. A break that
+    /// is over at `now` becomes `nil` first.
+    public func perform(with engine: TimerEngine, idleBreak: inout IdleBreak?, at now: Date) throws {
+        idleBreak = try idleBreak?.running(beside: engine.settle(at: now), at: now)
+        guard idleBreak != nil else { return try perform(with: engine, at: now) }
+        guard isAvailable(in: .idleBreak) else { throw TimerEngineError.notAllowed(.idleBreak) }
+        switch self {
+        case .breakOrEndBreak: idleBreak = nil
+        case .extend: idleBreak?.extend(by: TimerEngine.defaultExtendMinutes)
+        case .pauseOrResume: break
         }
     }
 

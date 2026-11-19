@@ -11,8 +11,9 @@ public enum MenuBarLabel: Equatable, Sendable {
     case running(name: String, color: WorkspaceColor, time: String)
     /// A block is paused: the workspace's dot and name.
     case paused(name: String, color: WorkspaceColor)
-    /// A break is running: the cup and the break time left in minutes and
-    /// seconds, or `nil` when the break has no planned length.
+    /// A break is running, in a block or with none: the cup and the break
+    /// time left in minutes and seconds, or `nil` when the break has no
+    /// planned length.
     case onBreak(time: String?)
     /// Nothing runs: the outline dot, and after 15 minutes the untracked time
     /// in hours and minutes.
@@ -49,7 +50,7 @@ public enum MenuBarLabel: Equatable, Sendable {
             self = .idle(untracked: untracked >= Self.untrackedThreshold ? Self.hoursAndMinutes(untracked) : nil)
         case .paused:
             self = .paused(name: name, color: color)
-        case .onBreak:
+        case .onBreak, .idleBreak:
             self = .onBreak(time: status.breakTimeLeft.map(Self.minutesAndSeconds))
         case .working:
             let left = status.blockTimeLeft ?? 0
@@ -73,7 +74,7 @@ public enum MenuBarLabel: Equatable, Sendable {
             nextCountUp(from: untrackedSince, after: now)
         case .paused:
             nil
-        case .onBreak:
+        case .onBreak, .idleBreak:
             status.breakTimeLeft.map { nextCountDown(left: $0, step: 1, after: now) }
         case .working:
             status.blockTimeLeft.map { left in

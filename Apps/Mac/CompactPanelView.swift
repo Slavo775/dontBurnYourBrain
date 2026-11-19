@@ -2,16 +2,18 @@ import DontBurnCore
 import SwiftData
 import SwiftUI
 
-/// The compact panel: the running block, its four quick actions and End
-/// block, the list of workspaces to switch to, or, when nothing runs, the
-/// quick start list and the custom block form.
+/// The compact panel: the running block or break, its four quick actions and
+/// End block, the list of workspaces to switch to, the break's lengths, or,
+/// when nothing runs, the quick start list and the custom block form.
 struct CompactPanelView: View {
     let countdown: Countdown
     let navigation: PanelNavigation
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            if let panel = countdown.panel {
+            if navigation.page == .breakLength {
+                BreakLengthList(countdown: countdown, navigation: navigation)
+            } else if let panel = countdown.panel {
                 if navigation.page == .switching {
                     WorkspaceList(title: "Switch to", countdown: countdown, navigation: navigation)
                 } else {
@@ -20,7 +22,7 @@ struct CompactPanelView: View {
             } else if navigation.page == .customBlock {
                 CustomBlockForm(countdown: countdown, navigation: navigation)
             } else if countdown.hasStore, countdown.workspaces.isEmpty {
-                NoWorkspaces()
+                NoWorkspaces(navigation: navigation)
             } else {
                 WorkspaceList(title: "Nothing running", countdown: countdown, navigation: navigation)
             }
@@ -46,7 +48,8 @@ struct CompactPanelView: View {
     }
 }
 
-/// The header, the countdown, the strip, the four quick actions and End block.
+/// The header, the countdown, the strip, the four quick actions and End
+/// block. A break with no block has the cup for a header and no End block.
 private struct RunningBlock: View {
     let panel: CompactPanel
     let countdown: Countdown
@@ -54,10 +57,17 @@ private struct RunningBlock: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            WorkspaceDot(color: panel.color)
-            Text(panel.name)
-                .font(.system(size: 15, weight: .semibold))
-                .lineLimit(1)
+            if panel.state == .idleBreak {
+                Image(systemName: "cup.and.heat.waves")
+                    .accessibilityHidden(true)
+                Text("Break")
+                    .font(.system(size: 15, weight: .semibold))
+            } else {
+                WorkspaceDot(color: panel.color)
+                Text(panel.name)
+                    .font(.system(size: 15, weight: .semibold))
+                    .lineLimit(1)
+            }
         }
         .frame(minHeight: 36)
 
@@ -78,7 +88,7 @@ private struct RunningBlock: View {
 
             ZStack {
                 Color.sunken
-                (panel.state == .onBreak ? Color.muted : panel.color.color)
+                (panel.state.isBreak ? Color.muted : panel.color.color)
                     .scaleEffect(x: panel.progress, anchor: .leading)
             }
             .frame(height: 8)
@@ -95,8 +105,13 @@ private struct RunningBlock: View {
                 ) {
                     countdown.perform(.pauseOrResume)
                 }
-                QuickButton(panel.state == .onBreak ? "End break" : "Break", symbol: "cup.and.heat.waves") {
-                    countdown.perform(.breakOrEndBreak)
+                .disabled(!QuickAction.pauseOrResume.isAvailable(in: panel.state))
+                QuickButton(panel.state.isBreak ? "End break" : "Break", symbol: "cup.and.heat.waves") {
+                    if QuickAction.canStartBreak(in: panel.state) {
+                        navigation.page = .breakLength
+                    } else {
+                        countdown.perform(.breakOrEndBreak)
+                    }
                 }
                 .disabled(!QuickAction.breakOrEndBreak.isAvailable(in: panel.state))
                 Button {
@@ -115,24 +130,28 @@ private struct RunningBlock: View {
                 QuickButton("Switch", symbol: "arrow.left.arrow.right") {
                     navigation.page = .switching
                 }
+                // With no workspace there is nothing to switch to.
+                .disabled(countdown.workspaces.isEmpty)
             }
 
             // Under the four actions, so they keep their places. Outlined like
             // "Custom block", so it reads quieter than the four.
-            Button {
-                countdown.endBlock()
-            } label: {
-                StartRow(key: "E", isGhost: true) {
-                    Image(systemName: "stop.fill")
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color.muted)
-                        .frame(width: 10)
-                    Text("End block")
-                        .fontWeight(.medium)
+            if panel.state.hasBlock {
+                Button {
+                    countdown.endBlock()
+                } label: {
+                    StartRow(key: "E", isGhost: true) {
+                        Image(systemName: "stop.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Color.muted)
+                            .frame(width: 10)
+                        Text("End block")
+                            .fontWeight(.medium)
+                    }
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("End block")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("End block")
         }
     }
 
@@ -141,6 +160,7 @@ private struct RunningBlock: View {
         case let .leftOf(length): "left of \(length)"
         case .paused: "Paused"
         case let .onBreak(name): "On a break, then back to \(name)"
+        case .idleBreak: "On a break, nothing running"
         }
     }
 }
@@ -254,7 +274,7 @@ private extension Countdown {
             // A preview without the scenario still shows the panel, so failing is fine here.
             try? scenario.apply(to: context, now: now)
         }
-        return Countdown(container: container, fixedTime: now)
+        return Countdown(container: container, fixedTime: now, idleBreak: scenario.idleBreak(at: now))
     }
 }
 
@@ -268,6 +288,16 @@ private extension Countdown {
 
 #Preview("On a break") {
     CompactPanelView(countdown: .preview(.onBreak), navigation: PanelNavigation())
+}
+
+#Preview("Break with nothing running") {
+    CompactPanelView(countdown: .preview(.idleBreak), navigation: PanelNavigation())
+}
+
+#Preview("Break for") {
+    let navigation = PanelNavigation()
+    navigation.page = .breakLength
+    return CompactPanelView(countdown: .preview(.running), navigation: navigation)
 }
 
 #Preview("Nothing running") {

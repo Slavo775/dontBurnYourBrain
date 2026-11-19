@@ -11,16 +11,29 @@ public enum TimerState: String, CaseIterable, Sendable {
     case paused
     /// A block is running with a break entry.
     case onBreak
+    /// No block is running, and a break with no block counts down. The engine
+    /// never reports it, since that break is not stored. See ``IdleBreak``.
+    case idleBreak
+
+    /// Whether a block is running, working, paused or on a break.
+    public var hasBlock: Bool {
+        self == .working || self == .paused || self == .onBreak
+    }
+
+    /// Whether a break counts down, inside a block or with none.
+    public var isBreak: Bool {
+        self == .onBreak || self == .idleBreak
+    }
 }
 
 /// The timer's report for one moment.
 public struct TimerStatus: Equatable, Sendable {
     /// What the timer is doing.
     public let state: TimerState
-    /// When the running block ends, or `nil` when nothing runs. While paused
+    /// When the running block ends, or `nil` when no block runs. While paused
     /// it moves later with the moment asked about.
     public let plannedEnd: Date?
-    /// The time left in the running block, never below zero, or `nil` when nothing runs.
+    /// The time left in the running block, never below zero, or `nil` when no block runs.
     public let blockTimeLeft: TimeInterval?
     /// The time left in the running break, never below zero, or `nil` when
     /// not on a break or the break has no planned length.
@@ -58,6 +71,8 @@ public enum TimerEngineError: Error, Equatable, Sendable {
 public struct TimerEngine {
     /// A break's length when none is given, in minutes.
     public static let defaultBreakMinutes = 5
+    /// The break lengths offered, in minutes, shortest first, on the keys 1 to 4.
+    public static let breakLengthChoices = [5, 15, 30, 60]
     /// How much Extend adds when no amount is given, in minutes.
     public static let defaultExtendMinutes = 15
 
@@ -169,17 +184,39 @@ public struct TimerEngine {
         try context.save()
     }
 
-    /// Adds `minutes` to the running block's planned length. Allowed while a block runs, paused or not.
+    /// Adds `minutes` to the running block's planned length, and on a break
+    /// to the break's too. Allowed while a block runs, paused or not.
     ///
-    /// Throws ``TimerEngineError/invalidMinutes`` when `minutes` is zero or
-    /// less, or when the new length would not fit in an `Int`.
+    /// On a break both ends move by `minutes`, so the break's countdown moves
+    /// by that much, even while the break is clipped at the block's end, and
+    /// the work left after the break stays the same. Throws
+    /// ``TimerEngineError/invalidMinutes`` when `minutes` is zero or less, or
+    /// when a new length would not fit in an `Int`.
     public func extend(by minutes: Int = defaultExtendMinutes, at now: Date) throws {
         guard minutes > 0 else { throw TimerEngineError.invalidMinutes }
         let (block, _) = try current(at: now, allowed: [.working, .paused, .onBreak])
         let (length, overflow) = block.plannedMinutes.addingReportingOverflow(minutes)
         guard !overflow else { throw TimerEngineError.invalidMinutes }
+        let open = openEntry(of: block)
+        if open?.kind == .break, let breakMinutes = open?.plannedMinutes {
+            let (breakLength, breakOverflow) = breakMinutes.addingReportingOverflow(minutes)
+            guard !breakOverflow else { throw TimerEngineError.invalidMinutes }
+            open?.plannedMinutes = breakLength
+        }
         block.plannedMinutes = length
         try context.save()
+    }
+
+    /// The length of a break, in minutes, read back from outside, such as
+    /// the last one used: `minutes` when it is one of
+    /// ``breakLengthChoices``, otherwise ``defaultBreakMinutes``.
+    public static func breakLength(remembered minutes: Int) -> Int {
+        breakLengthChoices.contains(minutes) ? minutes : defaultBreakMinutes
+    }
+
+    /// The break length on number `key`, 1 for the shortest, or `nil` when no length is on it.
+    public static func breakLength(onKey key: Int) -> Int? {
+        (1 ... breakLengthChoices.count).contains(key) ? breakLengthChoices[key - 1] : nil
     }
 
     /// Ends the running entry and the block now. Allowed while a block runs, paused or not.
