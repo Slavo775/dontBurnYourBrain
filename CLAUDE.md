@@ -29,7 +29,7 @@ Run from the repository root. Details in `docs/process/checks.md`.
 - Generate the project: `xcodegen generate`. Run it again after every pull or branch switch that adds, removes or renames files, because the project is not in git
 - Build the app and the hook tool: `xcodebuild -project DontBurn.xcodeproj -scheme DontBurn -configuration Debug -derivedDataPath DerivedData build | xcbeautify`
 - Test the shared package: `swift test --package-path Packages/DontBurnCore`
-- Start the development build: `open DerivedData/Build/Products/Debug/DontBurn.app`. Note its process ID with `pgrep -f DerivedData/Build/Products/Debug/DontBurn.app` and stop only that one
+- Start the development build: `open -g DerivedData/Build/Products/Debug/DontBurn.app`. Note its process ID with `pgrep -f "$PWD/DerivedData/Build/Products/Debug/DontBurn.app"` and stop only that one
 - The hook tool: `DerivedData/Build/Products/Debug/dontburn-hook`
 - Install the Release build in /Applications: `./scripts/install-release`. The maintainer runs it, or an agent with his yes in this session. See `docs/process/releases.md`
 - Next card: `/next`. Start work on it: `/lead [card]`. Merge: `/release`. A review alone: `/review <PR>`. Design alone: `/design <card and screen>`
