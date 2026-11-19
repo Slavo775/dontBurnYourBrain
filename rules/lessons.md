@@ -96,3 +96,12 @@ These were learned in the reference flow before this project started. All are `a
 - **What happened:** on card #16 (PR #31), the Tester twice took a region screenshot (`screencapture -R`) meant for the Dev app's window. Both times it captured whatever was on the maintainer's screen at those coordinates instead. The Tester deleted both files from its scratchpad at once and switched to `screencapture -l <window ID>`. Neither file reached the screenshots folder, the repository or the pull request.
 - **Root cause:** "Checking a screen" says to take screenshots with `screencapture`, but not how. A region is a place on the screen, not a window. The Dev app is never frontmost, so anything else can cover that region.
 - **Proposed change:** one rule in `rules/testing.md`, "Checking a screen", which the Tester, the Reviewer and the Designer read.
+
+## 2026-11-19 · Keys while the owner works, and a locked screen · accepted
+
+- **What happened:** on card #44 (PR #39):
+  - The Designer opened the compact panel for screenshots, and the running sample block came out paused with no key sent by the Designer. Most likely a "p" the maintainer typed in another app landed in the panel, and that keystroke was lost from the app he was using. Only the in-memory sample data was affected, and the run was discarded.
+  - The Tester sent five keys with `CGEventPostToPid` right after a menu bar lookup failed. No panel was open, and the app beeped five times. Nothing changed.
+  - The maintainer's screen was locked twice during the Tester's runs, for about a quarter of an hour each time. The menu bar item could not be reached, and the Tester read what happened from the system log.
+- **Root cause:** "Running the Dev build" says to open the panel only for the check that needs it. It does not say to confirm the panel is open before a key is sent, to send a check's keys at once, or what to do when the menu bar item cannot be reached. A key sent with no panel open goes nowhere useful. The longer the panel stays open, the more of the maintainer's typing it can take.
+- **Proposed change:** one rule in `rules/testing.md`, "Running the Dev build", which the Tester, the Developer and the Designer read.
