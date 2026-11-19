@@ -17,7 +17,7 @@ Which text wins when two disagree:
 | [roles/reviewer.md](roles/reviewer.md) | Reading code and tests, privacy and safety first | Reviewer |
 | [roles/documenter.md](roles/documenter.md) | Keeping `docs/` in step | Documenter |
 | [code-style.md](code-style.md) | Swift 6, SwiftUI and SwiftData as this project writes them | Developer, Designer, Tester, Reviewer |
-| [testing.md](testing.md) | Who writes tests, what is worth testing, running the Dev build, checking a screen | Tester, Reviewer. Developer for "Running the Dev build". Designer for that and "Checking a screen" |
+| [testing.md](testing.md) | Who writes tests, what is worth testing, running the Dev build, checking a screen | Tester, Reviewer. Designer for "Running the Dev build" and "Checking a screen". Developer for "Running the Dev build", and for the interaction points of "Checking a screen" when it starts the app |
 | [git.md](git.md) | Branches, worktrees, commits, pushing, pull requests, verdicts | Everyone |
 | [safety-and-privacy.md](safety-and-privacy.md) | The maintainer's Mac, the public repository, what the app itself may do | Everyone. The Reviewer reads it in full for every task |
 | [releases.md](releases.md) | What agents may do with versions and the Dev and Release builds | Everyone |
