@@ -76,7 +76,7 @@ How the first four states behave today:
 - Without a store the item shows the outline dot and never ticks.
 - The Dev build draws a small "DEV" 4 pt after the label, 9 pt bold, in the secondary label color, and VoiceOver reads ", Dev build" after the label, such as "Acme 1:23, Dev build". The marker makes the item about 25 pt wider, so on a notched display it is hidden sooner. The 116 pt limit for the name is the same. Release shows no marker.
 - A click, or VoiceOver's press, opens and closes the compact panel. A right-click or a Control-click opens the menu, described under [Right-click menu on the menu bar item](#right-click-menu-on-the-menu-bar-item).
-- The item also offers a "Show menu" accessibility action, listed under VoiceOver's Actions (VO-Command-Space). It closes the panel and opens the same menu, with no mouse. While the menu is open, it does nothing.
+- The item also offers a "Show menu" accessibility action, which accessibility clients such as VoiceOver can perform. It closes the panel and opens the same menu, with no mouse. While the menu is open, it does nothing. It has been checked through the accessibility API, not yet with VoiceOver itself.
 
 Phase 0 showed a plain clock here instead. Phase 1 replaced it.
 
@@ -86,7 +86,7 @@ Found while building the phase 0 clock and the phase 1 states. They hold for eve
 
 - The item is an AppKit `NSStatusItem`, not SwiftUI's `MenuBarExtra`, because `MenuBarExtra` offers either a menu or a window on a click, not a panel on the click and a menu on the right-click.
 - The label is drawn as one image, so the dot, the name and the digits stay together, in tabular figures. (Under `MenuBarExtra`, a `Text` label lost its font, so an image was the only way.) The image's accessibility description, and the button's accessibility title, carry the same text, such as "On a break, 4:12 left", so VoiceOver reads it.
-- The "Show menu" action sits on the button's cell, not on the button. On macOS 26, the element MenuBarAgent shows accessibility clients for the item reads the cell's actions. A standard `AXShowMenu` would need a subclass of AppKit's private status bar button cell, so the item offers a custom action instead. The action opens the menu on the run loop's next pass, so the client's request returns at once.
+- The "Show menu" action sits on the button's cell, not on the button. On macOS 27, the element MenuBarAgent shows accessibility clients for the item reads the cell's actions. A standard `AXShowMenu` would need a subclass of AppKit's private status bar button cell, so the item offers a custom action instead. The action opens the menu on the run loop's next pass, so the client's request returns at once.
 - The image is not a template image. A template image is drawn in one color and would lose the workspace's dot. Instead it is drawn each time the menu bar draws it, in the menu bar's own appearance: the text and outline in the label color, the dot in the workspace color.
 - Because it is not a template image, the item does not get the menu bar's vibrancy, and it is not dimmed on an inactive display.
 - The label is updated by a `Timer`, which sets the item's image only when the label changes. A `TimelineView` inside a `MenuBarExtra` label kept the main thread busy and hung the app.
