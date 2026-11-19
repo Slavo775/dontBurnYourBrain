@@ -10,8 +10,10 @@ while read -r _ local_sha _ _; do
     refs=$((refs + 1))
     [[ $local_sha =~ ^0+$ ]] && continue # a deleted branch
     sends=1
-    if [ "$local_sha" != "$head" ]; then
-        echo "pre-push: the check runs on the checked-out commit. Check out the branch you push."
+    # An annotated tag arrives as the tag object, so compare the commit it points to.
+    commit=$(git rev-parse -q --verify "$local_sha^{commit}")
+    if [ "$commit" != "$head" ]; then
+        echo "pre-push: the check runs on the checked-out commit. Check out the branch or the tagged commit you push."
         exit 1
     fi
 done
