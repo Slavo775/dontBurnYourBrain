@@ -129,9 +129,37 @@ func `the progress of a break with nothing running stays between zero and one`(
     #expect(try started.ended(at: at(4)) == idleBreak(0, 4))
 }
 
-@Test func `a break ending more than a day ahead is taken as damaged and does not finish`() throws {
-    let ahead = try #require(IdleBreak(start: at(60), end: at(60).addingTimeInterval(IdleBreak.maximumLength)))
-    #expect(ahead.ended(at: nine) == nil)
+@Test func `a break that starts after now is taken as damaged: it neither runs nor finishes`() throws {
+    let justAfter = try #require(IdleBreak(start: nine.addingTimeInterval(0.001), end: at(5)))
+    let dayAhead = try #require(IdleBreak(start: at(60), end: at(60).addingTimeInterval(IdleBreak.maximumLength)))
+    // The pair from round 2: a 30 minute break that starts in 30 minutes.
+    let halfHourAhead = try idleBreak(30, 60)
+
+    for damaged in [justAfter, dayAhead, halfHourAhead] {
+        #expect(damaged.running(beside: .idle, at: nine) == nil)
+        #expect(damaged.ended(at: nine) == nil)
+    }
+    #expect(try idleBreak(10, 20).ended(at: at(5)) == nil)
+}
+
+@Test func `a break that starts exactly now runs, and finishing it at once leaves no length`() throws {
+    let startingNow = try idleBreak(0, 5)
+    #expect(startingNow.running(beside: .idle, at: nine) == startingNow)
+    #expect(try startingNow.ended(at: nine) == idleBreak(0, 0))
+}
+
+@Test func `a leftover break starting after now gives way to a new one, and End break finds nothing running`() throws {
+    let desk = try Desk()
+    var resting: IdleBreak? = try idleBreak(30, 60)
+
+    #expect(throws: TimerEngineError.notAllowed(.idle)) {
+        try QuickAction.breakOrEndBreak.perform(with: desk.engine, idleBreak: &resting, at: nine)
+    }
+    #expect(resting == nil)
+
+    resting = try idleBreak(30, 60)
+    try QuickAction.startBreak(minutes: 5, with: desk.engine, idleBreak: &resting, at: nine)
+    #expect(try resting == idleBreak(0, 5))
 }
 
 @Test func `a finished break read back after a restart stays finished with the same end`() throws {
