@@ -36,6 +36,39 @@ build() {
         -derivedDataPath DerivedData build 2>&1 | xcbeautify --quiet
 }
 
+# Runs Xcode's own catalog sync, as a build in the Xcode app does, on a copy fed
+# the strings this build extracted, and fails when the copy differs from the
+# tracked catalog. The build system deletes the .stringsdata of a source that is
+# gone or no longer extracted, so no stale file can hide a missing key.
+catalog() {
+    local catalog=Apps/Mac/Localizable.xcstrings tmp copy file keys failed=0
+    local objects=DerivedData/Build/Intermediates.noindex/DontBurn.build/Debug/DontBurn.build/Objects-normal
+    if ! xcrun --find xcstringstool >/dev/null 2>&1; then
+        echo "No xcstringstool on this machine (it comes with Xcode), the catalog check is skipped."
+        return 0
+    fi
+    tmp=$(mktemp -d) || return 1
+    copy="$tmp/Localizable.xcstrings"
+    cp "$catalog" "$copy" || return 1
+    set -- "$copy"
+    for file in "$objects"/*/*.stringsdata; do
+        [ -f "$file" ] && set -- "$@" --stringsdata "$file"
+    done
+    if ! xcrun xcstringstool sync "$@"; then
+        failed=1
+    elif ! cmp -s "$catalog" "$copy"; then
+        echo "The string catalog disagrees with the strings the build extracted."
+        echo "A build in the Xcode app would make these changes to $catalog:"
+        keys=$(diff <(jq -r '.strings | keys[]' "$catalog") <(jq -r '.strings | keys[]' "$copy") \
+            | sed -n 's/^< /  remove key: /p; s/^> /  add key: /p')
+        # Same keys: the change is in a key's state or the formatting, so show it.
+        if [ -n "$keys" ]; then echo "$keys"; else diff -u "$catalog" "$copy" | head -40; fi
+        failed=1
+    fi
+    rm -f "$copy" && rmdir "$tmp"
+    return $failed
+}
+
 tests() {
     swift test --package-path Packages/DontBurnCore --enable-code-coverage --quiet || return 1
     local json
@@ -78,6 +111,7 @@ run format format
 run lint lint
 run generate generate
 run build build
+run catalog catalog
 run tests tests
 run privacy privacy
 

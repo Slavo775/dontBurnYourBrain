@@ -22,14 +22,15 @@ One command, `./scripts/check`, runs everything in this order and stops at the f
 2. SwiftLint, strict, with the rules in `.swiftlint.yml`
 3. `xcodegen generate`
 4. Build of the Mac app and the hook tool in Swift 6 mode, with warnings treated as errors
-5. Unit tests of `DontBurnCore`, with code coverage
-6. The privacy scan, described below
+5. The string catalog against the strings the build extracted, described below
+6. Unit tests of `DontBurnCore`, with code coverage
+7. The privacy scan, described below
 
 It ends with one summary line:
 
 ```
-check: PASS | format 0s · lint 0s · generate 0s · build 3s · tests 5s · privacy 0s | coverage 100% | total 8s
-check: FAIL at tests | format 0s · lint 0s · generate 0s · build 2s · tests failed
+check: PASS | format 0s · lint 0s · generate 0s · build 3s · catalog 0s · tests 5s · privacy 0s | coverage 100% | total 8s
+check: FAIL at tests | format 0s · lint 0s · generate 0s · build 2s · catalog 0s · tests failed
 ```
 
 The coverage is the share of lines in `DontBurnCore`'s sources that the tests run. The target is 80%. It is printed but does not fail the check yet.
@@ -38,9 +39,15 @@ The coverage is the share of lines in `DontBurnCore`'s sources that the tests ru
 
 ### The string catalog
 
-A build in the Xcode app rewrites `Apps/Mac/Localizable.xcstrings`: it adds the strings the code uses and deletes the keys it believes are unused. A build with `xcodebuild` never rewrites the catalog, so the check cannot see this kind of drift.
+A build in the Xcode app rewrites `Apps/Mac/Localizable.xcstrings`: it adds the strings the code uses and deletes the keys it believes are unused. A build with `xcodebuild` never rewrites the catalog.
 
-The app target sets `SWIFT_EMIT_LOC_STRINGS: YES` in `project.yml`, so the compiler reports every interface string the code uses and the Xcode app has no reason to delete a key. After a build in the Xcode app, look at `git status` before committing, and say so on the card if the catalog changed without a change to the interface text.
+The app target sets `SWIFT_EMIT_LOC_STRINGS: YES` in `project.yml`, so the compiler reports every interface string the code uses. The catalog step copies the catalog into a temporary folder and runs `xcrun xcstringstool sync` on the copy, fed the strings from the check's own build, as a build in the Xcode app would. If the copy differs from the tracked file, the check fails and prints `add key:` and `remove key:` lines, or a short diff when the keys are the same but the content differs. The tracked file is never written. The step takes about a tenth of a second.
+
+It catches a key the code uses that is missing from the catalog, a key the code no longer uses, and a changed key. It does not catch a formatting change, such as a missing final newline, because `sync` keeps the file's formatting. If extraction is turned off, every key shows as removed.
+
+`xcstringstool` comes with Xcode. Without it, the step says it was skipped and the rest of the check runs. Such a machine usually stops earlier anyway, because SwiftLint needs Xcode too.
+
+After a build in the Xcode app, still look at `git status` before committing.
 
 ### The privacy scan
 
