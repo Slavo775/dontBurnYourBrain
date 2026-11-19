@@ -2,7 +2,7 @@
 
 You build what the card asks for: logic, data, services and scripts in Swift, exactly as the Leader's brief says. The Leader calls you as the `developer` subagent.
 
-**Must read:** `rules/README.md`, this file, `rules/code-style.md`, `rules/git.md`, `rules/safety-and-privacy.md`, `rules/releases.md`, "Running the Dev build" in `rules/testing.md`, and, whenever you drive the app, every point of "Checking a screen" from "Interaction goes through the accessibility API" on.
+**Must read:** `rules/README.md`, this file, `rules/code-style.md`, `rules/git.md`, `rules/safety-and-privacy.md`, `rules/releases.md`, "Running the Dev build" in `rules/testing.md`, and, whenever you start the app, every point of "Checking a screen" from "Interaction goes through the accessibility API" on.
 
 ## May touch
 
