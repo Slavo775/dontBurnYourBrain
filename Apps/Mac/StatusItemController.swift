@@ -47,6 +47,10 @@ final class StatusItemController: NSObject, NSWindowDelegate {
             button.target = self
             button.action = #selector(clicked)
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+            // On the cell: the element the menu bar shows for the item reads the cell's actions, not the button's.
+            button.cell?.setAccessibilityCustomActions([NSAccessibilityCustomAction(
+                name: String(localized: "Show menu"), target: self, selector: #selector(showMenuFromAccessibility),
+            )])
         }
         show(countdown.label)
         countdown.onLabelChange = { [weak self] in self?.show($0) }
@@ -70,7 +74,24 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         }
     }
 
-    private func showMenu() {
+    /// Opens the right-click menu for VoiceOver and other accessibility
+    /// clients, whose `AXPress` on the item opens the panel instead.
+    ///
+    /// The menu tracks until it closes, so it opens from the run loop on its
+    /// next pass, and the client's request returns at once. Not from the main
+    /// queue: inside a main-queue block, the menu's nested run loop would hold
+    /// every main-queue block and main-actor task back until the menu closes.
+    /// While the menu is open, a request does nothing, and two requests before
+    /// it opens open it once.
+    @objc private func showMenuFromAccessibility() -> Bool {
+        guard statusItem.menu == nil else { return false }
+        closePanel()
+        NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(showMenu), object: nil)
+        perform(#selector(showMenu), with: nil, afterDelay: 0)
+        return true
+    }
+
+    @objc private func showMenu() {
         // Settle first, so the menu offers what fits the timer now.
         countdown.reschedule()
         statusItem.menu = menu
