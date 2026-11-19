@@ -109,11 +109,11 @@ final class StatusItemController: NSObject, NSWindowDelegate {
     }
 
     /// While a block runs: P pauses and resumes, B takes and ends a break, +
-    /// adds 15 minutes and S switches. In a list of workspaces, 1 to 9 start
-    /// the workspace on that key. With nothing running, ⌘N opens the custom
-    /// block form, where Return starts and Escape goes back. Elsewhere Escape
-    /// closes. ⌘O closes the panel and opens the window. Returns whether the
-    /// key was used.
+    /// adds 15 minutes, S switches and E ends the block. In a list of
+    /// workspaces, 1 to 9 start the workspace on that key. With nothing
+    /// running, ⌘N opens the custom block form, where Return starts and Escape
+    /// goes back. Elsewhere Escape closes. ⌘O closes the panel and opens the
+    /// window. Returns whether the key was used.
     ///
     /// A held key acts once. Repeats would extend again and again, pause and
     /// resume into near-empty entries, or start block after block.
@@ -181,7 +181,7 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         return true
     }
 
-    /// P, B, + and S, while a block runs.
+    /// P, B, +, S and E, while a block runs.
     private func takeQuickAction(_ event: NSEvent) -> Bool {
         guard let state = countdown.panel?.state else { return false }
         let action: QuickAction
@@ -192,6 +192,11 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         case "s":
             if !event.isARepeat {
                 navigation.page = .switching
+            }
+            return true
+        case "e":
+            if !event.isARepeat {
+                countdown.endBlock()
             }
             return true
         default: return false

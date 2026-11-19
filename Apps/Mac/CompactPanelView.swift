@@ -2,9 +2,9 @@ import DontBurnCore
 import SwiftData
 import SwiftUI
 
-/// The compact panel: the running block and its four quick actions, the list
-/// of workspaces to switch to, or, when nothing runs, the quick start list and
-/// the custom block form.
+/// The compact panel: the running block, its four quick actions and End
+/// block, the list of workspaces to switch to, or, when nothing runs, the
+/// quick start list and the custom block form.
 struct CompactPanelView: View {
     let countdown: Countdown
     let navigation: PanelNavigation
@@ -46,7 +46,7 @@ struct CompactPanelView: View {
     }
 }
 
-/// The header, the countdown, the strip and the four quick actions.
+/// The header, the countdown, the strip, the four quick actions and End block.
 private struct RunningBlock: View {
     let panel: CompactPanel
     let countdown: Countdown
@@ -115,6 +115,15 @@ private struct RunningBlock: View {
                 navigation.page = .switching
             }
         }
+
+        // Under the four actions, so they keep their places.
+        Button {
+            countdown.endBlock()
+        } label: {
+            Text("End block")
+                .frame(maxWidth: .infinity)
+        }
+        .accessibilityLabel("End block")
     }
 
     private var line: LocalizedStringKey {
