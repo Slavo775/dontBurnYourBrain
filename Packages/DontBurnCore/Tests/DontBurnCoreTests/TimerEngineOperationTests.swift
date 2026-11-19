@@ -262,6 +262,31 @@ import Testing
     #expect(try blocks(desk.context).first?.state == .done)
 }
 
+@Test(arguments: [TimerState.working, .paused, .onBreak])
+func `end starts nothing, not even after the break or the block would have run out`(state: TimerState) throws {
+    let desk = try Desk()
+    try desk.engine.start(desk.acme, at: nine)
+    switch state {
+    case .paused: try desk.engine.pause(at: at(10))
+    case .onBreak: try desk.engine.startBreak(at: at(10))
+    default: break
+    }
+
+    try desk.engine.end(at: at(12))
+
+    // Past the 5-minute break and the 60-minute block: no return to work, no new block.
+    #expect(try desk.engine.settle(at: at(120)) == .idle)
+    let expectedEnds: [Date?] = switch state {
+    case .paused: [at(10)]
+    case .onBreak: [at(10), at(12)]
+    default: [at(12)]
+    }
+    #expect(try entries(desk.context).map(\.end) == expectedEnds)
+    #expect(try entries(desk.context).last?.kind == (state == .onBreak ? .break : .work))
+    #expect(try blocks(desk.context).map(\.state) == [.done])
+    try expectHistoryKeepsRules(desk.context)
+}
+
 @Test func `time is up ends the entry and the block at the planned end`() throws {
     let desk = try Desk()
     try desk.engine.start(desk.acme, at: nine)
