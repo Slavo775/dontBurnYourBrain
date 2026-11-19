@@ -33,7 +33,7 @@ The app reads these arguments from the command line, so a check or a screenshot 
 | `-DontBurnTimerState running` | Puts the sample timer into one state, for the menu bar item. Works only with `-DontBurnSampleData`, with or without `-DontBurnFixedTime`. Values: `running` (Acme, 1:24 left), `ending` (Acme, 3:27 left), `paused`, `break` (4:12 left), `idle`, `untracked` (0:15 untracked), `idle-break` (nothing runs, Acme's block ended 2:30 ago, and a 15-minute break with nothing running has 12:30 left), `long-name` (Acme under a very long name), and `short` (a six-minute block from launch, to watch on the live clock). An unknown value, or one longer than 16 bytes, is ignored. |
 
 ```sh
-open DerivedData/Build/Products/Debug/DontBurn.app --args -DontBurnFixedTime 2026-01-15T09:41:30+01:00 -DontBurnAppearance dark -DontBurnSampleData YES
+open -g DerivedData/Build/Products/Debug/DontBurn.app --args -DontBurnFixedTime 2026-01-15T09:41:30+01:00 -DontBurnAppearance dark -DontBurnSampleData YES
 ```
 
 Without `-DontBurnSampleData`, the Dev build keeps its data in `~/Library/Application Support/io.github.slavo775.dontburn.dev/DontBurn.store`. The folder is named after the bundle identifier, so the Release app's data is never touched.

@@ -40,7 +40,7 @@ xcodebuild -project DontBurn.xcodeproj -scheme DontBurn -configuration Debug \
 swift test --package-path Packages/DontBurnCore
 
 # Start the development build. It shows the timer's state in the menu bar, with Settings and Quit items
-open DerivedData/Build/Products/Debug/DontBurn.app
+open -g DerivedData/Build/Products/Debug/DontBurn.app
 ```
 
 Launch arguments that freeze the clock, set light or dark, load sample data or put the timer into one state for one launch are in [docs/spec/dev-setup.md](docs/spec/dev-setup.md#launch-arguments).
