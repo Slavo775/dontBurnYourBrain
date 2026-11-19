@@ -41,7 +41,7 @@ build() {
 # tracked catalog. The build system deletes the .stringsdata of a source that is
 # gone or no longer extracted, so no stale file can hide a missing key.
 catalog() {
-    local catalog=Apps/Mac/Localizable.xcstrings tmp copy file failed=0
+    local catalog=Apps/Mac/Localizable.xcstrings tmp copy file keys failed=0
     local objects=DerivedData/Build/Intermediates.noindex/DontBurn.build/Debug/DontBurn.build/Objects-normal
     if ! xcrun --find xcstringstool >/dev/null 2>&1; then
         echo "No xcstringstool on this machine (it comes with Xcode), the catalog check is skipped."
@@ -59,9 +59,10 @@ catalog() {
     elif ! cmp -s "$catalog" "$copy"; then
         echo "The string catalog disagrees with the strings the build extracted."
         echo "A build in the Xcode app would make these changes to $catalog:"
-        diff <(jq -r '.strings | keys[]' "$catalog") <(jq -r '.strings | keys[]' "$copy") \
-            | sed -n 's/^< /  remove key: /p; s/^> /  add key: /p' | grep . \
-            || diff -u "$catalog" "$copy" | head -40
+        keys=$(diff <(jq -r '.strings | keys[]' "$catalog") <(jq -r '.strings | keys[]' "$copy") \
+            | sed -n 's/^< /  remove key: /p; s/^> /  add key: /p')
+        # Same keys: the change is in a key's state or the formatting, so show it.
+        if [ -n "$keys" ]; then echo "$keys"; else diff -u "$catalog" "$copy" | head -40; fi
         failed=1
     fi
     rm -f "$copy" && rmdir "$tmp"
