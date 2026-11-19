@@ -43,6 +43,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 - **SwiftData, synced**: Workspaces, projects, blocks, entries, issue links
 - **SwiftData, local only**: Agent sessions, terminal references
 - **Keychain**: Jira tokens
+- **The app's own defaults, this Mac only**: the alert switches, the last break length, and the latest break with nothing running, which is never a time entry
 
 **Outside**
 

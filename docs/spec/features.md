@@ -49,13 +49,14 @@ Must = needed for the app to be worth opening daily. Should = planned, later pha
 - Timer entries never overlap. Starting a block or switching first ends whatever is running, at the same moment, and after the clock moves back a new entry starts after the latest timer entry. An entry added or changed by hand is refused when it would overlap any other entry, the running one counted up to now. Overlaps with calendar entries are handled when those arrive
 - An entry of a running block takes only a note, and cannot be deleted, until the block ends. The timer derives the block's end from the gaps between its entries
 - Tracked time is shown in whole minutes, rounded down per entry, and every total is the sum of those minutes. Stored entries keep their seconds
-- A block keeps counting down during a break, and a break never runs past the end of its block. A paused block never runs out: its end moves later for as long as the pause lasts
+- A block keeps counting down during a break, and a break never runs past the end of its block. +15 during a break adds the 15 minutes to both the break and the block, so the work left after the break stays the same. A paused block never runs out: its end moves later for as long as the pause lasts
 - When the Mac sleeps or the app quits during a block, the block still ends at its planned time, and the time in between counts as worked. Idle detection refines this in phase 2
 - An action that does not fit the moment, such as Pause with nothing running, is refused and changes nothing
 - Idle detection: after 10 minutes without input the app asks whether to keep or discard that time
 - Jira rounding happens only in the review screen, never in stored data. The default step is 15 minutes and each workspace can set its own
 - The hours you send to Jira can differ from the hours tracked. The app keeps both numbers and shows the difference
 - A break inside a block belongs to the task of that block. By default it counts toward the hours sent to Jira, and each workspace can switch that off. Time between blocks is never counted
+- A break can also be taken with nothing running, such as for lunch after ending the block. It is not stored, counts toward nothing, and is left out of untracked time. Nothing starts when it ends
 - Every meeting counts unless you declined it, so invitations you have not answered count too
 - Out of office is never time worked. It marks the workspace whose calendar it is in as off for those hours, and the whole day when nothing else is planned. The app then stays quiet, and starting a block anyway takes one confirmation
 
