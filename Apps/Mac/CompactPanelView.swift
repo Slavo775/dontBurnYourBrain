@@ -2,9 +2,9 @@ import DontBurnCore
 import SwiftData
 import SwiftUI
 
-/// The compact panel: the running block and its four quick actions, the list
-/// of workspaces to switch to, or, when nothing runs, the quick start list and
-/// the custom block form.
+/// The compact panel: the running block, its four quick actions and End
+/// block, the list of workspaces to switch to, or, when nothing runs, the
+/// quick start list and the custom block form.
 struct CompactPanelView: View {
     let countdown: Countdown
     let navigation: PanelNavigation
@@ -46,7 +46,7 @@ struct CompactPanelView: View {
     }
 }
 
-/// The header, the countdown, the strip and the four quick actions.
+/// The header, the countdown, the strip, the four quick actions and End block.
 private struct RunningBlock: View {
     let panel: CompactPanel
     let countdown: Countdown
@@ -87,33 +87,52 @@ private struct RunningBlock: View {
             .accessibilityHidden(true)
         }
 
-        HStack(spacing: 8) {
-            QuickButton(
-                panel.state == .paused ? "Resume" : "Pause",
-                symbol: panel.state == .paused ? "play.fill" : "pause.fill",
-            ) {
-                countdown.perform(.pauseOrResume)
-            }
-            QuickButton(panel.state == .onBreak ? "End break" : "Break", symbol: "cup.and.heat.waves") {
-                countdown.perform(.breakOrEndBreak)
-            }
-            .disabled(!QuickAction.breakOrEndBreak.isAvailable(in: panel.state))
-            Button {
-                countdown.perform(.extend)
-            } label: {
-                VStack(spacing: 6) {
-                    Text(verbatim: "+15")
-                        .font(.system(size: 16, weight: .semibold))
-                        .monospacedDigit()
-                        .frame(height: 18)
-                    Text("min")
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                QuickButton(
+                    panel.state == .paused ? "Resume" : "Pause",
+                    symbol: panel.state == .paused ? "play.fill" : "pause.fill",
+                ) {
+                    countdown.perform(.pauseOrResume)
+                }
+                QuickButton(panel.state == .onBreak ? "End break" : "Break", symbol: "cup.and.heat.waves") {
+                    countdown.perform(.breakOrEndBreak)
+                }
+                .disabled(!QuickAction.breakOrEndBreak.isAvailable(in: panel.state))
+                Button {
+                    countdown.perform(.extend)
+                } label: {
+                    VStack(spacing: 6) {
+                        Text(verbatim: "+15")
+                            .font(.system(size: 16, weight: .semibold))
+                            .monospacedDigit()
+                            .frame(height: 18)
+                        Text("min")
+                    }
+                }
+                .buttonStyle(QuickButtonStyle())
+                .accessibilityLabel("Add 15 minutes")
+                QuickButton("Switch", symbol: "arrow.left.arrow.right") {
+                    navigation.page = .switching
                 }
             }
-            .buttonStyle(QuickButtonStyle())
-            .accessibilityLabel("Add 15 minutes")
-            QuickButton("Switch", symbol: "arrow.left.arrow.right") {
-                navigation.page = .switching
+
+            // Under the four actions, so they keep their places. Outlined like
+            // "Custom block", so it reads quieter than the four.
+            Button {
+                countdown.endBlock()
+            } label: {
+                StartRow(key: "E", isGhost: true) {
+                    Image(systemName: "stop.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color.muted)
+                        .frame(width: 10)
+                    Text("End block")
+                        .fontWeight(.medium)
+                }
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("End block")
         }
     }
 

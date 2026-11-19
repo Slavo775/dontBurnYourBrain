@@ -106,8 +106,9 @@ From top to bottom:
 2. **Countdown.** `1:24` large with `:10` small. Below it one line: "left of 2:00, break in 19 min".
 3. **The block as a strip.** Filled up to now. Pale gaps mark the breaks, so the rhythm and the next break are visible.
 4. **Four actions in fixed places:** Pause, Break, +15 min, Switch.
-5. **Needs-you strip,** amber, only when an agent is waiting: "acme-web needs you", "Claude (work) in iTerm2", and a Focus button. Working and idle sessions stay one step away.
-6. **Footer.** The next meeting ("Next: Sprint sync at 11:30") and a link to the sessions ("3 sessions").
+5. **End block,** one quieter row under the four.
+6. **Needs-you strip,** amber, only when an agent is waiting: "acme-web needs you", "Claude (work) in iTerm2", and a Focus button. Working and idle sessions stay one step away.
+7. **Footer.** The next meeting ("Next: Sprint sync at 11:30") and a link to the sessions ("3 sessions").
 
 What the actions do:
 
@@ -120,21 +121,22 @@ What the actions do:
 
 In the prototype the block's countdown stands still during a break. That is a shortcut of the drawing. The rule in [features.md](features.md) holds: a break is part of the block.
 
-End block is not among the four. It lives in the right-click menu and the command bar. It ends the running entry and the block now. When the block's time is up, the same happens at its planned end.
+End block is not among the four. It is a quieter row under them, and it also lives in the right-click menu and the command bar. It ends the running entry and the block now, with no confirmation, and starts nothing else. During a break the break entry ends and no work entry starts. While paused, nothing is reopened. The panel returns to "Nothing running". When the block's time is up, the same happens at its planned end. The row in the panel is the owner's decision on card 43. The prototype does not draw it.
 
 How the panel behaves today, in phase 1:
 
 - It is a borderless panel under the menu bar item. It takes the keys as soon as it opens, without bringing the app to the front.
-- It shows the workspace dot and name, the countdown, one line ("left of 2:00", "Paused", or "On a break, then back to Acme"), the strip, the four actions, and the footer "Today: 1:42 tracked". The issue, the expand button, the needs-you strip, the next meeting and the sessions link come in later phases.
+- It shows the workspace dot and name, the countdown, one line ("left of 2:00", "Paused", or "On a break, then back to Acme"), the strip, the four actions, the End block row, and the footer "Today: 1:42 tracked". The issue, the expand button, the needs-you strip, the next meeting and the sessions link come in later phases.
 - The countdown shows `h:mm` large and `:ss` small from one hour left on, and `m` with `:ss` below that. During a break the strip is filled in the muted color.
-- Keys: P pauses and resumes, B takes and ends a break, + adds 15 minutes, S opens Switch, Escape closes the panel. 1 to 9 start a workspace in the "Nothing running" list and in Switch. ⌘N opens the custom block form. In the form, Return or keypad Enter starts, and Escape goes back to the list instead of closing the panel. Each key acts once per press, and a held key does not repeat. ⌘O closes the panel and opens [the window](#the-window). ⌘N and ⌘O are the only keys with ⌘, ⌃ or ⌥ that are taken, each with ⌘ alone; the others are ignored.
+- The End block row is drawn like the outlined "Custom block" row, 8 pt under the four actions: a small muted stop icon, "End block", and the key hint E on the right. It shows while the block runs, is paused or is on a break. VoiceOver reads it as one element, "End block".
+- Keys: P pauses and resumes, B takes and ends a break, + adds 15 minutes, S opens Switch, E ends the block, Escape closes the panel. P, B, +, S and E work only on the running block, not in Switch. 1 to 9 start a workspace in the "Nothing running" list and in Switch. ⌘N opens the custom block form. In the form, Return or keypad Enter starts, and Escape goes back to the list instead of closing the panel. Each key acts once per press, and a held key does not repeat. ⌘O closes the panel and opens [the window](#the-window). ⌘N and ⌘O are the only keys with ⌘, ⌃ or ⌥ that are taken, each with ⌘ alone; the others are ignored.
 - Switch uses the same rows as "Nothing running": every active workspace in the order from Settings, the running one included, with the dot, the name, the default length and the number key. Back returns to the running block.
 - The panel closes on Escape, on a second click on the item, on a right-click, and when it loses focus, such as on a click elsewhere.
 - The countdown ticks every second only while the panel is open.
 - It follows the app's appearance, so `-DontBurnAppearance` reaches it. The item and its menu follow the system.
 - Today's tracked total counts work and meetings always, and a break only when its workspace counts breaks. Entries are clipped to today and to now. It is the window's Today total: the sum of each entry's whole minutes, rounded down per entry.
 - With nothing running, it shows the list described below. Without a store, it shows only "Nothing running", with no rows, no footer and no keys.
-- While the app asks for the notification permission, one line under the four actions says "Allow notifications to hear when a block or break ends". It goes away when the system prompt is answered, and never shows after a refusal.
+- While the app asks for the notification permission, one line under the End block row says "Allow notifications to hear when a block or break ends". It goes away when the system prompt is answered, and never shows after a refusal.
 
 ### Nothing is running
 
@@ -346,7 +348,7 @@ How it works:
 - A sound is skipped when it comes more than 60 seconds late, for example after the Mac slept.
 - The rules live in `Alerts.swift` in `DontBurnCore` (`AlertKind`, `AlertSettings` and the plan).
 
-**Permission.** It is asked at the first block start, while macOS has not asked yet, and never at launch. While the system prompt is open, the compact panel shows one line under the four actions. After a refusal only the note in Settings → General remains. When it is allowed later in System Settings, the app picks it up at the next change of plan.
+**Permission.** It is asked at the first block start, while macOS has not asked yet, and never at launch. While the system prompt is open, the compact panel shows one line under the End block row. After a refusal only the note in Settings → General remains. When it is allowed later in System Settings, the app picks it up at the next change of plan.
 
 **Settings → General** is a grouped form with three sections: When a block ends, When a break ends, and 5 minutes before a block ends. Each has a Notification switch and a "Sound (Name)" switch. The switches are stored in the defaults as `alert.<kind>.notification` and `alert.<kind>.sound`. When notifications are refused, a note says "Notifications are off for <app name>. Allow them in System Settings → Notifications." with an Open button, which only opens that pane. The version stays at the bottom, and the form scrolls when the note makes it taller than the window.
 
