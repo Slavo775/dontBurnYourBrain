@@ -19,6 +19,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 - `xcodebuild` comes with Xcode. Builds and runs tests from the terminal, so Claude Code can verify its own work.
 - `brew install swiftlint swiftformat xcbeautify xcodegen`
 - XcodeGen keeps the project definition in a small YAML file, which avoids merge pain in the generated Xcode project file and suits agent-written code.
+- The generated project stays out of git, so a pull never updates it. Run `xcodegen generate` after every pull or branch switch that adds, removes or renames files, before you build in Xcode or with `xcodebuild`.
 
 ### Launch arguments
 
