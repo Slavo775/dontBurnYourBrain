@@ -47,6 +47,10 @@ final class StatusItemController: NSObject, NSWindowDelegate {
             button.target = self
             button.action = #selector(clicked)
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+            // On the cell: the element the menu bar shows for the item reads the cell's actions, not the button's.
+            button.cell?.setAccessibilityCustomActions([NSAccessibilityCustomAction(
+                name: String(localized: "Show menu"), target: self, selector: #selector(showMenuFromAccessibility),
+            )])
         }
         show(countdown.label)
         countdown.onLabelChange = { [weak self] in self?.show($0) }
@@ -68,6 +72,17 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         } else {
             openPanel()
         }
+    }
+
+    /// Opens the right-click menu for VoiceOver and other accessibility
+    /// clients, whose `AXPress` on the item opens the panel instead.
+    ///
+    /// The menu tracks until it closes, so it opens on the next pass of the
+    /// run loop, and the client's request returns at once.
+    @objc private func showMenuFromAccessibility() -> Bool {
+        closePanel()
+        DispatchQueue.main.async { [weak self] in self?.showMenu() }
+        return true
     }
 
     private func showMenu() {
