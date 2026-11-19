@@ -150,16 +150,22 @@ extension AlertKind {
 }
 
 private extension PlannedAlert {
-    /// What makes two plans the same notifications: the kind, the second and the workspace.
+    /// What makes two plans the same notifications: the kind, the second and the workspace or none.
     var key: String {
-        "\(kind.rawValue) \(Int(date.timeIntervalSinceReferenceDate.rounded())) \(workspace)"
+        // The rounded seconds stay a Double: a far date must not trap in a conversion to Int.
+        "\(kind.rawValue) \(date.timeIntervalSinceReferenceDate.rounded()) \(String(describing: workspace))"
     }
 
     /// The title and the body.
     var text: (String, String) {
         // A workspace may have an empty name, and the text then names none.
+        let workspace = workspace ?? ""
         let named = !workspace.isEmpty
         return switch kind {
+        case .breakEnd where self.workspace == nil: (
+                String(localized: "Break is over"),
+                String(localized: "Start a block when you're ready."),
+            )
         case .blockEnd: (
                 named ? String(localized: "\(workspace) block finished") : String(localized: "Block finished"),
                 String(localized: "Time to stop or start the next one."),

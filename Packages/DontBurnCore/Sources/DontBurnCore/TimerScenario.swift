@@ -19,6 +19,9 @@ public enum TimerScenario: String, CaseIterable, Sendable {
     case idle
     /// Nothing runs, and the last block ended 15 minutes ago.
     case untracked
+    /// Nothing runs, and a 15-minute break with no block has 12:30 left. Acme's
+    /// block ended when the break started. See ``idleBreak(at:)``.
+    case idleBreak = "idle-break"
     /// Acme runs with 1:24 left under a very long name.
     case longName = "long-name"
     /// Acme runs a six-minute block that starts at `now`, to watch on the
@@ -63,6 +66,9 @@ public enum TimerScenario: String, CaseIterable, Sendable {
             try engine.start(acme, minutes: 30, at: ago(40 * 60))
         case .untracked:
             try engine.start(acme, minutes: 20, at: ago(35 * 60))
+        case .idleBreak:
+            try engine.start(acme, minutes: 120, at: ago(40 * 60))
+            try engine.end(at: ago(150))
         case .longName:
             acme.name = "Acme Corporation International Holdings"
             try engine.start(acme, minutes: 120, at: ago(36 * 60))
@@ -70,5 +76,14 @@ public enum TimerScenario: String, CaseIterable, Sendable {
             try engine.start(acme, minutes: 6, at: now)
         }
         try engine.settle(at: now)
+    }
+
+    /// The break with no block this scenario runs at `now`, or `nil`.
+    ///
+    /// Nothing stores that break, so ``apply(to:now:)`` cannot put it in the
+    /// store. The app keeps it in memory.
+    public func idleBreak(at now: Date) -> IdleBreak? {
+        guard self == .idleBreak else { return nil }
+        return IdleBreak(start: now.addingTimeInterval(-150), end: now.addingTimeInterval(750))
     }
 }

@@ -4,184 +4,17 @@ import os
 import SwiftData
 import SwiftUI
 
-/// Draws a ``MenuBarLabel`` as the item's image.
-///
-/// One image keeps the dot, the name and the digits together, in tabular
-/// figures that keep the item's width steady as the digits change. (Under
-/// `MenuBarExtra`, a `Text` label lost its font, so an image was the only
-/// way.) A template image is drawn in one color, which would lose the
-/// workspace's dot, so this image is not a template.
-/// Instead it is drawn by a handler that runs each time the item is drawn,
-/// under the menu bar's own appearance: the text and the outline take the
-/// label color of that appearance, and the dot the workspace color's light or
-/// dark value, on every display.
-///
-/// Sizes follow the prototype's menu bar tiles: a 10 pt dot, 6 pt to the
-/// text, and text at weight 500.
-enum MenuBarImage {
-    private static var font: NSFont {
-        .monospacedDigitSystemFont(ofSize: NSFont.menuBarFont(ofSize: 0).pointSize, weight: .medium)
-    }
-
-    private static let dotDiameter: CGFloat = 10
-    private static let gap: CGFloat = 6
-    private static let cupPointSize: CGFloat = 11
-    /// The widest a name may be drawn. Sixteen characters fit in ordinary
-    /// letters, and a name of wide letters is cut here, so the item never
-    /// crowds the menu bar on a notched display.
-    private static let maximumNameWidth: CGFloat = 116
-
-    /// "DEV" after the label in the Dev build, so it is never taken for the
-    /// daily copy. Small and in the secondary color, so the item stays narrow.
-    private static let marker: String? = BuildInfo.current.variant == .dev ? String(localized: "DEV") : nil
-    private static var markerFont: NSFont {
-        .systemFont(ofSize: 9, weight: .bold)
-    }
-
-    private static let markerGap: CGFloat = 4
-
-    /// The marker's width with the gap before it, or 0 without a marker.
-    private static var markerWidth: CGFloat {
-        guard let marker else { return 0 }
-        return markerGap + (marker as NSString).size(withAttributes: [.font: markerFont]).width
-    }
-
-    /// Draws the marker `markerGap` after `left`, centered in `height`.
-    private static func drawMarker(after left: CGFloat, height: CGFloat) {
-        guard let marker else { return }
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: markerFont, .foregroundColor: NSColor.secondaryLabelColor,
-        ]
-        let size = (marker as NSString).size(withAttributes: attributes)
-        let origin = NSPoint(x: left + markerGap, y: (height - size.height) / 2)
-        (marker as NSString).draw(at: origin, withAttributes: attributes)
-    }
-
-    private enum Symbol {
-        case dot(WorkspaceColor)
-        case outline
-        case cup
-    }
-
-    static func image(for label: MenuBarLabel) -> NSImage {
-        let font = font
-        let parts = parts(of: label, font: font)
-        let symbol = parts.symbol, text = parts.text
-        let attributes: [NSAttributedString.Key: Any] = [.font: font]
-        let textSize = text.isEmpty ? .zero : (text as NSString).size(withAttributes: attributes)
-        // The prototype's cup is drawn in outline, with steam above it.
-        let cup = NSImage(systemSymbolName: "cup.and.heat.waves", accessibilityDescription: nil)?
-            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: cupPointSize, weight: .medium))
-        let symbolSize = switch symbol {
-        case .cup: cup?.size ?? .zero
-        case .dot, .outline: NSSize(width: dotDiameter, height: dotDiameter)
-        }
-        let height = ceil(max(textSize.height, symbolSize.height))
-        let labelWidth = symbolSize.width + (text.isEmpty ? 0 : gap + textSize.width)
-        let width = ceil(labelWidth + markerWidth)
-
-        let image = NSImage(size: NSSize(width: width, height: height), flipped: false) { _ in
-            // Resolved here, while the item is drawn, so it follows the menu bar.
-            let ink = NSColor.labelColor
-            let symbolRect = NSRect(
-                x: 0, y: (height - symbolSize.height) / 2,
-                width: symbolSize.width, height: symbolSize.height,
-            )
-            switch symbol {
-            case let .dot(color):
-                color.nsColor.setFill()
-                NSBezierPath(ovalIn: symbolRect).fill()
-            case .outline:
-                ink.setStroke()
-                let path = NSBezierPath(ovalIn: symbolRect.insetBy(dx: 0.75, dy: 0.75))
-                path.lineWidth = 1.5
-                path.stroke()
-            case .cup:
-                // The symbol is drawn in black, then tinted where it has ink.
-                cup?.draw(in: symbolRect)
-                ink.setFill()
-                symbolRect.fill(using: .sourceAtop)
-            }
-            if !text.isEmpty {
-                var textAttributes = attributes
-                textAttributes[.foregroundColor] = ink
-                (text as NSString).draw(
-                    at: NSPoint(x: symbolSize.width + gap, y: (height - textSize.height) / 2),
-                    withAttributes: textAttributes,
-                )
-            }
-            drawMarker(after: labelWidth, height: height)
-            return true
-        }
-        // What VoiceOver reads, since the image is all the item shows.
-        image.accessibilityDescription = marker == nil ? parts.spoken : String(localized: "\(parts.spoken), Dev build")
-        return image
-    }
-
-    /// The symbol, the text shown, and the text VoiceOver reads.
-    private struct Parts {
-        let symbol: Symbol
-        let text: String
-        let spoken: String
-
-        init(_ symbol: Symbol, _ text: String, _ spoken: String) {
-            self.symbol = symbol
-            self.text = text
-            self.spoken = spoken
-        }
-    }
-
-    private static func parts(of label: MenuBarLabel, font: NSFont) -> Parts {
-        switch label {
-        case let .running(name, color, time):
-            let shown = fitted(name, font: font)
-            return Parts(
-                .dot(color),
-                shown.isEmpty ? time : "\(shown) \(time)",
-                name.isEmpty ? time : "\(name) \(time)",
-            )
-        case let .paused(name, color):
-            let shown = fitted(name, font: font)
-            return Parts(
-                .dot(color),
-                shown.isEmpty ? String(localized: "paused") : String(localized: "\(shown), paused"),
-                name.isEmpty ? String(localized: "paused") : String(localized: "\(name), paused"),
-            )
-        case let .onBreak(time?):
-            return Parts(.cup, time, String(localized: "On a break, \(time) left"))
-        case .onBreak(nil):
-            return Parts(.cup, "", String(localized: "On a break"))
-        case let .idle(untracked?):
-            return Parts(.outline, untracked, String(localized: "Nothing running, \(untracked) untracked"))
-        case .idle(nil):
-            return Parts(.outline, "", String(localized: "Nothing running"))
-        }
-    }
-
-    /// `name` cut at the end until it fits ``maximumNameWidth``.
-    private static func fitted(_ name: String, font: NSFont) -> String {
-        let attributes: [NSAttributedString.Key: Any] = [.font: font]
-        func width(_ text: String) -> CGFloat {
-            (text as NSString).size(withAttributes: attributes).width
-        }
-        guard width(name) > maximumNameWidth else { return name }
-        var kept = name.hasSuffix("…") ? String(name.dropLast()) : name
-        while !kept.isEmpty, width(kept + "…") > maximumNameWidth {
-            kept = String(kept.dropLast()).trimmingCharacters(in: .whitespaces)
-        }
-        return kept + "…"
-    }
-}
-
 /// The timer's state for the menu bar item and the panel, renewed exactly
 /// when what they show changes, and the one way the interface acts on the timer.
 ///
 /// Each tick settles the timer engine, so a block whose time is up closes and
 /// the item returns to the outline dot. The item and the panel read the same
-/// settled state. While the panel is open the countdown ticks every second,
-/// and otherwise only as often as the item needs. A `TimelineView` in a menu
-/// bar label kept the main thread busy updating the item from launch on, so
-/// the countdown ticks on a timer instead.
+/// settled state. Beside the engine it keeps the latest break with nothing
+/// running (``IdleBreak``) and the last break length, which no store holds. While
+/// the panel is open the countdown ticks every second, and otherwise only as
+/// often as the item needs. A `TimelineView` in a menu bar label kept the
+/// main thread busy updating the item from launch on, so the countdown ticks
+/// on a timer instead.
 @MainActor
 @Observable
 final class Countdown {
@@ -195,6 +28,9 @@ final class Countdown {
 
     /// What the panel shows, or `nil` when nothing runs or there is no store.
     private(set) var panel: CompactPanel?
+
+    /// The break length the "Break for" list preselects: the last one used, in minutes.
+    private(set) var breakMinutes: Int
 
     /// The workspaces to start or switch to, in their order. Empty without a store.
     ///
@@ -229,15 +65,42 @@ final class Countdown {
     /// The status the last settle reported, and when. `nil` after a user's
     /// action, so only a block or a break that runs out by itself plays a sound.
     @ObservationIgnored private var settled: (status: TimerStatus, at: Date)?
+    /// The latest break with nothing running, still running or finished, or
+    /// `nil`. A finished one keeps the end it really had, where untracked time
+    /// starts. The views read it through ``panel`` and ``label``.
+    @ObservationIgnored private var idleBreak: IdleBreak?
+    /// Where the break with nothing running and the last break length are
+    /// kept across launches, or `nil` to keep them in memory only.
+    private let defaults: UserDefaults?
+    /// Whether a refresh is under way. Saving to the defaults posts a change,
+    /// which would otherwise refresh again inside it.
+    @ObservationIgnored private var isRefreshing = false
     private let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "countdown")
 
     /// A countdown over the store in `container`, or the outline dot alone
     /// when there is no store. With `fixedTime` it is computed for that
     /// instant, acts at that instant, never ticks and gives no alerts.
-    init(container: ModelContainer?, fixedTime: Date?, alerts: AlertCenter? = nil) {
+    ///
+    /// `defaults` keeps the latest break with nothing running and the last
+    /// break length across launches. Without it, as for the sample data, both
+    /// stay in memory and start from `idleBreak` and the default length.
+    init(
+        container: ModelContainer?,
+        fixedTime: Date?,
+        alerts: AlertCenter? = nil,
+        defaults: UserDefaults? = nil,
+        idleBreak: IdleBreak? = nil,
+    ) {
         context = container?.mainContext
         self.fixedTime = fixedTime
         self.alerts = fixedTime == nil ? alerts : nil
+        self.defaults = defaults
+        breakMinutes = TimerEngine.breakLength(remembered: defaults?.integer(forKey: Self.breakMinutesKey) ?? 0)
+        if let defaults {
+            self.idleBreak = Self.storedIdleBreak(in: defaults)
+        } else {
+            self.idleBreak = idleBreak
+        }
         appStart = fixedTime ?? .now
         let next = refresh(at: appStart)
         guard fixedTime == nil, context != nil else { return }
@@ -280,13 +143,30 @@ final class Countdown {
         context != nil
     }
 
-    /// Takes `action` on the running block now.
+    /// Takes `action` now, on the running block or the break with nothing running.
     func perform(_ action: QuickAction) {
-        act("take a quick action") { try action.perform(with: $0, at: $1) }
+        act("take a quick action") { engine, now in
+            try changeBreak(with: engine, at: now) { try action.perform(with: engine, idleBreak: &$0, at: now) }
+        }
+    }
+
+    /// Starts a break of `minutes` now, inside the running block or with
+    /// nothing running, and remembers the length for next time.
+    func startBreak(minutes: Int) {
+        act("start a break") { engine, now in
+            try changeBreak(with: engine, at: now) {
+                try QuickAction.startBreak(minutes: minutes, with: engine, idleBreak: &$0, at: now)
+            }
+            // Only a break that started moves the preselection.
+            breakMinutes = minutes
+        }
+        // Its end is announced too, so a first break asks as a first start does.
+        alerts?.askPermissionIfUndetermined()
     }
 
     /// Starts a block for `workspace` now, of `minutes` or its default length.
-    /// Whatever runs ends first, so this also switches.
+    /// Whatever runs ends first, so this also switches, and it ends a break
+    /// with nothing running, silently.
     func start(_ workspace: Workspace, minutes: Int? = nil) {
         act("start a block") { try $0.start(workspace, minutes: minutes, at: $1) }
         // The first start asks for the permission to notify, never the launch.
@@ -300,8 +180,23 @@ final class Countdown {
 
     /// Settles now, updates what the item and the panel show, and sets the next tick.
     func reschedule() {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        defer { isRefreshing = false }
         let next = refresh(at: fixedTime ?? .now)
         timer?.fireDate = next
+    }
+
+    /// Passes the break with nothing running at `now`, or `nil`, to `change`.
+    /// One that stops running there is kept as finished.
+    private func changeBreak(
+        with engine: TimerEngine,
+        at now: Date,
+        _ change: (inout IdleBreak?) throws -> Void,
+    ) throws {
+        var running = try idleBreak?.running(beside: engine.settle(at: now), at: now)
+        try change(&running)
+        idleBreak = running ?? idleBreak?.ended(at: now)
     }
 
     private func act(_ what: String, _ body: (TimerEngine, Date) throws -> Void) {
@@ -327,17 +222,23 @@ final class Countdown {
         }
         do {
             let engine = TimerEngine(context: context)
-            let status = try engine.settle(at: now)
+            let blockStatus = try engine.settle(at: now)
+            // Before anything is shown, so a damaged break never is.
+            let running = idleBreak?.running(beside: blockStatus, at: now)
+            idleBreak = running ?? idleBreak?.ended(at: now)
+            let status = running?.status(at: now) ?? blockStatus
             let since = try MenuBarLabel.untrackedStart(
-                in: context, appStart: appStart, now: now, calendar: .current,
+                in: context, appStart: appStart, now: now, calendar: .current, idleBreak: idleBreak,
             )
             let block = try engine.runningBlock()
             announce(status, workspace: block?.workspace?.name ?? "", at: now)
             label = MenuBarLabel(status: status, workspace: block?.workspace, untrackedSince: since, at: now)
             let tracked = try CompactPanel.trackedToday(in: context, now: now, calendar: .current)
-            panel = CompactPanel(status: status, block: block, tracked: tracked)
+            panel = running.map { CompactPanel(idleBreak: $0, at: now, tracked: tracked) }
+                ?? CompactPanel(status: status, block: block, tracked: tracked)
             trackedToday = MenuBarLabel.hoursAndMinutes(tracked)
             workspaces = try WorkspaceRoster(context: context).activeWorkspaces()
+            saveBreaks()
             let next = MenuBarLabel.nextRedraw(status: status, untrackedSince: since, after: now)
             guard isPanelOpen, let tick = CompactPanel.nextRedraw(status: status, after: now) else { return next }
             return min(next, tick)
@@ -352,6 +253,36 @@ final class Countdown {
         }
     }
 
+    private static let breakMinutesKey = "break.lastMinutes"
+    private static let idleBreakStartKey = "break.idle.start"
+    private static let idleBreakEndKey = "break.idle.end"
+
+    /// The latest break with nothing running kept in `defaults`, or `nil` when
+    /// none is kept or what is kept is damaged.
+    private static func storedIdleBreak(in defaults: UserDefaults) -> IdleBreak? {
+        guard let start = defaults.object(forKey: idleBreakStartKey) as? Date,
+              let end = defaults.object(forKey: idleBreakEndKey) as? Date
+        else { return nil }
+        return IdleBreak(start: start, end: end)
+    }
+
+    /// Keeps the latest break with nothing running and the last break length
+    /// in the defaults, writing only what changed.
+    private func saveBreaks() {
+        guard let defaults else { return }
+        if TimerEngine.breakLength(remembered: defaults.integer(forKey: Self.breakMinutesKey)) != breakMinutes {
+            defaults.set(breakMinutes, forKey: Self.breakMinutesKey)
+        }
+        // Against the raw values, so a damaged pair is removed and a kept one is not written again.
+        for (key, date) in [(Self.idleBreakStartKey, idleBreak?.start), (Self.idleBreakEndKey, idleBreak?.end)] {
+            let stored = defaults.object(forKey: key)
+            let isKept = date.map { stored as? Date == $0 } ?? (stored == nil)
+            if !isKept {
+                defaults.set(date, forKey: key)
+            }
+        }
+    }
+
     /// Plays the sound of an alert whose moment passed since the last settle,
     /// and replans the pending notifications.
     private func announce(_ status: TimerStatus, workspace: String, at now: Date) {
@@ -362,16 +293,4 @@ final class Countdown {
         }
         alerts.schedule(PlannedAlert.plan(for: status, workspace: workspace, settings: alerts.settings, at: now))
     }
-}
-
-#Preview {
-    VStack(alignment: .leading) {
-        Image(nsImage: MenuBarImage.image(for: .running(name: "Acme", color: .teal, time: "1:24")))
-        Image(nsImage: MenuBarImage.image(for: .running(name: "Globex", color: .indigo, time: "4:59")))
-        Image(nsImage: MenuBarImage.image(for: .paused(name: "Personal", color: .ochre)))
-        Image(nsImage: MenuBarImage.image(for: .onBreak(time: "4:12")))
-        Image(nsImage: MenuBarImage.image(for: .idle(untracked: nil)))
-        Image(nsImage: MenuBarImage.image(for: .idle(untracked: "0:15")))
-    }
-    .padding()
 }

@@ -11,8 +11,9 @@ public enum MenuBarLabel: Equatable, Sendable {
     case running(name: String, color: WorkspaceColor, time: String)
     /// A block is paused: the workspace's dot and name.
     case paused(name: String, color: WorkspaceColor)
-    /// A break is running: the cup and the break time left in minutes and
-    /// seconds, or `nil` when the break has no planned length.
+    /// A break is running, in a block or with none: the cup and the break
+    /// time left in minutes and seconds, or `nil` when the break has no
+    /// planned length.
     case onBreak(time: String?)
     /// Nothing runs: the outline dot, and after 15 minutes the untracked time
     /// in hours and minutes.
@@ -24,6 +25,9 @@ public enum MenuBarLabel: Equatable, Sendable {
     public static let untrackedThreshold: TimeInterval = 15 * 60
     /// The longest workspace name shown, in characters, including the ellipsis.
     public static let maximumNameLength = 16
+    /// The longest time shown, in seconds, about 68 years. A longer one, which
+    /// only a damaged value gives, shows as this.
+    static let maximumShownTime = TimeInterval(Int32.max)
     /// The longest wait between two redraws, so a change in the store shows within it.
     static let maximumRedrawInterval: TimeInterval = 60
     /// How long after the instant the digits change the redraw is due, so a
@@ -34,7 +38,7 @@ public enum MenuBarLabel: Equatable, Sendable {
     ///
     /// `workspace` is the running block's workspace, ignored when nothing
     /// runs. `untrackedSince` is where the untracked time starts, see
-    /// ``untrackedStart(in:appStart:now:calendar:)``.
+    /// ``untrackedStart(in:appStart:now:calendar:idleBreak:)``.
     ///
     /// Every time is rounded down to the whole minute or second, as in the
     /// panel: a two-hour block shows `2:00` only at its first instant, then
@@ -49,7 +53,7 @@ public enum MenuBarLabel: Equatable, Sendable {
             self = .idle(untracked: untracked >= Self.untrackedThreshold ? Self.hoursAndMinutes(untracked) : nil)
         case .paused:
             self = .paused(name: name, color: color)
-        case .onBreak:
+        case .onBreak, .idleBreak:
             self = .onBreak(time: status.breakTimeLeft.map(Self.minutesAndSeconds))
         case .working:
             let left = status.blockTimeLeft ?? 0
@@ -73,7 +77,7 @@ public enum MenuBarLabel: Equatable, Sendable {
             nextCountUp(from: untrackedSince, after: now)
         case .paused:
             nil
-        case .onBreak:
+        case .onBreak, .idleBreak:
             status.breakTimeLeft.map { nextCountDown(left: $0, step: 1, after: now) }
         case .working:
             status.blockTimeLeft.map { left in
@@ -85,10 +89,27 @@ public enum MenuBarLabel: Equatable, Sendable {
 
     /// Where the untracked time starts: the end of the latest entry that
     /// ended today by `now`, or else the app's start, but never before today.
+    /// The end of `idleBreak`, the latest break with nothing running, wins
+    /// when it is later, so the break is not counted as untracked.
     ///
     /// Entries of every kind and source count. One that ends after `now`,
-    /// such as a meeting later today, does not.
+    /// such as a meeting later today, does not, and neither does a break end
+    /// after `now` or before today.
     public static func untrackedStart(
+        in context: ModelContext,
+        appStart: Date,
+        now: Date,
+        calendar: Calendar,
+        idleBreak: IdleBreak? = nil,
+    ) throws -> Date {
+        let start = try untrackedStartFromEntries(in: context, appStart: appStart, now: now, calendar: calendar)
+        guard let breakEnd = idleBreak?.end, breakEnd > start, breakEnd <= now,
+              breakEnd >= calendar.startOfDay(for: now)
+        else { return start }
+        return breakEnd
+    }
+
+    private static func untrackedStartFromEntries(
         in context: ModelContext,
         appStart: Date,
         now: Date,
@@ -123,14 +144,22 @@ public enum MenuBarLabel: Equatable, Sendable {
 
     /// `h:mm` for whole minutes in `seconds`, rounded down, such as `0:10`.
     public static func hoursAndMinutes(_ seconds: TimeInterval) -> String {
-        let minutes = max(0, Int(seconds / 60))
+        let minutes = wholeSeconds(seconds) / 60
         return "\(minutes / 60):" + twoDigits(minutes % 60)
     }
 
     /// `m:ss` for whole seconds in `seconds`, rounded down.
     static func minutesAndSeconds(_ seconds: TimeInterval) -> String {
-        let whole = max(0, Int(seconds))
+        let whole = wholeSeconds(seconds)
         return "\(whole / 60):" + twoDigits(whole % 60)
+    }
+
+    /// `seconds` rounded down to whole seconds, from zero to
+    /// ``maximumShownTime``. Zero for a value that is not a number, so a
+    /// damaged time never stops the app.
+    static func wholeSeconds(_ seconds: TimeInterval) -> Int {
+        guard seconds > 0 else { return 0 }
+        return Int(min(seconds, maximumShownTime))
     }
 
     private static func twoDigits(_ value: Int) -> String {

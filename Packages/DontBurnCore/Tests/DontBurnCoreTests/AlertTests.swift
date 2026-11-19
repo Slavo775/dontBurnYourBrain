@@ -118,6 +118,39 @@ struct AlertDueTests {
     @Test func `nothing is due after idle`() {
         #expect(AlertKind.due(from: .idle, at: at(0), to: .idle, at: at(1)) == nil)
     }
+
+    @Test func `a break with nothing running that runs out is due as the break end`() throws {
+        let resting = try #require(IdleBreak(start: nine, end: at(5)))
+        #expect(AlertKind.due(from: resting.status(at: at(4.9)), at: at(4.9), to: .idle, at: at(5.1)) == .breakEnd)
+        #expect(AlertKind.due(from: resting.status(at: at(4.9)), at: at(4.9), to: .idle, at: at(5)) == .breakEnd)
+    }
+
+    @Test func `a break with nothing running plays its end up to a minute late, and not later`() throws {
+        let resting = try #require(IdleBreak(start: nine, end: at(5)))
+        let then = at(4.5)
+        let late = at(5).addingTimeInterval(59)
+        let tooLate = at(5).addingTimeInterval(61)
+        #expect(AlertKind.due(from: resting.status(at: then), at: then, to: .idle, at: late) == .breakEnd)
+        #expect(AlertKind.due(from: resting.status(at: then), at: then, to: .idle, at: tooLate) == nil)
+    }
+
+    @Test func `a break with nothing running ended early, or not over yet, plays nothing`() throws {
+        let resting = try #require(IdleBreak(start: nine, end: at(15)))
+        let previous = resting.status(at: at(3))
+        #expect(AlertKind.due(from: previous, at: at(3), to: .idle, at: at(3.5)) == nil)
+        #expect(AlertKind.due(from: previous, at: at(3), to: resting.status(at: at(4)), at: at(4)) == nil)
+    }
+
+    @Test func `a block started as a break with nothing running ends plays no break end`() throws {
+        let resting = try #require(IdleBreak(start: nine, end: at(5)))
+        let block = working(until: at(65), at: at(5.1))
+        #expect(AlertKind.due(from: resting.status(at: at(4.9)), at: at(4.9), to: block, at: at(5.1)) == nil)
+    }
+
+    @Test func `a break with nothing running already over at the earlier settle plays nothing again`() throws {
+        let resting = try #require(IdleBreak(start: nine, end: at(5)))
+        #expect(AlertKind.due(from: resting.status(at: at(5)), at: at(5), to: .idle, at: at(5.1)) == nil)
+    }
 }
 
 struct AlertPlanTests {
@@ -216,6 +249,29 @@ struct AlertPlanTests {
         let planned = PlannedAlert.plan(for: status, workspace: "Acme", settings: breakOnly, at: at(31))
         #expect(planned.map(\.kind) == [.breakEnd])
         #expect(PlannedAlert.plan(for: status, workspace: "Acme", settings: none, at: at(31)).isEmpty)
+    }
+
+    @Test func `a break with nothing running plans its end alone, naming no workspace`() throws {
+        let resting = try #require(IdleBreak(start: nine, end: at(15)))
+        let status = resting.status(at: at(3))
+        let plan = PlannedAlert.plan(for: status, workspace: "Acme", settings: everything, at: at(3))
+        #expect(plan == [PlannedAlert(kind: .breakEnd, date: at(15), workspace: nil)])
+    }
+
+    @Test func `a break with nothing running plans the moved end after +15`() throws {
+        var resting = try #require(IdleBreak(start: nine, end: at(5)))
+        resting.extend(by: 15)
+        let plan = PlannedAlert.plan(for: resting.status(at: at(3)), workspace: "", settings: .standard, at: at(3))
+        #expect(plan.map(\.date) == [at(20)])
+    }
+
+    @Test func `a break with nothing running plans nothing with its switch off or at its end`() throws {
+        let resting = try #require(IdleBreak(start: nine, end: at(15)))
+        let noBreakEnd = AlertSettings(notifications: [.blockEnd, .warning], sounds: Set(AlertKind.allCases))
+        let status = resting.status(at: at(3))
+        #expect(PlannedAlert.plan(for: status, workspace: "", settings: noBreakEnd, at: at(3)).isEmpty)
+        let over = resting.status(at: at(15))
+        #expect(PlannedAlert.plan(for: over, workspace: "", settings: everything, at: at(15)).isEmpty)
     }
 
     @Test func `the plan names the running block's workspace`() throws {

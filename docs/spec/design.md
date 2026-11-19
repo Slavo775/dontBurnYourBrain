@@ -62,7 +62,7 @@ The prototype draws five states as tiles. Its live panel shows a sixth, paused.
 |---|---|
 | **Block running** | A dot in the workspace color, the workspace name, and hours and minutes left: `Acme 1:24`. In the last five minutes it shows minutes and seconds |
 | **Paused** | The dot, the name and "paused": `Acme, paused` |
-| **On a break** | A cup icon and the break time left: `4:12` |
+| **On a break** | A cup icon and the break time left: `4:12`. The same for [a break with nothing running](#a-break-with-nothing-running) |
 | **Nothing running** | An outline dot. After 15 minutes it also shows how long nothing has been tracked: `0:15` |
 | **Agent waiting** | Any state above plus an amber badge with the number of waiting sessions. The panel then opens with that session on top |
 | **Day off** | An icon and "Off". Out of office leaves nothing planned for today, or the user took the day off. Untracked time is not counted |
@@ -70,7 +70,7 @@ The prototype draws five states as tiles. Its live panel shows a sixth, paused.
 How the first four states behave today:
 
 - Times left are rounded down. A block shows `h:mm` until less than five minutes are left, so the seconds start at `4:59`. A break always shows `m:ss`.
-- Untracked time counts from the end of the latest entry that ended today, else from the app's start, but never from before the start of today.
+- Untracked time counts from the end of the latest entry that ended today, else from the app's start, but never from before the start of today. A break with nothing running is left out: when it ended later than that, untracked time counts from its real end. That is its planned end when it ran out, or the moment it was ended by hand or by a block start. It never counts from a moment in the future or before today, and this holds after a restart.
 - The item redraws just after the shown digits change, and at least once a minute. At `0:00` the block or break is closed on the next tick.
 - A long workspace name is cut to 16 characters, "…" included, and never drawn wider than 116 pt.
 - Without a store the item shows the outline dot and never ticks.
@@ -115,8 +115,8 @@ What the actions do:
 | Action | Effect |
 |---|---|
 | **Pause** | The countdown stops and the running entry ends. The button becomes Resume, the digits dim, the menu bar says "paused". Resume starts a new entry, and the block ends later by the length of the pause. Pausing during a break ends the break, and Resume starts work |
-| **Break** | A break entry starts inside the block, with its own countdown, five minutes by default. The button becomes End break. When the break is over, work continues. The block still ends at its planned time, and a break that would run past it stops there. While the block is paused, Break is disabled in the button, the B key and the menu: resume first (the owner's decision) |
-| **+15 min** | Adds 15 minutes to the block |
+| **Break** | Opens "Break for", where the length is chosen. A break entry then starts inside the block, with its own countdown. The button becomes End break. When the break is over, work continues. The block still ends at its planned time, and a break that would run past it stops there, so for lunch the block is ended first. While the block is paused, Break is disabled in the button, the B key and the menu: resume first (the owner's decision) |
+| **+15 min** | Adds 15 minutes to the block. On a break it adds them to the break too, so the work left after the break stays the same. This is the owner's decision on card 44 |
 | **Switch** | Shows the quick start list under the title "Switch to", with a Back button. Choosing a workspace ends the current block and starts a new one for that workspace, at its default length |
 
 In the prototype the block's countdown stands still during a break. That is a shortcut of the drawing. The rule in [features.md](features.md) holds: a break is part of the block.
@@ -128,15 +128,16 @@ How the panel behaves today, in phase 1:
 - It is a borderless panel under the menu bar item. It takes the keys as soon as it opens, without bringing the app to the front.
 - It shows the workspace dot and name, the countdown, one line ("left of 2:00", "Paused", or "On a break, then back to Acme"), the strip, the four actions, the End block row, and the footer "Today: 1:42 tracked". The issue, the expand button, the needs-you strip, the next meeting and the sessions link come in later phases.
 - The countdown shows `h:mm` large and `:ss` small from one hour left on, and `m` with `:ss` below that. During a break the strip is filled in the muted color.
-- The End block row is drawn like the outlined "Custom block" row, 8 pt under the four actions: a small muted stop icon, "End block", and the key hint E on the right. It shows while the block runs, is paused or is on a break. VoiceOver reads it as one element, "End block".
-- Keys: P pauses and resumes, B takes and ends a break, + adds 15 minutes, S opens Switch, E ends the block, Escape closes the panel. P, B, +, S and E work only on the running block, not in Switch. 1 to 9 start a workspace in the "Nothing running" list and in Switch. ⌘N opens the custom block form. In the form, Return or keypad Enter starts, and Escape goes back to the list instead of closing the panel. Each key acts once per press, and a held key does not repeat. ⌘O closes the panel and opens [the window](#the-window). ⌘N and ⌘O are the only keys with ⌘, ⌃ or ⌥ that are taken, each with ⌘ alone; the others are ignored.
+- The End block row is drawn like the outlined "Custom block" row, 8 pt under the four actions: a small muted stop icon, "End block", and the key hint E on the right. It shows only while a block runs, is paused or is on a break, so not on a break with nothing running. VoiceOver reads it as one element, "End block".
+- "Break for" opens from Break or B while working, and from "Take a break" with nothing running. Like Switch, it has a title, a Back button and rows: 5, 15, 30 and 60 min on the keys 1 to 4. There is no typed length. The last length used is preselected: its row has a 2 pt ink outline and the Return key ↵ beside its number, and Return or keypad Enter starts it. VoiceOver reads the rows as "5 minutes" to "60 minutes", the preselected one as selected. The length is remembered across launches. It is 5 min at first, and a stored value outside the list becomes 5.
+- Keys: P pauses and resumes, B opens "Break for" while working and ends a break, + adds 15 minutes, S opens Switch, E ends the block, Escape closes the panel. On a break with nothing running, B ends it, + lengthens it and S opens Switch, and P and E do nothing. P, B, +, S and E act on the running block or break, and not in Switch or "Break for". With nothing running only B is taken, and it opens "Break for" when there is a store. 1 to 9 start a workspace in the "Nothing running" list and in Switch. In "Break for", 1 to 4 start a break of that length, Return or keypad Enter starts the preselected one, and Escape closes the panel, as in Switch. ⌘N opens the custom block form, but not from "Break for". In the form, Return or keypad Enter starts, and Escape goes back to the list instead of closing the panel. Each key acts once per press, and a held key does not repeat. ⌘O closes the panel and opens [the window](#the-window). ⌘N and ⌘O are the only keys with ⌘, ⌃ or ⌥ that are taken, each with ⌘ alone; the others are ignored.
 - Switch uses the same rows as "Nothing running": every active workspace in the order from Settings, the running one included, with the dot, the name, the default length and the number key. Back returns to the running block.
 - The panel closes on Escape, on a second click on the item, on a right-click, and when it loses focus, such as on a click elsewhere.
 - The countdown ticks every second only while the panel is open.
 - It follows the app's appearance, so `-DontBurnAppearance` reaches it. The item and its menu follow the system.
 - Today's tracked total counts work and meetings always, and a break only when its workspace counts breaks. Entries are clipped to today and to now. It is the window's Today total: the sum of each entry's whole minutes, rounded down per entry.
 - With nothing running, it shows the list described below. Without a store, it shows only "Nothing running", with no rows, no footer and no keys.
-- While the app asks for the notification permission, one line under the End block row says "Allow notifications to hear when a block or break ends". It goes away when the system prompt is answered, and never shows after a refusal.
+- While the app asks for the notification permission, one line under the actions says "Allow notifications to hear when a block or break ends". It goes away when the system prompt is answered, and never shows after a refusal.
 
 ### Nothing is running
 
@@ -153,9 +154,27 @@ What phase 1 builds:
 - One row per active workspace in the order from Settings: the dot, the name and the default length, without the last issue. The first nine get the keys 1 to 9. The list scrolls only with more than nine.
 - A click or a number key starts a block at the workspace's default length.
 - "Custom block", ⌘N, opens a form with a Workspace picker, a Length picker and Start. The lengths are the fixed list Settings offers, preselected to the workspace's default, and again when the workspace changes. There is no typed length and no issue field yet. ⌘N works only with nothing running and at least one workspace.
+- "Take a break", on the key B, under "Custom block" and drawn like it, outlined. It opens "Break for" and starts [a break with nothing running](#a-break-with-nothing-running). It shows only with a store.
 - Footer "Today: h:mm tracked".
-- No workspaces: the note "No workspaces yet" and a "Settings…" button that opens Settings.
+- No workspaces: the note "No workspaces yet", the "Take a break" row, because a break needs no workspace, and a "Settings…" button that opens Settings.
 - When a block ends by itself, the panel returns to the list, and the sound and the notification from [Sounds and notifications](#sounds-and-notifications) announce it.
+
+### A break with nothing running
+
+A break of the length the owner needs, such as lunch, also when no block runs. This is the owner's decision on card 44. For lunch during a block, he ends the block first. The prototype draws neither this break nor "Break for".
+
+- **Starting.** From the "Take a break" row in "Nothing running" or under "No workspaces yet", which opens "Break for", or from the "Take a break" submenu in the right-click menu. Both offer 5, 15, 30 and 60 min, and both need a store.
+- **Not stored.** It is not a time entry, names no workspace and counts toward nothing, so Today and History stay as they are. It is left out of untracked time, as the [Menu bar item](#menu-bar-item) says.
+- **The menu bar item** shows the cup and the time left as `m:ss`, as on a break in a block.
+- **The panel** has a muted cup and "Break" for a header, the countdown, "No block running" under it, the strip, which fills in the muted color as the break is used up, the four actions and the footer. Pause is disabled. End break ends it with no sound and returns to "Nothing running". +15 lengthens it, but a break never runs longer than a day from its start: past that, +15 is refused. Switch opens the start list, and choosing a workspace ends the break and starts that block. With no workspaces, Switch is disabled. There is no End block row.
+- **The right-click menu** holds End break and Add 15 minutes, with no Pause and no End block.
+- **When it runs out,** the break-end alert plays its sound and shows "Break is over" and "Start a block when you're ready." The panel returns to "Nothing running", and nothing starts by itself. The first break asks for the notification permission, as the first block does.
+- **Starting a block** in any way ends the break first, with no sound.
+- **Restarts.** It survives quitting the app. A break that ended while the app was quit plays no sound at launch.
+- **Where it is kept.** The app's own defaults hold the latest break with nothing running, running or finished, as `break.idle.start` and `break.idle.end`, and the last length used as `break.lastMinutes`. None of it is in SwiftData, so the data model did not change. Under `-DontBurnSampleData` all three stay in memory, and the defaults are never read or written.
+- **Checked when read.** A stored break counts only when both values are dates, in order, at most a day long, started by now and ending at most a day after now. Anything else is dropped and removed from the defaults. Every time shown is capped, so no stored value can crash the app.
+- **A known limit.** If the clock moves back to between a finished break's start and its end, that break runs again until its end. A `ponytail:` comment in `IdleBreak.swift` names it.
+- The rules live in `IdleBreak` and `QuickAction` in `DontBurnCore`.
 
 ## Expanded panel on the Mac
 
@@ -198,7 +217,7 @@ Opened with ⌥ Space from anywhere. About 580 pt wide, one text field, results 
 
 Pause, Take a break, Add 15 minutes, End block. Then the quick start presets ("Start Acme for 2 h"). Then Focus the waiting session, and Open the window ⌘O.
 
-Opened with a right-click or a Control-click. In phase 1 it holds Pause or Resume, Take a break or End break, Add 15 minutes and End block while a block runs, each only when it fits the timer's state, then a divider. Then "Start Acme for 1 h" for the first three active workspaces at their default lengths, then a divider. While a block runs, picking one switches to that workspace. Then "Open the window" on ⌘O, "Settings…" on ⌘ and comma, another divider, and "Quit" with the app's name, on ⌘Q. With nothing running it holds the start items, Open the window, Settings and Quit. With no workspaces or no store, the start items are left out.
+Opened with a right-click or a Control-click. In phase 1, while a block runs, it holds Pause or Resume, "Take a break" or End break, Add 15 minutes and End block, then a divider. "Take a break" is a submenu with 5, 15, 30 and 60 min, disabled while paused. On a break with nothing running it holds End break and Add 15 minutes, with no Pause and no End block, then a divider. Then "Start Acme for 1 h" for the first three active workspaces at their default lengths, then a divider. While a block runs, picking one switches to that workspace. On a break with nothing running, it ends the break and starts that block. Then "Open the window" on ⌘O, "Settings…" on ⌘ and comma, another divider, and "Quit" with the app's name, on ⌘Q. With nothing running it holds the "Take a break" submenu and a divider when there is a store, then the start items, Open the window, Settings and Quit. With no workspaces or no store, the start items are left out.
 
 ### Session switcher
 
@@ -334,7 +353,7 @@ Three alerts, each with a notification and a sound that can be switched off on t
 | Alert | Sound | Notification | On by default |
 |---|---|---|---|
 | A block ends | Submarine | "Acme block finished", "Time to stop or start the next one." | Yes |
-| A break ends | Glass | "Break is over", "Back to Acme." | Yes |
+| A break ends | Glass | "Break is over", "Back to Acme." After a break with nothing running: "Break is over", "Start a block when you're ready." | Yes |
 | 5 minutes before a block ends | Purr | "5 minutes left", "The Acme block ends soon." | No |
 
 **Where the sounds come from.** They are the macOS system sounds in `/System/Library/Sounds`, played by name with `NSSound`. No sound file is in the repository, so no license is needed. The owner chose them. `AlertKind.soundName` in `Apps/Mac/AlertCenter.swift` records this.
@@ -344,11 +363,12 @@ How it works:
 - The notifications are silent, because the app plays the sound itself. So the sound still plays when notifications are refused.
 - Notifications are scheduled ahead and replaced on every change of plan: start, pause, resume, extend, break, switch and end. Their ids are `<bundle id>.<kind>`. Pending ones survive quitting the app.
 - A paused block has no notification. A break cut off by the block's end gets only the block-end alert.
-- Ending, switching, pausing or ending a break by hand never plays a sound.
+- A break with nothing running gets the break-end alert alone, with the same Settings switches and the same notification id. Its notification names no workspace.
+- Ending, switching, pausing or ending a break by hand never plays a sound, and neither does a block start that ends a break with nothing running.
 - A sound is skipped when it comes more than 60 seconds late, for example after the Mac slept.
 - The rules live in `Alerts.swift` in `DontBurnCore` (`AlertKind`, `AlertSettings` and the plan).
 
-**Permission.** It is asked at the first block start, while macOS has not asked yet, and never at launch. While the system prompt is open, the compact panel shows one line under the End block row. After a refusal only the note in Settings → General remains. When it is allowed later in System Settings, the app picks it up at the next change of plan.
+**Permission.** It is asked at the first start of a block or a break, while macOS has not asked yet, and never at launch. While the system prompt is open, the compact panel shows one line under the actions. After a refusal only the note in Settings → General remains. When it is allowed later in System Settings, the app picks it up at the next change of plan.
 
 **Settings → General** is a grouped form with three sections: When a block ends, When a break ends, and 5 minutes before a block ends. Each has a Notification switch and a "Sound (Name)" switch. The switches are stored in the defaults as `alert.<kind>.notification` and `alert.<kind>.sound`. When notifications are refused, a note says "Notifications are off for <app name>. Allow them in System Settings → Notifications." with an Open button, which only opens that pane. The version stays at the bottom, and the form scrolls when the note makes it taller than the window.
 

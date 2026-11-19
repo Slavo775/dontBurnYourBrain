@@ -33,6 +33,19 @@ func `the countdown shows hours and minutes from one hour on, minutes alone belo
     #expect(rest == small)
 }
 
+@Test func `a damaged countdown shows zero or its cap and never stops the app`() {
+    for value in [TimeInterval.nan, -.infinity, -1e300] {
+        let (clock, seconds) = CompactPanel.split(value)
+        #expect(clock == "0")
+        #expect(seconds == ":00")
+    }
+    for value in [TimeInterval.infinity, 1e20, TimeInterval(Int.max) * 2] {
+        let (clock, seconds) = CompactPanel.split(value)
+        #expect(clock == "596523:14")
+        #expect(seconds == ":07")
+    }
+}
+
 // MARK: - What the panel shows
 
 @Test func `nothing is shown while nothing runs`() throws {
@@ -103,6 +116,34 @@ func `the countdown shows hours and minutes from one hour on, minutes alone belo
     #expect(panel.clock == "30")
 }
 
+@Test func `on a break with nothing running the panel shows the break's countdown and line, and no workspace`() throws {
+    let resting = try #require(IdleBreak(start: nine, end: at(15)))
+
+    let panel = CompactPanel(idleBreak: resting, at: at(2.5), tracked: 600)
+
+    #expect(panel.name.isEmpty)
+    #expect(panel.state == .idleBreak)
+    #expect(panel.clock == "12")
+    #expect(panel.seconds == ":30")
+    #expect(panel.line == .idleBreak)
+    #expect(abs(panel.progress - 2.5 / 15) < 1e-9)
+    #expect(panel.trackedToday == "0:10")
+}
+
+@Test func `a sixty minute break with nothing running shows 1:00, and 0 with a full strip at its end`() throws {
+    let resting = try #require(IdleBreak(start: nine, end: at(60)))
+
+    let start = CompactPanel(idleBreak: resting, at: nine, tracked: 0)
+    let end = CompactPanel(idleBreak: resting, at: at(61), tracked: 0)
+
+    #expect(start.clock == "1:00")
+    #expect(start.seconds == ":00")
+    #expect(start.progress == 0)
+    #expect(end.clock == "0")
+    #expect(end.seconds == ":00")
+    #expect(end.progress == 1)
+}
+
 @Test func `a block without a workspace shows no name and the first color`() throws {
     let block = TimeBlock(workspace: nil, plannedStart: nine, plannedMinutes: 60, state: .running)
     let panel = try #require(CompactPanel(status: working(left: 60), block: block, tracked: 0))
@@ -149,6 +190,13 @@ func `progress stays between zero and one`(planned: Int, left: TimeInterval, exp
     let withoutBreak = try #require(CompactPanel.nextRedraw(status: open, after: nine))
     #expect(withoutBreak.timeIntervalSince(nine) > 0.75)
     #expect(withoutBreak.timeIntervalSince(nine) < 0.8)
+}
+
+@Test func `on a break with nothing running the panel redraws with the break's seconds`() throws {
+    let resting = try #require(IdleBreak(start: nine, end: nine.addingTimeInterval(50.5)))
+    let next = try #require(CompactPanel.nextRedraw(status: resting.status(at: nine), after: nine))
+    #expect(next.timeIntervalSince(nine) > 0.5)
+    #expect(next.timeIntervalSince(nine) < 0.55)
 }
 
 @Test func `at zero the panel still redraws soon after`() throws {

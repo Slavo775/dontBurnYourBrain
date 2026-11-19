@@ -15,9 +15,19 @@ struct DontBurnApp: App {
 
     init() {
         let sampleData = SampleData.isRequested(by: Self.launchArgument("DontBurnSampleData"))
-        let container = Self.openStore(sampleData: sampleData)
+        // Ignored without the sample set, so it never changes the store on disk.
+        let scenario = sampleData ? TimerScenario(launchArgument: Self.launchArgument("DontBurnTimerState")) : nil
+        let now = Self.fixedTime ?? .now
+        let container = Self.openStore(sampleData: sampleData, scenario: scenario, now: now)
         self.container = container
-        let countdown = Countdown(container: container, fixedTime: Self.fixedTime, alerts: AlertCenter())
+        // The sample data keeps its breaks in memory, so a run with it leaves nothing in the defaults.
+        let countdown = Countdown(
+            container: container,
+            fixedTime: Self.fixedTime,
+            alerts: AlertCenter(),
+            defaults: sampleData ? nil : .standard,
+            idleBreak: scenario?.idleBreak(at: now),
+        )
         let mainWindow = MainWindowController(container: container, fixedTime: Self.fixedTime) {
             countdown.reschedule()
         }
@@ -44,23 +54,22 @@ struct DontBurnApp: App {
         #endif
     }
 
-    /// The sample set in memory with `-DontBurnSampleData YES`, otherwise the
-    /// store on disk in the folder named after the bundle identifier.
+    /// The sample set in memory with `-DontBurnSampleData YES`, seeded at
+    /// `now`, otherwise the store on disk in the folder named after the bundle
+    /// identifier.
     ///
-    /// With the sample set, `-DontBurnTimerState <scenario>` also puts the
-    /// timer into one of the ``TimerScenario`` states. It is ignored without
-    /// the sample set, so it never changes the store on disk.
+    /// With the sample set, `scenario`, from `-DontBurnTimerState <scenario>`,
+    /// also puts the timer into one of the ``TimerScenario`` states.
     ///
     /// The sample data never touches the store on disk. A store that cannot be
     /// opened is logged, and the app keeps running without one.
-    private static func openStore(sampleData: Bool) -> ModelContainer? {
+    private static func openStore(sampleData: Bool, scenario: TimerScenario?, now: Date) -> ModelContainer? {
         let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "store")
         do {
             if sampleData {
                 let container = try ModelStore.inMemory()
-                let now = fixedTime ?? .now
                 try SampleData.seed(into: container.mainContext, now: now)
-                if let scenario = TimerScenario(launchArgument: launchArgument("DontBurnTimerState")) {
+                if let scenario {
                     try scenario.apply(to: container.mainContext, now: now)
                     log.info("Put the sample timer into the \(scenario.rawValue) state")
                 }
