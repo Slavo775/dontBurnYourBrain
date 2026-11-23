@@ -34,14 +34,24 @@ struct ProjectFolderList: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 10) {
             ForEach(folders) { folder in
                 let shown = displayPath(folder.path)
-                HStack(spacing: 4) {
-                    Text(verbatim: shown)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .help(shown)
+                // The folder's name first, the path below it, shortened in
+                // the middle so its end stays, and whole in the tooltip.
+                HStack(spacing: 8) {
+                    Image(systemName: "folder")
+                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(verbatim: folderName(folder.path))
+                        Text(verbatim: shown)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .truncationMode(.middle)
+                    }
+                    .lineLimit(1)
+                    .help(shown)
+                    .accessibilityElement(children: .combine)
                     Spacer(minLength: 0)
                     Button {
                         remove(folder)
@@ -54,9 +64,11 @@ struct ProjectFolderList: View {
             }
             Button("Add folder…") { isPicking = true }
             ForEach(refusals) { refusal in
-                Text("“\(refusal.path)” already belongs to \(refusal.holder).")
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                Text("“\(folderName(refusal.path))” already belongs to \(refusal.holder).")
+                    .font(.callout)
+                    .foregroundStyle(Color.bad)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .help(refusal.path)
             }
         }
         .fileImporter(isPresented: $isPicking, allowedContentTypes: [.folder], allowsMultipleSelection: true) {
@@ -104,6 +116,11 @@ struct ProjectFolderList: View {
 /// `path` with the home folder written as `~`.
 private func displayPath(_ path: String) -> String {
     (path as NSString).abbreviatingWithTildeInPath
+}
+
+/// The last part of `path`, the folder's own name.
+private func folderName(_ path: String) -> String {
+    (path as NSString).lastPathComponent
 }
 
 #Preview("Sample data") {

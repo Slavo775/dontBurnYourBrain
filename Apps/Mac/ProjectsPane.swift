@@ -58,6 +58,7 @@ struct ProjectsPane: View {
 
     @State private var selection: Project.ID?
     @State private var showsArchived = true
+    @State private var archiveCandidate: Project?
     /// The project whose name field takes the focus next, set on create.
     @State private var nameFocusRequest: Project.ID?
 
@@ -77,24 +78,46 @@ struct ProjectsPane: View {
         (active + archived).first { $0.id == selection }
     }
 
+    private var archiveCandidateName: String {
+        guard let archiveCandidate else { return "" }
+        return archiveCandidate.name.isEmpty ? String(localized: "Unnamed") : archiveCandidate.name
+    }
+
     var body: some View {
         Group {
             if active.isEmpty, archived.isEmpty {
                 NoProjectsView(canCreate: !workspace.isArchived, create: create)
             } else {
+                // The workspace list's pattern in a smaller, bordered box
+                // under the switch: list, divider, form.
+                let box = RoundedRectangle(cornerRadius: 10)
                 HStack(spacing: 0) {
                     list
-                        .frame(width: 170)
+                        .frame(width: 160)
                     Divider()
                     detail
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
+                .clipShape(box)
+                .overlay { box.strokeBorder(.separator) }
+                .padding(.top, 12)
+                .padding([.horizontal, .bottom], 20)
             }
         }
         .onAppear {
             if selection == nil {
                 selection = active.first?.id ?? archived.first?.id
             }
+        }
+        .confirmationDialog(
+            "Archive “\(archiveCandidateName)”?",
+            isPresented: Binding { archiveCandidate != nil } set: { _ in archiveCandidate = nil },
+            presenting: archiveCandidate,
+        ) { project in
+            Button("Archive") { archive(project) }
+            Button("Cancel", role: .cancel) {}
+        } message: { _ in
+            Text("Its history and its folders stay. You can restore it from the Archived list.")
         }
     }
 
@@ -137,9 +160,7 @@ struct ProjectsPane: View {
             .accessibilityLabel("Add a project")
             .disabled(workspace.isArchived)
             Button {
-                if let selected {
-                    archive(selected)
-                }
+                archiveCandidate = selected
             } label: {
                 Image(systemName: "minus")
                     .frame(width: 30, height: 26)
@@ -246,50 +267,62 @@ private struct ProjectForm: View {
     @FocusState private var isNameFocused: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            if project.isArchived {
-                HStack {
-                    Label("Archived", systemImage: "archivebox")
+        // Scrolls rather than grows: the window keeps its size, however many folders.
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                if isWorkspaceArchived {
+                    Label("Read-only while the workspace is archived.", systemImage: "archivebox")
                         .foregroundStyle(.secondary)
-                    Spacer()
-                    if !isWorkspaceArchived {
+                } else if project.isArchived {
+                    HStack {
+                        Label("Archived", systemImage: "archivebox")
+                            .foregroundStyle(.secondary)
+                        Spacer()
                         Button("Restore", action: restore)
                     }
                 }
-            }
-            Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 16) {
-                GridRow {
-                    label("Name")
-                    TextField("Name", text: $project.name)
-                        .labelsHidden()
-                        .focused($isNameFocused)
-                }
-                GridRow {
-                    label("Track time")
-                    VStack(alignment: .leading, spacing: 4) {
-                        Toggle("Track time", isOn: $project.isTimeTracked)
+                // The workspace form's family: muted, right-aligned labels,
+                // 16 pt between columns and rows, large controls. The label
+                // column is as wide as its widest label, as 130 pt does not
+                // fit beside the project list.
+                Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 16, verticalSpacing: 16) {
+                    GridRow {
+                        label("Name")
+                        TextField("Name", text: $project.name)
                             .labelsHidden()
-                            .toggleStyle(.switch)
-                        Text("Time already tracked stays when this is off.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .focused($isNameFocused)
+                    }
+                    GridRow {
+                        label("Track time")
+                        VStack(alignment: .leading, spacing: 6) {
+                            // The prototype's switch is small, as in General; large is too heavy here.
+                            Toggle("Track time", isOn: $project.isTimeTracked)
+                                .labelsHidden()
+                                .toggleStyle(.switch)
+                                .controlSize(.small)
+                            Text("Its entries stay when this is off.")
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    GridRow {
+                        label("Folders")
+                        if let localContainer {
+                            ProjectFolderList(project: project, projects: projects)
+                                .modelContainer(localContainer)
+                        } else {
+                            Text("The folders could not be opened.")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
-                GridRow {
-                    label("Folders")
-                    if let localContainer {
-                        ProjectFolderList(project: project, projects: projects)
-                            .modelContainer(localContainer)
-                    } else {
-                        Text("The folders could not be opened.")
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                .controlSize(.large)
+                .disabled(isWorkspaceArchived || project.isArchived)
             }
-            .disabled(isWorkspaceArchived || project.isArchived)
-            Spacer(minLength: 0)
+            .padding(16)
         }
-        .padding(16)
+        .scrollBounceBehavior(.basedOnSize)
         .onChange(of: project.name) { save() }
         .onChange(of: project.isTimeTracked) { save() }
         .onChange(of: nameFocusRequest, initial: true) {
@@ -304,7 +337,7 @@ private struct ProjectForm: View {
     private func label(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .foregroundStyle(.secondary)
-            .frame(width: 80, alignment: .trailing)
+            .gridColumnAlignment(.trailing)
     }
 }
 

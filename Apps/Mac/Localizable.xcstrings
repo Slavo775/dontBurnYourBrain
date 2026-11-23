@@ -215,6 +215,12 @@
     "It would overlap another entry, %@." : {
 
     },
+    "Its entries stay when this is off." : {
+
+    },
+    "Its history and its folders stay. You can restore it from the Archived list." : {
+
+    },
     "Kind" : {
 
     },
@@ -311,6 +317,9 @@
     "Raspberry" : {
 
     },
+    "Read-only while the workspace is archived." : {
+
+    },
     "Release" : {
 
     },
@@ -396,9 +405,6 @@
 
     },
     "Time" : {
-
-    },
-    "Time already tracked stays when this is off." : {
 
     },
     "Time to stop or start the next one." : {
