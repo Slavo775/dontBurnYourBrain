@@ -22,7 +22,7 @@ It is not part of the app, not in `project.yml` and not built by the check. The 
 |---|---|---|
 | 1. List the profiles with their names | **Only with the "App Data" permission for Google Chrome.** `Local State` holds every profile's name under `profile.info_cache.<directory>.name`, and decoding only that key works on a copy outside Chrome's folder. But macOS 27.2 protects Chrome's own folder as another app's data: the read of the owner's real file from Terminal was denied, with no prompt | Measured: the throwaway file, and the denied read of the owner's file |
 | 2a. Bring an existing window of a profile forward | **Only for a window whose id the app already knows**, with Apple events: `set index of window id <id> to 1`, then `activate`. 10 of 10. Nothing tells which profile a window the user opened belongs to, so the user's own windows cannot be found | Measured on the throwaway. That no property tells the profile: measured, from the dictionary |
-| 2b. Open a new window in a profile | **Yes**, with `open -n -b com.google.Chrome --args --profile-directory=<directory>`. Always exactly one new window, in front, whether a window of that profile is open or not, and whether the instance runs or not: 10 of 10 not running, 10 of 10 running, and 20 of 20 opens in the set-ups. Chrome's binary gave the same | Measured on the throwaway, and once on the owner's real Chrome: one new window, in front, in 0.67 s. Which profile, only he can see |
+| 2b. Open a new window in a profile | **Yes**, with `open -n -b com.google.Chrome --args --profile-directory=<directory>`. Always exactly one new window, in front, whether a window of that profile is open or not, and whether the instance runs or not: 10 of 10 not running, 10 of 10 running, and 20 of 20 opens in the set-ups. Chrome's binary gave the same | Measured on the throwaway, and once on the owner's real Chrome: one new window, in front, in 0.67 s, in the intended profile as the owner confirmed |
 | 3. Permissions | Reading the real `Local State`: "App Data" for Google Chrome (`kTCCServiceSystemPolicyAppDataDetailed`). `open -n`: none. Apple events: Automation. Calling Chrome's binary directly: none for the call, but macOS then holds the caller responsible for Chrome's own requests, and Terminal got a Local Network prompt | Measured, except the Automation and App Data prompts themselves, which did not show |
 | 4. What it can know about a profile's windows | **Nothing per profile.** With Automation: how many Chrome windows there are in all, their ids, order, bounds, and whether minimized or incognito. Without any permission, the window server gives the same count and order for Chrome's process | Measured |
 
@@ -222,11 +222,21 @@ The owner said yes on 2026-11-23 to two commands, each run once, from Terminal i
 | Frontmost app | Terminal | his Chrome |
 | The new window is Chrome's front window | | yes |
 
-The command took 0.15 s, and the signals agreed at 0.67 s: Chrome frontmost with the new window in front. So this is a hit for opening: exactly one new window, in front. In the same second the system log shows the desktop of one display switching, so the earlier window most likely went off screen with that switch. Nothing was sent that could close a window, and the owner closes the new window himself. Which profile the window opened in, only the owner can see.
+The command took 0.15 s, and the signals agreed at 0.67 s: Chrome frontmost with the new window in front. **The owner confirmed the window opened in the profile whose Profile Path ends in `/Default`**, so this is a hit for opening: exactly one new window, in the intended profile, in front. In the same second the system log shows the desktop of one display switching. **The owner confirmed that the earlier window did not close**: it only went out of view with that desktop switch. Nothing was sent that could close a window, and the owner closed the new window himself.
 
 ## Recommendation
 
-Written after the stage above.
+**Build the smaller form.** The owner decides.
+
+The smaller form: a workspace can be linked to one Chrome profile, and then offers "Open a window in <profile>", which runs `open -n -b com.google.Chrome --args --profile-directory=<folder>`, or the same through `NSWorkspace.openApplication(at:configuration:)` with `createsNewApplicationInstance`. It sends no Apple event and needs no permission. It worked 20 of 20 on the throwaway, running and not running, and once on the owner's Chrome, in about 0.6 s. A workspace without a linked profile, or a Mac without Chrome, shows nothing about browsers.
+
+What each choice costs:
+
+- **Listing and checking profiles needs the App Data permission for Google Chrome.** On macOS 27.2 the profile names live in Chrome's protected folder, and the read was denied. The app has to ask for it, with macOS's prompt "Allow “<app>” to access your “Google Chrome” data?". Whether macOS shows that prompt to this app was not tried. Without the permission the app can neither list the names nor check that a linked folder still exists. The user could then type the folder's name, the last part of the Profile Path on `chrome://version`, as the owner did for step 2.
+- **A missing folder silently makes a new profile.** Measured. With the permission, the app checks the folder before every open. Without it, a typo or a deleted profile gives the user an empty new Chrome profile.
+- **Every open is a new window.** It never brings the profile's existing window forward. The button has to say "Open a window", and ten clicks are ten windows.
+- **Building it as drawn,** with the profile's existing window brought forward, is not possible for windows the user opened: nothing the card allows tells which profile a window belongs to. With Automation the app could bring back a window it opened itself, 10 of 10 on the throwaway. But Automation for Chrome also lets the app read every tab's URL and title and run JavaScript in any page of any profile, and macOS's prompt says so. That is a lot to ask for a convenience, so it is left out of the smaller form.
+- **Drop it** if the owner does not want the app to ask for Chrome's data, and a typed folder name is too easy to get wrong.
 
 ## Clean up
 
