@@ -31,10 +31,10 @@ guard args.count >= 2, ["setup", "cold", "warm", "forward", "probe"].contains(mo
     fail("usage: see the top of chrome-check.swift")
 }
 
-let scratch = URL(fileURLWithPath: args[1]).resolvingSymlinksInPath().path
+/// The canonical path keeps `/private`, as `pwd -P` in the README does, so `pgrep -f "$S/ud"` finds the instance.
+let scratch = (try? URL(fileURLWithPath: args[1]).resourceValues(forKeys: [.canonicalPathKey]).canonicalPath) ?? ""
 guard scratch.contains("/dontburn-chrome.") else { fail("\(args[1]) is not a scratch folder from the README's setup") }
-let userData = scratch + "/ud"
-let pidFile = scratch + "/pid"
+let (userData, pidFile) = (scratch + "/ud", scratch + "/pid")
 let way: Way = {
     let way = mode == "setup" ? .open : args.count > 2 ? Way(rawValue: args[2]) : nil
     guard let way, way == .open || mode == "cold" || mode == "warm" else { fail("the way is open or binary") }

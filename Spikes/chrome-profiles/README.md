@@ -81,7 +81,7 @@ swift $H setup "$S"
 swift Spikes/chrome-profiles/profile-names.swift "$S/ud/Local State" --names
 ```
 
-`setup` writes `$S/ud/Local State` with three profiles before Chrome ever runs: `Default` = Acme, `Profile 1` = Globex and `Profile 2` = Personal, each with `is_using_default_name: false`. Chrome creates each profile's folder on the first launch into it and keeps the names. The second line must print `3 profiles, 3 with a name` and the three names.
+`setup` writes `$S/ud/Local State` with three profiles before Chrome ever runs: `Default` = Acme, `Profile 1` = Globex and `Profile 2` = Personal, each with `is_using_default_name: false`. Chrome creates each profile's folder on the first launch into it and keeps the names. `setup` prints the user data folder, which must be `$S/ud` exactly: every throwaway Chrome carries that path, and the checks below look for it. The second line must print `3 profiles, 3 with a name` and the three names.
 
 ## How a try is counted
 
@@ -114,9 +114,24 @@ Each command is one run of 1 to 12 tries, 10 by default, given as the last argum
 | Running, `open` | `swift $H warm "$S" open` | Starts the instance with the target's profile, opens a window for each of the two other profiles the same way, brings your terminal to the front, then sends the target's command again | nothing |
 | Running, binary | `swift $H warm "$S" binary` | The same, with the instance started through `open -n` and every open by the binary | nothing |
 | The first Apple event | `swift $H probe "$S" open` | Asks whether the terminal may send Apple events to Chrome without a prompt, then counts the windows: the one event that may show the Automation prompt, with two minutes for an answer and one retry on −1712. Then opens two more windows and reads each allowed property of all three | Automation |
-| Bring a known window forward | `swift $H forward "$S" open` | As `warm open`, then reads the window ids front to back. The target's window opened first, so it is the last. Brings your terminal to the front, then sends `set index of window id <id> to 1` and `activate` (`misc/actv`, the event AppleScript's `activate` sends) to the process ID | Automation |
+| Bring a known window forward | `swift $H forward "$S" open`, after `probe` has run once | Run `probe` once first, so that an Automation prompt can only come in its single event and never in the middle of this run. Then each try goes as `warm open`, then reads the window ids front to back. The target's window opened first, so it is the last. Brings your terminal to the front, then sends `set index of window id <id> to 1` and `activate` (`misc/actv`, the event AppleScript's `activate` sends) to the process ID | Automation |
 
 Chrome's dictionary, without any Apple event: `sdef "/Applications/Google Chrome.app"`.
+
+**A profile folder that does not exist**, run once and last, with the throwaway Chrome not running. `Profile 9` is not in `Local State`, so Chrome has to decide what to do with it:
+
+```sh
+pgrep -f "$S/ud" || echo "nothing runs"   # must say "nothing runs"
+open -n -b com.google.Chrome --args --user-data-dir="$S/ud" --profile-directory="Profile 9" \
+    --no-first-run --no-default-browser-check --use-mock-keychain --disable-search-engine-choice-screen
+sleep 3
+P=$(pgrep -f "Google Chrome --user-data-dir=$S/ud --profile-directory=Profile 9"); echo "$P"
+kill "$P"; sleep 3; ps -p "$P" || echo "gone"; pgrep -f "$S/ud" || echo "nothing runs"
+ls "$S/ud"
+swift Spikes/chrome-profiles/profile-names.swift "$S/ud/Local State" --names
+```
+
+The `pgrep` that sets `P` matches only the throwaway browser's main process, whose command line starts with Chrome's binary and these two flags, so it prints exactly one process ID. That ID is stopped with `kill`, and the last two checks must say `gone` and `nothing runs`. Compare before the `kill`: exactly one throwaway window, in front, whose profile button at the top right shows Chrome's default name, "Your Chrome" in the system's language. Compare after it: `ls` shows a `Profile 9` folder next to `Default`, `Profile 1` and `Profile 2`, and the reader prints `4 profiles, 4 with a name`, with that default name for `Profile 9`.
 
 ## Results
 
