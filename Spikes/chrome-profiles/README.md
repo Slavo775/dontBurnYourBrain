@@ -22,7 +22,7 @@ It is not part of the app, not in `project.yml` and not built by the check. The 
 |---|---|---|
 | 1. List the profiles with their names | **Only with the "App Data" permission for Google Chrome.** `Local State` holds every profile's name under `profile.info_cache.<directory>.name`, and decoding only that key works on a copy outside Chrome's folder. But macOS 27.2 protects Chrome's own folder as another app's data: the read of the owner's real file from Terminal was denied, with no prompt | Measured: the throwaway file, and the denied read of the owner's file |
 | 2a. Bring an existing window of a profile forward | **Only for a window whose id the app already knows**, with Apple events: `set index of window id <id> to 1`, then `activate`. 10 of 10. Nothing tells which profile a window the user opened belongs to, so the user's own windows cannot be found | Measured on the throwaway. That no property tells the profile: measured, from the dictionary |
-| 2b. Open a new window in a profile | **Yes**, with `open -n -b com.google.Chrome --args --profile-directory=<directory>`. Always exactly one new window, in front, whether a window of that profile is open or not, and whether the instance runs or not: 10 of 10 not running, 10 of 10 running, and 20 of 20 opens in the set-ups. Chrome's binary gave the same | Measured on the throwaway. The owner's real Chrome: not run, because step 1 could not list `Default` |
+| 2b. Open a new window in a profile | **Yes**, with `open -n -b com.google.Chrome --args --profile-directory=<directory>`. Always exactly one new window, in front, whether a window of that profile is open or not, and whether the instance runs or not: 10 of 10 not running, 10 of 10 running, and 20 of 20 opens in the set-ups. Chrome's binary gave the same | Measured on the throwaway, and once on the owner's real Chrome: one new window, in front, in 0.67 s. Which profile, only he can see |
 | 3. Permissions | Reading the real `Local State`: "App Data" for Google Chrome (`kTCCServiceSystemPolicyAppDataDetailed`). `open -n`: none. Apple events: Automation. Calling Chrome's binary directly: none for the call, but macOS then holds the caller responsible for Chrome's own requests, and Terminal got a Local Network prompt | Measured, except the Automation and App Data prompts themselves, which did not show |
 | 4. What it can know about a profile's windows | **Nothing per profile.** With Automation: how many Chrome windows there are in all, their ids, order, bounds, and whether minimized or incognito. Without any permission, the window server gives the same count and order for Chrome's process | Measured |
 
@@ -141,7 +141,7 @@ Measured on 2026-11-23, macOS 27.2.1, Chrome 157.0.8103.79, sent from Terminal. 
 - It decodes a `Decodable` type that holds only `profile.info_cache[<directory>].name`. `JSONDecoder` skips every other key without keeping it. Without `--names` it prints only the number of profiles and their directory keys. An error prints only the error's type.
 - No prompt and no permission for the throwaway file in `$TMPDIR`.
 - **The owner's real file is protected.** Run once from Terminal with his yes, the read of `~/Library/Application Support/Google/Chrome/Local State` failed and printed nothing but the error. The system log shows why: `sandboxd` checked `kTCCServiceSystemPolicyAppDataDetailed` for `com.google.Chrome`, with Terminal as the responsible app, and TCC denied it 12 ms later, so no prompt was on screen. No notification for it shows in the log. The file's size could be read, its content could not. Measured.
-- So macOS 27.2 treats Chrome's folder as Chrome's private data, as the card's way 1 did not expect. For the app, the system's string table has this prompt: "Allow “<app>” to access your “Google Chrome” data?" with "This will allow the app to access your data associated with “Google Chrome” on this Mac." When access is blocked, macOS may post "Data Access Blocked": "“<app>” tried to access your data from other apps and was blocked. You can manage this at any time in Files & Folders settings." Whether the app gets that prompt, where Terminal got none, is not known: Terminal is one of Apple's own apps, and `tccd` logged that it does not prompt for those in another request. Reasoned, not tried.
+- So macOS 27.2 treats Chrome's folder as Chrome's private data, as the card's way 1 did not expect. For the app, the system's string table has this prompt: "Allow “<app>” to access your “Google Chrome” data?" with "This will allow the app to access your data associated with “Google Chrome” on this Mac." When access is blocked, macOS may post "Data Access Blocked": "“<app>” tried to access your data from other apps and was blocked. You can manage this at any time in Files & Folders settings." Whether a third-party app such as this one gets that prompt, where Terminal got none, was not tried, and is for the feature card to find out: Terminal is one of Apple's own apps, and `tccd` logged that it does not prompt for those in another request. Reasoned, not tried.
 - `Local State` is not a documented interface, and only Chrome 157 was tried. A later Chrome may move the key, and the reader then finds no profiles. Chrome Beta, Canary and Chromium keep their own folders next to Chrome's. Reasoned.
 
 ### Part 2: bringing a window forward, or opening one
@@ -161,7 +161,7 @@ Measured on 2026-11-23, macOS 27.2.1, Chrome 157.0.8103.79, sent from Terminal. 
 | Way | Permission | Measured |
 |---|---|---|
 | Reading `Local State` | None in `$TMPDIR`. In Chrome's own folder: "App Data" for Google Chrome. Terminal was denied without a prompt | Both |
-| `open -n -b com.google.Chrome --args …` | None. Chrome runs as its own responsible process | No prompt in 44 starts and 52 hand-overs |
+| `open -n -b com.google.Chrome --args …` | None. Chrome runs as its own responsible process | No prompt in 44 starts and 52 hand-overs on the throwaway, nor in the one run on the owner's Chrome |
 | Chrome's binary, started by the caller | None for the call. But Chrome then runs as the caller's child, and macOS holds the caller responsible for Chrome's requests: Chrome's local network discovery showed a Local Network prompt naming **Terminal**, in the first try of `cold … binary`. For the app it would name the app. Hand-overs to a running instance asked for nothing | Yes |
 | Apple events to Chrome | Automation, for the sending app and Chrome's bundle ID. One answer covers every Chrome instance, the owner's included | The check returned 0 before the first event: Terminal already had it. No prompt |
 | The window server's list without names | None | Yes |
@@ -213,8 +213,16 @@ Reasoned, nothing tried. **Safari** keeps its profiles in its protected containe
 
 The owner said yes on 2026-11-23 to two commands, each run once, from Terminal in the worktree. Nothing else touched his Chrome, its folder or its `Local State`, and no Apple event was sent to his Chrome.
 
-1. **List the profiles:** `swift Spikes/chrome-profiles/profile-names.swift ~/Library/"Application Support"/Google/Chrome/"Local State"`. Result: no profiles listed. The read was denied by macOS (Part 1), and the helper printed only `the file is not a Local State file Chrome wrote: NSError`. It has since been changed to say `cannot read the file` with the error's domain and code. Not repeated.
-2. **Open one window in `Default`:** `open -n -b com.google.Chrome --args --profile-directory=Default`. **Not run**: the owner's yes held only when step 1 listed `Default`, and step 1 listed nothing. No other key was tried.
+1. **List the profiles:** `swift Spikes/chrome-profiles/profile-names.swift ~/Library/"Application Support"/Google/Chrome/"Local State"`. Result: no profiles listed. The read was denied by macOS (Part 1), and the helper printed only `the file is not a Local State file Chrome wrote: NSError`. It has since been changed to say `cannot read the file` with the error's domain and code. The owner took the denial as the result: no new permission and no second run. Measured.
+2. **Open one window in `Default`:** `open -n -b com.google.Chrome --args --profile-directory=Default`. Step 1 could not list `Default`, so the owner confirmed himself that one of his profiles uses that folder, and said yes to one run without the check. Measured, with Terminal in front and his Chrome running:
+
+| | Before | After, 2 s after the command |
+|---|---|---|
+| His Chrome's on-screen windows | 2 | 2: 1 new, and 1 of the earlier 2 no longer on screen |
+| Frontmost app | Terminal | his Chrome |
+| The new window is Chrome's front window | | yes |
+
+The command took 0.15 s, and the signals agreed at 0.67 s: Chrome frontmost with the new window in front. So this is a hit for opening: exactly one new window, in front. In the same second the system log shows the desktop of one display switching, so the earlier window most likely went off screen with that switch. Nothing was sent that could close a window, and the owner closes the new window himself. Which profile the window opened in, only the owner can see.
 
 ## Recommendation
 
