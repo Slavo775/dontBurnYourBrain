@@ -42,15 +42,16 @@ Run from the repository root. Details in `docs/process/checks.md`.
 4. **Nothing personal in the repository.** No real employer, client, project or account names, no email addresses, no absolute home paths. Sample data is always Acme, Globex and Personal. See `rules/safety-and-privacy.md`.
 5. **Be careful on the maintainer's Mac.** Stop only what you started, by process ID. Run only the development build, which keeps its data in its own folder. Never touch a Claude Code profile without the owner's yes.
 6. **No GitHub Actions for tests.** Checks run locally. Workflows arrive with releases in phase 8.
-7. **Every part works without the others.** Sessions, terminal focus, Jira, calendar, sync, the insight-flow integration and each terminal or agent adapter are optional layers on top of the timer. A part that is not set up, not installed or not permitted is left out of the interface, and nothing else breaks or nags. Every feature task says what the app does when its part is missing, and the Tester checks that case. The same holds for building and for the agent flow: a clone without Trello, the private notes or a signing team still builds, passes the check and runs the flow.
+7. **Every part works without the others.** Sessions, terminal focus, issue trackers, calendar, sync, the insight-flow integration and each terminal, agent or tracker adapter are optional layers on top of the timer. Sessions need no running timer: they are listed with no block running, and for projects whose time is not tracked. A part that is not set up, not installed or not permitted is left out of the interface, and nothing else breaks or nags. Every feature task says what the app does when its part is missing, and the Tester checks that case. The same holds for building and for the agent flow: a clone without Trello, the private notes or a signing team still builds, passes the check and runs the flow.
 8. **Only the Dev build is yours.** Build, run and test the Debug variant only. Never touch the installed Release app or its data, never change the version or build number, never tag. Anything named outside the app derives from the bundle identifier. See `rules/releases.md`.
 9. **Everything is written in English.** Code, comments, commits, pull requests, docs and Trello cards.
-10. **The app only asks.** It never starts a timer, sends a worklog or changes another tool's settings by itself.
+10. **The app only asks.** It never starts a timer, sends a worklog or changes another tool's settings by itself. For a project whose time is not tracked, it does not even ask.
 
 ## Architecture rules
 
 - Logic and models live in `DontBurnCore`, pure Swift, covered by tests. Views hold no business rules.
 - Mac-only services (sessions, terminal focus, calendar) stay in `Apps/Mac`, each behind a small protocol, one adapter per agent tool and per terminal.
+- Issue trackers sit behind one protocol in `DontBurnCore`, with one adapter per tracker. Each adapter declares what it can do, such as keeping time. Views ask for a capability, never for a tracker by name.
 - Time is always passed in. Nothing in `DontBurnCore` reads the system clock directly, so tests never sleep.
 - Secrets go to the Keychain. Never into the database, the defaults or a file.
 - Interface text lives in the string catalog.
