@@ -29,16 +29,16 @@ The app reads these arguments from the command line, so a check or a screenshot 
 | --- | --- |
 | `-DontBurnFixedTime 2026-01-15T09:41:30+01:00` | Freezes the clock at that instant, shown in the Mac's time zone. The value needs seconds and an offset, `Z` or `±hh:mm`. A malformed value is ignored, and the clock runs live. |
 | `-DontBurnAppearance light` or `dark` | Sets the app's appearance for that launch, the compact panel included. It does not reach the menu bar item or its menu, which follow the system. Any other value follows the system. |
-| `-DontBurnSampleData YES` | Runs on a store in memory, seeded with Acme, Globex and Personal: 3 workspaces, 5 projects (Reading under Personal is not time tracked), 3 blocks and 5 entries. One of them, the manual "Release checklist", lies a day earlier, so History has something to show. `true` and `1` work too. The store on disk is never opened. With `-DontBurnFixedTime`, the sample data is seeded around that time. |
+| `-DontBurnSampleData YES` | Runs on a store in memory, seeded with Acme, Globex and Personal: 3 workspaces, 5 projects (Reading under Personal is not time tracked), 3 blocks and 5 entries. One of them, the manual "Release checklist", lies a day earlier, so History has something to show. The sample projects' folders, such as `code/acme-web`, are made in a temporary folder named after the bundle identifier and kept in a local store in memory. Reading has none. `true` and `1` work too. Neither store on disk is opened. With `-DontBurnFixedTime`, the sample data is seeded around that time. |
 | `-DontBurnTimerState running` | Puts the sample timer into one state, for the menu bar item. Works only with `-DontBurnSampleData`, with or without `-DontBurnFixedTime`. Values: `running` (Acme, 1:24 left), `ending` (Acme, 3:27 left), `paused`, `break` (4:12 left), `idle`, `untracked` (0:15 untracked), `idle-break` (nothing runs, Acme's block ended 2:30 ago, and a 15-minute break with nothing running has 12:30 left), `long-name` (Acme under a very long name), and `short` (a six-minute block from launch, to watch on the live clock). An unknown value, or one longer than 16 bytes, is ignored. |
 
 ```sh
 open -g DerivedData/Build/Products/Debug/DontBurn.app --args -DontBurnFixedTime 2026-01-15T09:41:30+01:00 -DontBurnAppearance dark -DontBurnSampleData YES
 ```
 
-Without `-DontBurnSampleData`, the Dev build keeps its data in `~/Library/Application Support/io.github.slavo775.dontburn.dev/DontBurn.store`. The folder is named after the bundle identifier, so the Release app's data is never touched.
+Without `-DontBurnSampleData`, the Dev build keeps its data in `~/Library/Application Support/io.github.slavo775.dontburn.dev/DontBurn.store`, and the projects' folders in `Local.store` next to it. The folder is named after the bundle identifier, so the Release app's data is never touched.
 
-To start with an empty store on disk, such as for the "No workspaces yet" state, point the home folder at a new temporary folder: `open -g --env CFFIXED_USER_HOME=<temp folder> DerivedData/Build/Products/Debug/DontBurn.app`. The store is then created inside that folder. Remove the folder by its literal path when done.
+To start with an empty store on disk, such as for the "No workspaces yet" state, point the home folder at a new temporary folder: `open -g --env CFFIXED_USER_HOME=<temp folder> DerivedData/Build/Products/Debug/DontBurn.app`. Both stores are then created inside that folder. Remove the folder by its literal path when done.
 
 How light and dark are checked is in "Checking a screen" of [../../rules/testing.md](../../rules/testing.md).
 
