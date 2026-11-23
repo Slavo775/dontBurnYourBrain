@@ -48,10 +48,14 @@ guard let size = try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize else
 
 guard size <= limit else { fail("the file is \(size) bytes, more than the \(limit) a Local State file can be") }
 
+let data: Data
+do { data = try Data(contentsOf: file) } catch {
+    // On macOS 27 a read of Chrome's own folder fails here when the "App Data" permission is missing.
+    fail("cannot read the file: \((error as NSError).domain) \((error as NSError).code)")
+}
+
 let state: LocalState
-do {
-    state = try JSONDecoder().decode(LocalState.self, from: Data(contentsOf: file))
-} catch {
+do { state = try JSONDecoder().decode(LocalState.self, from: data) } catch {
     fail("the file is not a Local State file Chrome wrote: \(type(of: error))")
 }
 
