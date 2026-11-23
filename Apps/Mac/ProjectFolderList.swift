@@ -40,8 +40,10 @@ struct ProjectFolderList: View {
                 // The folder's name first, the path below it, shortened in
                 // the middle so its end stays, and whole in the tooltip.
                 HStack(spacing: 8) {
+                    // Decoration: the name and path say what the row is.
                     Image(systemName: "folder")
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(verbatim: folderName(folder.path))
                         Text(verbatim: shown)
