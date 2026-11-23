@@ -49,7 +49,7 @@ The repository is public, and git keeps everything. Every push can be read by an
 - names of the maintainer's employers or clients, their projects, repositories or issue keys
 - account names, profile names and email addresses, except GitHub's noreply address in commit metadata
 - absolute paths with a user name. Write `~` for the home folder
-- anything read from a session transcript, a calendar or Jira
+- anything read from a session transcript, a calendar or an issue tracker
 - tokens, keys and passwords, in any form
 
 Trello cards and their comments follow the same rules, because the board may be shared later.
@@ -67,7 +67,7 @@ Trello cards and their comments follow the same rules, because the board may be 
 These are product rules. A change that breaks one of them needs the owner's decision, not just a review.
 
 - **Local first.** The app works fully offline. Its data stays on the user's devices and in the user's own iCloud. There is no server and no telemetry.
-- **Network.** It talks only to the Jira sites the user added and to iCloud. Nothing else, ever, without a decision recorded in `docs/spec/decisions.md`.
+- **Network.** It talks only to the issue trackers the user connected and to iCloud. Nothing else, ever, without a decision recorded in `docs/spec/decisions.md`.
 - **Secrets** live in the Keychain. Never in the database, the defaults, a file or a log.
 - **It only asks.** The app never starts a timer by itself, never sends a worklog without showing it first, never changes another tool's settings by itself, and never installs a hook without consent.
 - **Hooks are reversible.** Installing adds the app's own entries to a profile's settings and nothing else. Uninstalling removes exactly those.

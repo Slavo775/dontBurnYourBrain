@@ -51,7 +51,7 @@ How light and dark are checked is in "Checking a screen" of [../../rules/testing
 | TypeScript strict mode | Swift 6 language mode | The compiler also checks for data races between threads. |
 | ESLint | SwiftLint | Rules in `.swiftlint.yml`, runs on every build and in the local check. |
 | Prettier | SwiftFormat | Runs in a pre-commit hook. |
-| Jest, Vitest | Swift Testing (`@Test`) | Unit tests for the shared package: timer engine, rounding, Jira payloads. |
+| Jest, Vitest | Swift Testing (`@Test`) | Unit tests for the shared package: timer engine, rounding, issue tracker payloads. |
 | Playwright | XCUITest | A few smoke tests only. UI tests are slow. |
 | Hot reload | Xcode Previews | Live preview of a single view with sample data. |
 | SQLite or Postgres with an ORM | SwiftData | Models are plain Swift classes marked `@Model`. |
@@ -89,6 +89,6 @@ How light and dark are checked is in "Checking a screen" of [../../rules/testing
 - **Calendars**, to read meetings (phase 5)
 - **Launch at login**, optional
 
-The app is not sandboxed, because it reads session files from other tools and scripts your terminals. It makes network calls only to Jira sites you add and to iCloud.
+The app is not sandboxed, because it reads session files from other tools and scripts your terminals. It makes network calls only to the issue trackers you connect and to iCloud.
 
 What agents may do on the Mac they work on, and what never enters the repository, is in [../../rules/safety-and-privacy.md](../../rules/safety-and-privacy.md).

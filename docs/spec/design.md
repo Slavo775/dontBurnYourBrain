@@ -4,6 +4,8 @@ How the app looks and behaves, surface by surface.
 
 The drawn screens are in [../design/prototype/index.html](../design/prototype/index.html). Open it in a browser. Several of them are live: the compact panel, Jira review and the Workspaces settings. When this text and the prototype disagree, the prototype wins on looks and this text wins on behaviour. Tell the owner about the difference either way.
 
+Where this text is ahead of the prototype: the prototype draws folders and a Jira link on each workspace, a Jira tab in Settings and a Jira review, and no projects. Here the projects of a workspace hold the folders and the issue tracker, the tab is Trackers, and the review is Time review. The prototype also does not draw the End block row, "Break for" or a break with nothing running.
+
 Acme, Globex, Personal and the issue keys are sample data. Users create their own workspaces.
 
 ## Principles
@@ -12,7 +14,7 @@ Acme, Globex, Personal and the issue keys are sample data. Users create their ow
 - One strong color per screen: the color of the workspace. Everything else stays neutral.
 - Time left is the largest thing on screen. Seconds are small on purpose.
 - Light and dark from the first screen.
-- The app only asks. It never starts a timer, sends a worklog or changes another tool's settings by itself.
+- The app only asks. It never starts a timer, sends a worklog or changes another tool's settings by itself. For a project whose time is not tracked, it does not even ask.
 
 ## The four surfaces
 
@@ -21,7 +23,7 @@ Acme, Globex, Personal and the issue keys are sample data. Users create their ow
 | **Menu bar item** | Always visible | Whose time is running and how much is left |
 | **Compact panel** | A click on the menu bar item | The running block and four actions |
 | **Expanded panel** | ⌘E in the panel | Sessions, the plan for today, totals |
-| **Window** | ⌘O | Day plan, history and Jira review |
+| **Window** | ⌘O | Day plan, history and time review |
 
 Settings have their own window, opened with ⌘ and comma.
 
@@ -37,7 +39,7 @@ The prototype draws the app at real macOS sizes in the system font. These values
 | ink | `#16201d` | `#e6ece9` | Text |
 | muted | `#5a6964` | `#96a59f` | Secondary text |
 | ok | `#1f7a3d` | `#6bcf8a` | A working session, a sent worklog, a switch that is on |
-| warn | `#9a5b00` | `#e2b25a` | A session that needs you, time not yet in Jira |
+| warn | `#9a5b00` | `#e2b25a` | A session that needs you, time not yet sent to a tracker |
 | warn, soft | `#f6e7c8` | `#392b10` | The background of the needs-you strip |
 | bad | `#a8322a` | `#ee8c83` | Errors |
 
@@ -146,6 +148,7 @@ How the panel behaves today, in phase 1:
 - Title "Nothing running", and below it "Free until 11:30" when the calendar knows.
 - One row per workspace, in the order from Settings: the dot, the name, the default block length, the last issue, and a number key. A click or the number starts the block.
 - "Custom block", ⌘N, opens a short form: workspace, length, issue.
+- The needs-you strip when an agent is waiting, as while a block runs. Sessions need no block.
 - Footer: "Today: 0:10 tracked".
 
 When the block ends, a sound plays, a notification appears and the panel returns to this view.
@@ -182,14 +185,16 @@ A break of the length the owner needs, such as lunch, also when no block runs. T
 
 Decided: the Mac gets one wide panel, the iPhone gets pages.
 
-⌘E widens the panel to about 780 pt, and it stays wide until it is collapsed. Two columns:
+⌘E widens the panel to about 780 pt, and it stays wide until it is collapsed. The expand button in the compact panel does the same. Two columns:
 
 - **Left, 320 pt.** The compact panel's header, countdown, strip and four actions. Below them "Today": the day as a short list of blocks and meetings with their start times and lengths.
-- **Right.** "Sessions" with filter chips (All 5, Acme 3, Globex 1, Personal 1), then the sessions in three groups:
-  - **Needs you:** project, session title, "Claude (work) in iTerm2", a Focus button and ⌘1.
+- **Right.** "Sessions": every agent session on this Mac, the same whether a block runs, is paused or nothing runs. A session belongs to the project whose folder it runs in, and through it to a workspace. Filter chips (All 5, Acme 3, Globex 1, Personal 1), plus "Other" when a session is in no project's folder. Then the sessions in three groups:
+  - **Needs you:** the project, or the folder's name when it has no project, the session title, "Claude (work) in iTerm2", a Focus button and ⌘1.
   - **Working:** the same row with ⌘2, ⌘3.
   - **Idle:** dimmed, with the time since the last activity.
 - **Footer.** Today's totals per workspace, "Log time", and "Open window ⌘O".
+
+A session of a project whose time is not tracked is listed like any other, and nothing in its row offers to start a block. With no sessions the column says so in one line. Without the hook it says so and links to Settings, Sessions.
 
 ⌘1 to ⌘9 jump straight to a session while the panel is open. A session's state shows as a small dot on its icon: amber for waiting, green for working, grey for idle.
 
@@ -211,13 +216,13 @@ Three ways to act without opening the panel.
 Opened with ⌥ Space from anywhere. About 580 pt wide, one text field, results below.
 
 - Typing `ac 2h 412` offers "Start Acme for 2 h" with the issue `ACM-412`. Return starts it. ⌘ Return starts it without an issue.
-- Other things to type: `globex 1h`, `break 10`, `+15`, `focus web`, `log`.
-- With the field empty, one key acts at once: P pause, B break, F focus the waiting session, 1 to 3 the quick start presets.
+- Other things to type: `globex 1h`, `break 10`, `+15`, `end`, `focus web`, `log`.
+- With the field empty, one key acts at once: P pause, B break, E end the block, F focus the waiting session, 1 to 3 the quick start presets.
 - A day off can be taken from here too, with no calendar involved.
 
 ### Right-click menu on the menu bar item
 
-Pause, Take a break, Add 15 minutes, End block. Then the quick start presets ("Start Acme for 2 h"). Then Focus the waiting session, and Open the window ⌘O.
+Pause, Take a break, Add 15 minutes, End block. Then the quick start presets ("Start Acme for 2 h"). Then Focus the waiting session, Open the command bar, and Open the window ⌘O.
 
 Opened with a right-click, a Control-click, or the item's "Show menu" accessibility action. In phase 1, while a block runs, it holds Pause or Resume, "Take a break" or End break, Add 15 minutes and End block, then a divider. "Take a break" is a submenu with 5, 15, 30 and 60 min, disabled while paused. On a break with nothing running it holds End break and Add 15 minutes, with no Pause and no End block, then a divider. Then "Start Acme for 1 h" for the first three active workspaces at their default lengths, then a divider. While a block runs, picking one switches to that workspace. On a break with nothing running, it ends the break and starts that block. Then "Open the window" on ⌘O, "Settings…" on ⌘ and comma, another divider, and "Quit" with the app's name, on ⌘Q. With nothing running it holds the "Take a break" submenu and a divider when there is a store, then the start items, Open the window, Settings and Quit. With no workspaces or no store, the start items are left out.
 
@@ -231,7 +236,7 @@ Hold ⌥ and tap Tab to step through the sessions, and release to jump there. Th
 |---|---|
 | Open the command bar | ⌥ Space |
 | Switch between sessions | ⌥ Tab |
-| Pause, break, focus the waiting session | ⌥ Space, then P, B or F |
+| Pause, break, end, focus the waiting session | ⌥ Space, then P, B, E or F |
 | Start preset 1 to 3 | ⌥ Space, then 1, 2 or 3 |
 | Expand or collapse the open panel | ⌘E |
 | Jump to a session while the panel is open | ⌘1 to ⌘9 |
@@ -240,7 +245,7 @@ Only ⌥ Space and ⌥ Tab are global. Both can be changed in Settings, in case 
 
 ## The window
 
-Opened with ⌘O. It is used a few times a week, so it can afford detail. A sidebar on the left, 210 pt wide: Today, History, Sessions and Jira review with a count of what is waiting. At the bottom of the sidebar, last week's totals per workspace, which double as the legend for the charts.
+Opened with ⌘O. It is used a few times a week, so it can afford detail. A sidebar on the left, 210 pt wide: Today, History, Sessions and Time review with a count of what is waiting. At the bottom of the sidebar, last week's totals per workspace, which double as the legend for the charts.
 
 ### Today: plan the whole day
 
@@ -253,31 +258,33 @@ Opened with ⌘O. It is used a few times a week, so it can afford detail. A side
 ### History
 
 - Day, week and month. A bar chart of hours per day, in workspace colors.
-- A table per task: the issue and its title, the workspace, the time, and the Jira state: "3:11 to send" in amber, "logged", or "no Jira issue".
-- Amber always means tracked time that is not in Jira yet. Jira review collects exactly that.
+- A table per task: the issue and its title, the workspace, the time, and its state in the tracker: "3:11 to send" in amber, "logged", or "no issue".
+- Amber always means tracked time that a tracker keeps but has not received yet. Time review collects exactly that.
 
-### Jira review: the hours are yours to change
+### Time review: the hours are yours to change
+
+Only for trackers that keep time, such as Jira. A project whose tracker keeps no time never appears here, and neither does a project whose time is not tracked.
 
 One row per task for the chosen day:
 
 - a checkbox, the issue and its title
 - **Tracked:** what the timer measured, with the part spent in breaks ("3:11, 0:20 in breaks")
-- **Goes to Jira:** the tracked time rounded by the workspace rule, with − and + to change it in steps, or a typed value
-- a comment for Jira
-- a state: to send, in Jira, changed since it was sent, or left out
+- **Goes to the tracker:** the tracked time rounded by the workspace rule, with − and + to change it in steps, or a typed value
+- a comment for the tracker
+- a state: to send, sent, changed since it was sent, or left out
 
-Below: "Tracked 5:00, going to Jira 5:00", and one button, "Send 2 worklogs (5:00)".
+Below: "Tracked 5:00, to send 5:00", and one button, "Send 2 worklogs (5:00)".
 
-- A task without a Jira issue stays out until one is chosen.
+- A task without an issue stays out until one is chosen.
 - Nothing leaves until the button is pressed.
-- After sending, changing a number offers to update that worklog in Jira. Removing a row deletes the worklog there.
+- After sending, changing a number offers to update that worklog in the tracker. Removing a row deletes the worklog there.
 
 ### What phase 1 builds
 
 A list of the day's entries instead of the timeline, and corrections by hand. The rules live in `DayLog` and `EntryEditor` in `DontBurnCore`.
 
 - **Opening.** ⌘O in the compact panel closes the panel and opens the window, once per press. The right-click menu has "Open the window" on ⌘O. The app stays an accessory app with no Dock icon. The window follows `-DontBurnAppearance`.
-- **The sidebar** is 210 pt and holds Today and History only. Last week's totals come with the charts in phase 2, the timeline in phase 5, and Sessions and Jira review with their phases.
+- **The sidebar** is 210 pt and holds Today and History only. Last week's totals come with the charts in phase 2, the timeline in phase 5, and Sessions and Time review with their phases.
 - **A day** shows its total and one total per workspace: active ones in the order from Settings, then archived ones, each only when it has time that day. Below them a list with a column header: Time, Workspace with its dot, Kind, Length and Note.
 - **Lengths** are whole minutes, rounded down per entry, and every total is the sum of the rows.
 - **The running entry** reads "21:31–now" and counts up.
@@ -305,7 +312,7 @@ An Out of office entry in a calendar is not a meeting. It says the user is not w
 
 ## Settings
 
-Seven tabs: General, Workspaces, Rhythm, Sessions, Jira, Calendars, Shortcuts.
+Seven tabs: General, Workspaces, Rhythm, Sessions, Trackers, Calendars, Shortcuts.
 
 ### Workspaces
 
@@ -313,12 +320,12 @@ A list on the left with + and −, the chosen workspace on the right:
 
 - name and color, from the six swatches
 - default block length, and rhythm ("25 min focus, 5 min break")
-- folders that belong to it. A session started in one of them shows up under this workspace
-- the Jira site and project, the rounding step, and a switch: "Breaks count as working time and go to Jira"
+- its projects, described below
+- the rounding step, and a switch: "Breaks count as working time"
 - the calendar
 - its quick start key ("Shown on key 1")
 
-The order of the list is the order of the quick start presets and their number keys. Removing a workspace archives it: it leaves the menus and its history stays. A workspace without Jira never appears in Jira review.
+The order of the list is the order of the quick start presets and their number keys. Removing a workspace archives it: it leaves the menus and its history stays.
 
 #### What phase 1 builds
 
@@ -335,18 +342,38 @@ The window has a fixed size of 760 × 470 pt and two tabs: General, with the ale
 
 The prototype does not draw the Archived section, the empty state or the list of block lengths. The owner chose the looks above. The rules live in `WorkspaceRoster` in `DontBurnCore`.
 
+#### Projects, from phase 3
+
+The chosen workspace lists its projects.
+
+- Projects are added, renamed, reordered, archived and brought back. Nothing deletes a project.
+- Each has a name, a "Track time" switch, on by default, and its folders, added with the system's folder picker and removed again. A folder belongs to one project at most.
+- A session started in a project's folder, or below it, shows up under that project and its workspace. When two project folders hold it, the deepest one wins.
+- Folder paths belong to this Mac and are never synced.
+- Switching "Track time" off keeps the entries the project already has, and a note next to the switch says so.
+- From phase 4, a project also names its issue tracker and the project or board there. A project without a tracker that keeps time never appears in time review.
+- A workspace without projects works as in phase 1, and nothing asks for one.
+
+### Rhythm
+
+The focus presets: a name, the minutes of focus and of break, and a long break after a number of rounds. The app comes with 25 and 5, 50 and 10, and "none". A workspace names its default preset in Workspaces, and "Custom block" may choose another for one block. A preset that a workspace uses cannot be removed. This arrives in phase 2.
+
 ### Sessions
 
 - **Claude Code profiles.** Each Claude account is its own profile folder. The app finds them, lists them with their path, and shows per profile whether its hook is installed, with an "Install hook" button. A profile can also be added by its folder.
 - **Other agents.** Codex is listed as "added later".
 - **Terminals.** iTerm2 and Terminal jump to the exact tab. VS Code and Cursor bring the window forward. Each shows whether macOS has allowed the app to control it, with an "Allow" button.
 
+### Trackers
+
+The issue trackers the user connected, Jira and Trello first, each with its account. The token goes to the Keychain. A project chooses its tracker under Workspaces. This arrives in phase 4.
+
 ## Sounds and notifications
 
 - A soft chime when a focus interval ends (phase 2)
 - A different chime when a break ends
 - A longer tone when the block ends
-- A short tick when an agent needs you, which can be muted during focus (phase 3)
+- A short tick when an agent needs you, also with no block running, which can be muted during focus (phase 3)
 
 ### What phase 1 builds
 
@@ -385,10 +412,11 @@ How it works:
 | Settings: Workspaces (name, color, default block, order, archive) | 1 |
 | Window: Today as a list, simple history | 1 |
 | Right-click menu: the block actions and the quick start items | 1 |
-| Break gaps in the strip, "break in", rhythm settings | 2 |
-| Command bar, the full right-click menu, week and month charts | 2 |
-| Needs-you strip, expanded panel, session switcher, Settings: Sessions, the amber badge | 3 |
-| Issue on a block, Jira review, Settings: Jira | 4 |
+| Break gaps in the strip, "break in", Settings: Rhythm | 2 |
+| Command bar, also from the right-click menu, week and month charts, the idle question, start at login | 2 |
+| Settings: the projects of a workspace, with their folders and the "Track time" switch | 3 |
+| Needs-you strip, expanded panel, session switcher, Settings: Sessions, the amber badge, "Focus the waiting session" in the right-click menu | 3 |
+| Issue on a block, a project's tracker, time review, Settings: Trackers | 4 |
 | Day plan, next meeting, "free until", Out of office, the Off state, Settings: Calendars | 5 |
 | iPhone pages and the Live Activity | 6 |
 
