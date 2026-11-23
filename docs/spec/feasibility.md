@@ -39,7 +39,7 @@ No screen scraping, no accessibility tricks. The hook is the only moving part. P
 - **CloudKit sync on Mac.** Mitigation: add sync late, on a stable data model, and design the model for CloudKit from day one.
 - **Hook formats change** as Claude Code and Codex evolve. Mitigation: one small adapter per tool, tolerant parsing. Borne out in phase 0: since Claude Code 2.1.302 subagents run in the background by default, which changes how the end of a session's turn looks.
 - **Company restrictions** on Jira tokens or calendar access. Mitigation: both integrations are optional and the app is complete without them.
-- **Other people's setups** differ: other terminals, agents and Jira flavors. Mitigation: one adapter per terminal and per agent behind a common interface, added when someone needs it.
+- **Other people's setups** differ: other terminals, agents and issue trackers. Mitigation: one adapter per terminal, per agent and per tracker behind a common interface, added when someone needs it.
 
 ### Sources checked for this assessment
 

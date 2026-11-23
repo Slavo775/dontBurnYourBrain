@@ -30,7 +30,8 @@ How the app is versioned, and how a development build and the maintainer's daily
 | Who runs it | Agents and Xcode | The maintainer, every day | The maintainer and early testers |
 | Data | Sample data (Acme, Globex, Personal) or throwaway | Real | Real |
 | iCloud environment | Development | Production | Production |
-| Global shortcuts, launch at login | Off by default | On, as set by the user | On, as set by the user |
+| Global shortcuts | Off by default | On, as set by the user | On, as set by the user |
+| Launch at login | Off by default | Off until the user switches it on | Off until the user switches it on |
 | Gets updates from | Xcode | `./scripts/install-release`, later Sparkle | Sparkle's beta channel |
 
 Because the identifiers differ, macOS treats Dev and Release as two separate apps: separate data folders, settings, Keychain items, permissions and notifications. Both can sit in the menu bar at the same time.
