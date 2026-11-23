@@ -82,7 +82,7 @@ Phase 1 ends when the maintainer runs a full working day on the Release build fr
 
 ### Phases 2 and 3, side by side
 
-The two phases run side by side, in the order of the Ready list: card 45 first, then phase 3, then phase 2. As always, the next card is the top one whose `Blocked by` cards are done, so a phase 2 card with nothing blocking it can start before a blocked phase 3 card.
+The two phases run side by side, in the order of the Ready list. As always, the next card is the top one whose `Blocked by` cards are done.
 
 45. The plan and CLAUDE.md match the decisions on projects, sessions and trackers
 
