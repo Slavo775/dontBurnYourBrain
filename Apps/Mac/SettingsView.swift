@@ -7,6 +7,8 @@ import UserNotifications
 struct SettingsView: View {
     /// The open store, or `nil` when it could not be opened.
     let container: ModelContainer?
+    /// The open local store, this Mac's own, or `nil` when it could not be opened.
+    let localContainer: ModelContainer?
 
     var body: some View {
         TabView {
@@ -15,7 +17,7 @@ struct SettingsView: View {
             }
             Tab("Workspaces", systemImage: "square.grid.2x2") {
                 if let container {
-                    WorkspacesPane()
+                    WorkspacesPane(localContainer: localContainer)
                         .modelContainer(container)
                 } else {
                     ContentUnavailableView(
@@ -162,12 +164,28 @@ extension ModelContainer {
             return nil
         }
     }
+
+    /// A local store in memory with the sample folders of the projects in
+    /// `projects`, for previews, or `nil` when it could not be made.
+    static func sampleFolders(for projects: ModelContainer?) -> ModelContainer? {
+        guard let projects else { return nil }
+        do {
+            let container = try ModelStore.localInMemory()
+            let root = FileManager.default.temporaryDirectory
+                .appending(path: "DontBurnPreview.sample", directoryHint: .isDirectory)
+            try SampleData.seedFolders(into: container.mainContext, projects: projects.mainContext, root: root)
+            return container
+        } catch {
+            return nil
+        }
+    }
 }
 
 #Preview("Sample data") {
-    SettingsView(container: .sample)
+    let container = ModelContainer.sample
+    SettingsView(container: container, localContainer: .sampleFolders(for: container))
 }
 
 #Preview("No store") {
-    SettingsView(container: nil)
+    SettingsView(container: nil, localContainer: nil)
 }

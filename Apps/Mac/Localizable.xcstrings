@@ -74,6 +74,9 @@
     "Add a note" : {
 
     },
+    "Add a project" : {
+
+    },
     "Add a workspace" : {
 
     },
@@ -86,6 +89,9 @@
     "Add entry" : {
 
     },
+    "Add folder…" : {
+
+    },
     "Allow notifications to hear when a block or break ends" : {
 
     },
@@ -93,6 +99,9 @@
 
     },
     "Archive" : {
+
+    },
+    "Archive this project" : {
 
     },
     "Archive this workspace" : {
@@ -128,6 +137,9 @@
     "Cancel" : {
 
     },
+    "Choose a project" : {
+
+    },
     "Choose a workspace" : {
 
     },
@@ -135,6 +147,9 @@
 
     },
     "Color" : {
+
+    },
+    "Create a project" : {
 
     },
     "Create a workspace" : {
@@ -182,6 +197,9 @@
     "Entries can't be shown or changed right now." : {
 
     },
+    "Folders" : {
+
+    },
     "General" : {
 
     },
@@ -207,6 +225,9 @@
 
     },
     "Name" : {
+
+    },
+    "New project" : {
 
     },
     "New workspace" : {
@@ -266,6 +287,9 @@
     "Orange" : {
 
     },
+    "Page" : {
+
+    },
     "Pause" : {
 
     },
@@ -273,6 +297,9 @@
 
     },
     "Previous day" : {
+
+    },
+    "Projects" : {
 
     },
     "Quick start" : {
@@ -285,6 +312,9 @@
 
     },
     "Release" : {
+
+    },
+    "Remove %@" : {
 
     },
     "Restore" : {
@@ -356,10 +386,19 @@
     "The entry was not deleted" : {
 
     },
+    "The folders could not be opened." : {
+
+    },
     "This entry's block is still running. Only its note can change until the block ends." : {
 
     },
+    "This workspace has no projects." : {
+
+    },
     "Time" : {
+
+    },
+    "Time already tracked stays when this is off." : {
 
     },
     "Time to stop or start the next one." : {
@@ -372,6 +411,9 @@
 
     },
     "Total" : {
+
+    },
+    "Track time" : {
 
     },
     "Unnamed" : {
@@ -421,6 +463,16 @@
     },
     "paused" : {
 
+    },
+    "“%@” already belongs to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "“%1$@” already belongs to %2$@."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
