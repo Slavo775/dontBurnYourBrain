@@ -47,7 +47,9 @@ What the Leader does at the end of each phase is in [../../rules/roles/leader.md
 
 Reports and requests from other people arrive from phase 8 on as GitHub issues. Each accepted one becomes a card.
 
-## The first 17 cards
+## The cards of each phase
+
+The cards of phases 0 to 3, in the order they were written. Cards with other numbers are follow-ups, work on the flow itself, or wait in Backlog. The board has them all.
 
 ### Phase 0: setup and risk spikes
 
@@ -76,4 +78,40 @@ Phase 0 ends when the app builds and runs from Xcode and from the command line, 
 16. Today list and simple history
 17. Release v0.1.0 beside the Dev build
 
-Phase 1 ends when the maintainer runs a full working day on the Release build from card 17.
+Phase 1 ends when the maintainer runs a full working day on the Release build from card 17. It ended on 19 November 2026, on v0.1.0.
+
+### Phases 2 and 3, side by side
+
+The two phases run side by side, in the order of the Ready list: card 45 first, then phase 3, then phase 2. As always, the next card is the top one whose `Blocked by` cards are done, so a phase 2 card with nothing blocking it can start before a blocked phase 3 card.
+
+45. The plan and CLAUDE.md match the decisions on projects, sessions and trackers
+
+### Phase 3: agent sessions and terminal focus
+
+46. Projects in Settings: name, folders and whether time is tracked
+47. Session states from hook events, in the shared package
+48. The hook tool reports a session's events to the running app
+49. Settings, Sessions: install and remove the hook, with a clean uninstall
+50. Expanded panel with the session list, also when no block runs
+51. Focus brings a session's exact tab forward in Terminal and iTerm2
+52. Focus brings a session's window forward in VS Code and Cursor
+53. The app tells you when an agent waits for you
+54. Jump to a session from the keyboard
+55. Release the version with sessions, and the owner uses it for a week
+56. Spike: a Chrome profile for each workspace, and its window brought forward
+
+Phase 3 ends when the maintainer has used the Release build from card 55 for a week and stops hunting for terminal windows.
+
+### Phase 2: focus rhythm and history
+
+57. Focus rhythm in the timer engine: planned focus intervals and breaks
+58. Rhythm in the panel, the menu bar and Settings
+59. Idle time: the app asks what to do with time away from the Mac
+60. History by week and month, totals per project, split an entry, export to CSV
+61. Command bar on a global shortcut
+62. The app starts when the owner logs in, if he wants
+63. Release the version with rhythm, history and the command bar
+
+Phase 2 ends when the maintainer has used the Release build from card 63 for a few working days and said what got in his way.
+
+Whichever of cards 55 and 63 comes first takes the next version, and the other takes the one after.

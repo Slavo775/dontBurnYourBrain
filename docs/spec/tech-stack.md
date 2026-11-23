@@ -28,11 +28,11 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 
 **Shared package**
 
-- **DontBurnCore**: Data model, timer engine, rounding rules, Jira client. Pure Swift, fully unit tested.
+- **DontBurnCore**: Data model, timer engine, rounding rules, the issue tracker protocol and one adapter per tracker. Pure Swift, fully unit tested.
 
 **Mac-only services**
 
-- **SessionMonitor**: Receives hook events, reads transcripts. One adapter per agent tool and profile folder
+- **SessionMonitor**: Receives hook events, reads transcripts, and finds each session's project through the projects' folders. One adapter per agent tool and profile folder
 - **TerminalFocus**: One adapter per terminal host
 - **CalendarService**: EventKit
 - **InsightFlowBridge**: Reads the current task per repo from the CLI
@@ -41,14 +41,14 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 **Storage**
 
 - **SwiftData, synced**: Workspaces, projects, blocks, entries, issue links
-- **SwiftData, local only**: Agent sessions, terminal references
-- **Keychain**: Jira tokens
+- **SwiftData, local only**: Agent sessions, terminal references, the folders of each project
+- **Keychain**: Issue tracker tokens
 - **The app's own defaults, this Mac only**: the alert switches, the last break length, and the latest break with nothing running, which is never a time entry
 
 **Outside**
 
 - **iCloud (CloudKit)**: Private database
-- **Jira sites**: REST
+- **Issue trackers, Jira and Trello**: REST
 - **macOS Calendar**: Google accounts
 - **Terminal, iTerm2**: AppleScript
 - **VS Code, Cursor**: `open -b` through LaunchServices. Neither has an AppleScript dictionary, and their `code` and `cursor` commands were not tested in phase 0
@@ -57,20 +57,21 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 
 | Entity | Key fields | Synced |
 | --- | --- | --- |
-| **Workspace** | name, color, sort order, archived flag, default block minutes, focus preset, rounding step, whether breaks count, folder paths that belong to it, linked Jira site, calendar | Yes |
-| **Project** | name, workspace, sort order, archived flag, whether its time is tracked, optional Jira project key | Yes |
+| **Workspace** | name, color, sort order, archived flag, default block minutes, focus preset, rounding step, whether breaks count, calendar | Yes |
+| **Project** | name, workspace, sort order, archived flag, whether its time is tracked, optional tracker link: the tracker account and the project or board there | Yes |
+| **ProjectFolder** | the project's identifier, folder path | No, this Mac only |
 | **TimeBlock** | workspace, planned start, planned minutes, focus preset, state (planned, running, done, cancelled) | Yes |
 | **TimeEntry** | start, end, kind (work, break, meeting), planned minutes (set on a break, so it survives a restart), workspace, project, block, issue link, note, source (timer, manual, calendar) | Yes |
 | **TimeOff** | start, end, workspace (empty means every workspace), source (calendar, manual), whether you worked anyway | Yes |
-| **IssueLink** | Jira site id, issue key, summary snapshot | Yes |
-| **WorklogPush** | entries covered, seconds tracked, seconds sent after your edits, comment, Jira worklog id, status, sent at | Yes |
+| **IssueLink** | tracker account, issue key or id, summary snapshot | Yes |
+| **WorklogPush** | entries covered, seconds tracked, seconds sent after your edits, comment, the tracker's worklog id, status, sent at. Only for a tracker that keeps time | Yes |
 | **FocusPreset** | name, work minutes, break minutes, long break rule, sounds | Yes |
-| **JiraSite** | base URL, account email, Keychain reference (the token itself is not stored here) | Yes, without token |
+| **TrackerAccount** | tracker kind (Jira, Trello), base URL, account, Keychain reference (the token itself is not stored here) | Yes, without token |
 | **AgentSession** | tool (claude, codex), session id, account label, folder, state, last event, transcript path, terminal reference | No, this Mac only |
 
 CloudKit rules applied from the start: every property has a default or is optional, relationships are optional, no unique constraints, and fields are only ever added.
 
-Card 9 built Workspace, Project, TimeBlock and TimeEntry as `SchemaV1` in `DontBurnCore`, without the fields that belong to later phases (focus preset, folders, Jira, calendar, issue link). Their field names are fixed from now on, because sync cannot rename them. Card 10 added the planned minutes of a TimeEntry. The other entities arrive with their phases. The rules for the model are also in `CLAUDE.md`.
+Card 9 built Workspace, Project, TimeBlock and TimeEntry as `SchemaV1` in `DontBurnCore`, without the fields that belong to later phases (focus preset, calendar, tracker link, issue link). Their field names are fixed from now on, because sync cannot rename them. Folder paths never enter the synced model, because they belong to one Mac. Card 10 added the planned minutes of a TimeEntry. The other entities arrive with their phases. The rules for the model are also in `CLAUDE.md`.
 
 - **Delete rules:** deleting a workspace deletes its projects, blocks and entries. Deleting a project or a block keeps their entries and only clears the link.
 - **The project rule:** a block or entry names a project only through `assign(_:)`, and only a time-tracked project of its own workspace.
