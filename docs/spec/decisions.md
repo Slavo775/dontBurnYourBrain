@@ -42,7 +42,7 @@ Each of these has a moment when it gets checked.
 | Assumption | Checked |
 |---|---|
 | Both organizations use Jira Cloud with native worklogs | When phase 4 starts |
-| ⌥ Space and ⌥ Tab are free as global shortcuts | In phase 2, when the command bar is built |
+| ⌥ Space and ⌥ Tab are free as global shortcuts | ⌥ Space when the command bar is built (card 61), ⌥ Tab when the session switcher is built (card 54) |
 | macOS passes along nothing that marks an Out of office entry | In phase 5 |
 | The app can ask macOS for a fresh fetch of a calendar account | In phase 5 |
 | iCloud sync behaves in a signed, notarized build the way it does from Xcode | Early in phase 6 |

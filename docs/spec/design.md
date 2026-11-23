@@ -222,7 +222,7 @@ Opened with ⌥ Space from anywhere. About 580 pt wide, one text field, results 
 
 ### Right-click menu on the menu bar item
 
-Pause, Take a break, Add 15 minutes, End block. Then the quick start presets ("Start Acme for 2 h"). Then Focus the waiting session, and Open the window ⌘O.
+Pause, Take a break, Add 15 minutes, End block. Then the quick start presets ("Start Acme for 2 h"). Then Focus the waiting session, Open the command bar, and Open the window ⌘O.
 
 Opened with a right-click, a Control-click, or the item's "Show menu" accessibility action. In phase 1, while a block runs, it holds Pause or Resume, "Take a break" or End break, Add 15 minutes and End block, then a divider. "Take a break" is a submenu with 5, 15, 30 and 60 min, disabled while paused. On a break with nothing running it holds End break and Add 15 minutes, with no Pause and no End block, then a divider. Then "Start Acme for 1 h" for the first three active workspaces at their default lengths, then a divider. While a block runs, picking one switches to that workspace. On a break with nothing running, it ends the break and starts that block. Then "Open the window" on ⌘O, "Settings…" on ⌘ and comma, another divider, and "Quit" with the app's name, on ⌘Q. With nothing running it holds the "Take a break" submenu and a divider when there is a store, then the start items, Open the window, Settings and Quit. With no workspaces or no store, the start items are left out.
 
@@ -413,7 +413,7 @@ How it works:
 | Window: Today as a list, simple history | 1 |
 | Right-click menu: the block actions and the quick start items | 1 |
 | Break gaps in the strip, "break in", Settings: Rhythm | 2 |
-| Command bar, week and month charts, the idle question, start at login | 2 |
+| Command bar, also from the right-click menu, week and month charts, the idle question, start at login | 2 |
 | Settings: the projects of a workspace, with their folders and the "Track time" switch | 3 |
 | Needs-you strip, expanded panel, session switcher, Settings: Sessions, the amber badge, "Focus the waiting session" in the right-click menu | 3 |
 | Issue on a block, a project's tracker, time review, Settings: Trackers | 4 |
