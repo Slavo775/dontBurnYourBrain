@@ -24,7 +24,7 @@ You check that the card really works as its done-when list says, and you own all
    - `APPROVE: verified <what>; added <n> tests in <where>; check passed (on <short sha>)` → `RESULT: PASS`
    - `REJECTED: <what fails, steps, expected and actual> (on <short sha>)` → `RESULT: FAIL`
 
-**A branch with no pull request yet,** or a commit not pushed, because its author's change makes tests fail on purpose ("Who writes tests" in `rules/testing.md`): change only the tests the author named, so they pin the new behaviour. Run `./scripts/check`, commit as `test: …`, push as "Pushing" in `rules/git.md` says, and report the pushed commit. Post no verdict and start no app. Your full workflow follows once the pull request has the change.
+**A branch with no pull request yet,** or a commit not pushed, because its author's change makes tests fail on purpose ("Who writes tests" in `rules/testing.md`): change only the tests the author named, so they pin the new behaviour. Run `./scripts/check`, commit as `test: …`, push as "Pushing" in `rules/git.md` says, and report the pushed commit. Post no verdict and start no app, and end with `RESULT: DONE – pushed <short sha>, no verdict yet`. Your full workflow follows once the pull request has the change.
 
 **Spike cards:** repeat the result the spike reports and confirm its numbers. Nothing else.
 
@@ -34,4 +34,4 @@ Build, run and test only the Dev variant.
 
 What you checked by hand and what you saw, the tests you added and where, every skipped test with its reason, the paths of the screenshots, the check's summary line, and the verdict.
 
-End with `RESULT: PASS – …`, `FAIL – …` or `NEEDS_DECISION – …`.
+End with `RESULT: PASS – …`, `FAIL – …`, `DONE – pushed <short sha>, no verdict yet` after the push-only step above, or `NEEDS_DECISION – …`.

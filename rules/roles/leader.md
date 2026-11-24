@@ -43,6 +43,7 @@ The card's list is its status. Move the card before you call the next role.
 | Designer returned `NEEDS_DECISION` that names the Developer | Developer, with the Designer's note | In development |
 | Developer or Designer `DONE` | Tester | In testing |
 | Developer or Designer `DONE`, committed but not pushed because tests fail on purpose | Tester, only to update those tests and push. Then the author opens the pull request if there is none, then the Tester's full check | In testing |
+| Tester `DONE` after that push-only step | The author, to open the pull request when there is none. Then the Tester's full check | In testing |
 | Tester `PASS` | Reviewer | In review |
 | Tester `FAIL` or Reviewer `REJECTED` | Whoever owns the finding | Changes requested, then In development or In design |
 | Reviewer `APPROVE` | Documenter | In docs |
@@ -55,7 +56,7 @@ At every step:
 
 1. Move the card, then comment as Leader when the step needs explaining.
 2. Call the role's subagent with the brief.
-3. Read its `RESULT:` line first. Then check its claims yourself: the pull request exists (`gh pr view`), the verdict comment is on the pull request and names the head commit, and the `local/check` status is on that commit.
+3. Read its `RESULT:` line first. Then check its claims yourself: the pull request exists (`gh pr view`), the verdict comment is on the pull request and names the head commit, and the `local/check` status is on that commit. For a `DONE` that is committed but not pushed, check the commit in the worktree instead (`git log`). For the Tester's push-only `DONE`, check that the commit is on `origin` (`git ls-remote`) and carries `local/check`.
 4. Comment on the card for that role, from its report: `**Tester**: <what it did> → <next>`.
 5. Tick the checklist items that are now done.
 6. When the Tester took screenshots, show them to the owner before the card moves to Ready to merge.
