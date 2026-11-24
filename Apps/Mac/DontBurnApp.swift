@@ -9,6 +9,8 @@ struct DontBurnApp: App {
 
     /// The menu bar item, its panel and its menu. Kept for the life of the app.
     @State private var statusItem: StatusItemController
+    /// The agent sessions, or `nil` without a bundle identifier. Kept for the life of the app.
+    @State private var sessions: SessionMonitor?
 
     /// The open store, or `nil` when it could not be opened.
     private let container: ModelContainer?
@@ -35,6 +37,7 @@ struct DontBurnApp: App {
             countdown.reschedule()
         }
         _statusItem = State(initialValue: StatusItemController(countdown: countdown, mainWindow: mainWindow))
+        _sessions = State(initialValue: Self.startSessions(sampleData: sampleData))
         switch Self.launchArgument("DontBurnAppearance").flatMap(Appearance.init(rawValue:)) {
         case .light: NSApplication.shared.appearance = NSAppearance(named: .aqua)
         case .dark: NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
@@ -143,6 +146,28 @@ struct DontBurnApp: App {
             log.error("The local store could not be opened: \(error.localizedDescription)")
             return nil
         }
+    }
+
+    /// The sessions, listening on the hook channel in the folder named after
+    /// the bundle identifier. With the sample data they stay in memory, and
+    /// the channel is still opened.
+    private static func startSessions(sampleData: Bool) -> SessionMonitor? {
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier else {
+            Logger(subsystem: "", category: "sessions")
+                .error("No bundle identifier, so the hook channel has no folder of its own and is not opened")
+            return nil
+        }
+        let applicationSupport = URL.applicationSupportDirectory
+        let monitor = SessionMonitor(
+            directory: sampleData
+                ? nil
+                : StoreLocation.directory(bundleIdentifier: bundleIdentifier, applicationSupport: applicationSupport),
+            receiver: HookSocket(url: HookChannel.url(
+                bundleIdentifier: bundleIdentifier, applicationSupport: applicationSupport,
+            )),
+        )
+        monitor.start()
+        return monitor
     }
 
     var body: some Scene {

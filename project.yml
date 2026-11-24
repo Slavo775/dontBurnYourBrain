@@ -20,6 +20,11 @@ settings:
     CODE_SIGN_STYLE: Automatic
     CODE_SIGN_IDENTITY: "-"
     DEVELOPMENT_TEAM: ""
+    # The app's two bundle identifiers, in one place: the app takes one per
+    # configuration, and the hook tool carries both in its Info.plist, so it
+    # reaches either build whichever configuration built it.
+    DONTBURN_RELEASE_BUNDLE_IDENTIFIER: io.github.slavo775.dontburn
+    DONTBURN_DEV_BUNDLE_IDENTIFIER: $(DONTBURN_RELEASE_BUNDLE_IDENTIFIER).dev
 
 targets:
   DontBurn:
@@ -49,13 +54,13 @@ targets:
         # The development build has its own identifier, so its data, settings
         # and permissions never mix with the daily copy.
         Debug:
-          PRODUCT_BUNDLE_IDENTIFIER: io.github.slavo775.dontburn.dev
+          PRODUCT_BUNDLE_IDENTIFIER: $(DONTBURN_DEV_BUNDLE_IDENTIFIER)
           APP_DISPLAY_NAME: "Don't Burn Your Brain Dev"
           APP_VARIANT: Dev
           # A tinted placeholder, so Dev is never taken for the daily copy.
           ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon-Dev
         Release:
-          PRODUCT_BUNDLE_IDENTIFIER: io.github.slavo775.dontburn
+          PRODUCT_BUNDLE_IDENTIFIER: $(DONTBURN_RELEASE_BUNDLE_IDENTIFIER)
           APP_DISPLAY_NAME: "Don't Burn Your Brain"
           APP_VARIANT: Release
     postBuildScripts:
@@ -83,10 +88,13 @@ targets:
     settings:
       base:
         PRODUCT_NAME: dontburn-hook
-        PRODUCT_BUNDLE_IDENTIFIER: io.github.slavo775.dontburn.hook
+        PRODUCT_BUNDLE_IDENTIFIER: $(DONTBURN_RELEASE_BUNDLE_IDENTIFIER).hook
         # An Info.plist inside the binary carries MARKETING_VERSION, so the
-        # tool reads its version from Bundle.main like the app does.
+        # tool reads its version from Bundle.main like the app does. The file
+        # adds the app's two bundle identifiers, so the tool finds each
+        # build's channel.
         GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Tools/dontburn-hook/Info.plist
         CREATE_INFOPLIST_SECTION_IN_BINARY: YES
 
 schemes:

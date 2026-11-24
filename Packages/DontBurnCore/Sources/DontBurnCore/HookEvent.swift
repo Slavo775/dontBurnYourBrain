@@ -5,7 +5,8 @@ public enum HookEventError: Error, Equatable, Sendable {
     /// The event is larger than ``HookEvent/maximumSize``.
     case tooLarge
     /// The event is not a JSON object of the expected shape, or lacks its
-    /// name or session id, or names a process ID below 1.
+    /// name or session id, or names a process ID below 1, or, in the hook
+    /// tool, comes without a valid `CLAUDE_PID`.
     case malformed
 }
 
@@ -21,6 +22,14 @@ public struct HookEvent: Codable, Equatable, Sendable {
     /// The largest event ``decode(_:)`` accepts, in bytes. A trimmed event
     /// takes a few hundred.
     public static let maximumSize = 64 * 1024
+
+    /// The largest event from Claude Code that ``init(claudeEvent:environment:tty:)``
+    /// takes, in bytes.
+    ///
+    /// Far above ``maximumSize``, because Claude Code's event carries the
+    /// prompt and the tool's input: a `PermissionRequest` to write a large file
+    /// can take megabytes. Only the trimmed event has to fit ``maximumSize``.
+    public static let maximumClaudeEventSize = 16 * 1024 * 1024
 
     /// The event's name, such as `Stop`, from `hook_event_name`.
     public var name: String
@@ -76,6 +85,34 @@ public struct HookEvent: Codable, Equatable, Sendable {
     /// the session id is empty, or when the process ID is below 1. Fields
     /// outside this type are dropped.
     public static func decode(_ data: Data) throws -> HookEvent {
+        let event = try decoded(data, maximumSize: maximumSize)
+        guard event.processID ?? 1 > 0 else { throw HookEventError.malformed }
+        return event
+    }
+
+    /// Claude Code's `event`, trimmed to the fields the app may keep, with
+    /// what only the hook tool knows: the app's variables from `environment`,
+    /// the `claude` process ID from its `CLAUDE_PID`, and the tty `tty` finds
+    /// for that process.
+    ///
+    /// Throws ``HookEventError/tooLarge`` before decoding anything when
+    /// `event` is larger than ``maximumClaudeEventSize``. Throws
+    /// ``HookEventError/malformed`` when `CLAUDE_PID` is missing or not a
+    /// number above 0, which `tty` is then never asked about, and when `event`
+    /// is not a JSON object with the fields' types, or its name or session id
+    /// is empty. `env`, `claude_pid` and `tty` in `event` are never taken.
+    public init(claudeEvent event: Data, environment: [String: String], tty: (Int32) -> String?) throws {
+        guard event.count <= Self.maximumClaudeEventSize else { throw HookEventError.tooLarge }
+        guard let processID = environment["CLAUDE_PID"].flatMap(Int32.init), processID > 0 else {
+            throw HookEventError.malformed
+        }
+        self = try Self.decoded(event, maximumSize: Self.maximumClaudeEventSize)
+        self.environment = HookEnvironment(environment)
+        self.processID = processID
+        self.tty = tty(processID)
+    }
+
+    private static func decoded(_ data: Data, maximumSize: Int) throws -> HookEvent {
         guard data.count <= maximumSize else { throw HookEventError.tooLarge }
         let event: HookEvent
         do {
@@ -83,9 +120,7 @@ public struct HookEvent: Codable, Equatable, Sendable {
         } catch {
             throw HookEventError.malformed
         }
-        guard !event.name.isEmpty, !event.sessionID.isEmpty, event.processID ?? 1 > 0 else {
-            throw HookEventError.malformed
-        }
+        guard !event.name.isEmpty, !event.sessionID.isEmpty else { throw HookEventError.malformed }
         return event
     }
 
