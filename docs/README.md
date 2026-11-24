@@ -33,7 +33,7 @@ The rules that bind agents are in `rules/` at the repository root: [../rules/REA
 
 ## Spike notes
 
-The findings of the phase 0 spikes: one summary across them, and one note per spike.
+The findings of the spikes: one summary across the phase 0 spikes, and one note per spike.
 
 | File | What it answers |
 |---|---|
@@ -41,3 +41,4 @@ The findings of the phase 0 spikes: one summary across them, and one note per sp
 | [spikes/claude-hook.md](spikes/claude-hook.md) | What a Claude Code hook tells the app about a session, its state, its terminal tab and its profile, and how the hook goes into a profile's settings and out again without a trace |
 | [spikes/terminal-focus.md](spikes/terminal-focus.md) | Whether a command brings the exact tab of a session forward in iTerm2 and Terminal, how often and how fast, which handle each app uses, the awkward cases, and whose permission the commands need |
 | [spikes/editor-focus.md](spikes/editor-focus.md) | Whether a command brings forward the VS Code or Cursor window that holds a session, which command, how often and how fast, the card's six cases and how sure each result is, what phase 3 should do with a subfolder, and why an unwanted window is costly |
+| [spikes/chrome-profiles.md](spikes/chrome-profiles.md) | Phase 3: whether the app can list Chrome's profiles, bring a profile's window forward or open a new one, which macOS permission each way needs, what it can know about a profile's windows, and the recommendation for the owner |
