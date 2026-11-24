@@ -131,7 +131,7 @@ ls "$S/ud"
 swift Spikes/chrome-profiles/profile-names.swift "$S/ud/Local State" --names
 ```
 
-The `pgrep` that sets `P` matches only the throwaway browser's main process, whose command line starts with Chrome's binary and these two flags, so it prints exactly one process ID. That ID is stopped with `kill`, and the last two checks must say `gone` and `nothing runs`. Compare before the `kill`: exactly one throwaway window, in front, whose profile button at the top right shows Chrome's default name, "Your Chrome" in the system's language. Compare after it: `ls` shows a `Profile 9` folder next to `Default`, `Profile 1` and `Profile 2`, and the reader prints `4 profiles, 4 with a name`, with that default name for `Profile 9`.
+The `pgrep` that sets `P` matches only the throwaway browser's main process, whose command line starts with Chrome's binary and these two flags, so it prints exactly one process ID. That ID is stopped with `kill`, and the last two checks must say `gone` and `nothing runs`. Compare before the `kill`: exactly one throwaway window, in front, whose profile button at the top right shows Chrome's default name, "Your Chrome" in the system's language. Compare after it: `ls` shows a new `Profile 9` folder next to the folders of the profiles that have run, and the reader prints `4 profiles, 4 with a name`, with that default name for `Profile 9`.
 
 ## Results
 
