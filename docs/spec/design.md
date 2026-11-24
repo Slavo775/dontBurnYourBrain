@@ -198,6 +198,16 @@ A session of a project whose time is not tracked is listed like any other, and n
 
 ⌘1 to ⌘9 jump straight to a session while the panel is open. A session's state shows as a small dot on its icon: amber for waiting, green for working, grey for idle.
 
+**Which group a session is in,** ready for the panel later in phase 3:
+
+- **Needs you:** a permission prompt waits for the user.
+- **Working:** a turn runs, or the turn stopped while a subagent, a workflow or a teammate it waits for still runs. A background shell does not count. A turn that stopped still reads working for 3 s, so a turn that wakes right after does not flicker. After an Esc no event comes, so the session stays here until its next event.
+- **Idle:** the session started and no turn ran yet, or its last turn ended, with a `Stop` or, after a denied permission, with Claude Code's `idle_prompt` notification. That notification does not count as activity, so the time since the last activity stays right.
+- A session that ended is left out, and so is one whose `claude` process is gone, which the app checks whenever it looks. A resumed session can be open in two tabs, so the end of the older one changes nothing.
+- A session keeps the folder, profile, terminal and tab of its process's first event, and takes new ones when it is resumed in another process. Its project is found through [the folder rule](#projects-from-phase-3) each time it is read. An empty or relative folder has none, so the session goes under "Other".
+
+The rules live in `SessionStore` and `HookEvent` in `DontBurnCore`.
+
 ## Pages on the iPhone
 
 The phone keeps the panel small and shows one thing at a time. A bar at the bottom switches between four pages: Now, Today, History and Log. Sessions are read-only on the phone, because the terminals live on the Mac. The prototype also draws these pages at Mac size for comparison. On the Mac they are not built.
