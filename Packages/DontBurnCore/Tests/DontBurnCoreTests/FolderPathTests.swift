@@ -5,45 +5,49 @@ import Testing
 // MARK: - Resolving symlinks
 
 @Test func `the var and private var spellings of one real folder resolve to the same path`() throws {
-    let temporary = try TemporaryFolder()
-    let made = try temporary.make("code/acme-web")
-    try #require(made.hasPrefix("/var/"))
-    let privateSpelling = "/private" + made
+    try withTemporaryFolder { temporary in
+        let made = try temporary.make("code/acme-web")
+        try #require(made.hasPrefix("/var/"))
+        let privateSpelling = "/private" + made
 
-    let resolved = FolderPath.resolved(made)
+        let resolved = FolderPath.resolved(made)
 
-    #expect(resolved.hasPrefix("/private/var/"))
-    #expect(resolved.hasSuffix("/code/acme-web"))
-    #expect(FolderPath.resolved(privateSpelling) == resolved)
+        #expect(resolved.hasPrefix("/private/var/"))
+        #expect(resolved.hasSuffix("/code/acme-web"))
+        #expect(FolderPath.resolved(privateSpelling) == resolved)
+    }
 }
 
 @Test func `a symlink to a folder resolves to the folder it points to`() throws {
-    let temporary = try TemporaryFolder()
-    let target = try temporary.make("code/acme-web")
-    let link = temporary.path("acme-link")
-    try FileManager.default.createSymbolicLink(atPath: link, withDestinationPath: target)
+    try withTemporaryFolder { temporary in
+        let target = try temporary.make("code/acme-web")
+        let link = temporary.path("acme-link")
+        try FileManager.default.createSymbolicLink(atPath: link, withDestinationPath: target)
 
-    #expect(FolderPath.resolved(link) == FolderPath.resolved(target))
-    #expect(FolderPath.resolved(link + "/") == FolderPath.resolved(target))
+        #expect(FolderPath.resolved(link) == FolderPath.resolved(target))
+        #expect(FolderPath.resolved(link + "/") == FolderPath.resolved(target))
+    }
 }
 
 @Test func `a folder not made yet resolves its deepest existing parent and keeps the rest`() throws {
-    let temporary = try TemporaryFolder()
-    let parent = try temporary.make("code/acme-web")
+    try withTemporaryFolder { temporary in
+        let parent = try temporary.make("code/acme-web")
 
-    let resolved = FolderPath.resolved(parent + "/not-made/./deeper/")
+        let resolved = FolderPath.resolved(parent + "/not-made/./deeper/")
 
-    #expect(resolved == FolderPath.resolved(parent) + "/not-made/deeper")
-    #expect(resolved.hasPrefix("/private/var/"))
+        #expect(resolved == FolderPath.resolved(parent) + "/not-made/deeper")
+        #expect(resolved.hasPrefix("/private/var/"))
+    }
 }
 
 @Test func `a missing folder below a symlink resolves through the symlink`() throws {
-    let temporary = try TemporaryFolder()
-    let target = try temporary.make("code/acme-web")
-    let link = temporary.path("acme-link")
-    try FileManager.default.createSymbolicLink(atPath: link, withDestinationPath: target)
+    try withTemporaryFolder { temporary in
+        let target = try temporary.make("code/acme-web")
+        let link = temporary.path("acme-link")
+        try FileManager.default.createSymbolicLink(atPath: link, withDestinationPath: target)
 
-    #expect(FolderPath.resolved(link + "/mobile") == FolderPath.resolved(target) + "/mobile")
+        #expect(FolderPath.resolved(link + "/mobile") == FolderPath.resolved(target) + "/mobile")
+    }
 }
 
 @Test func `a path under no existing folder but the root comes back standardized`() {
@@ -52,9 +56,14 @@ import Testing
     #expect(FolderPath.resolved(missing + "//code/./acme-web/../globex-data/") == missing + "/code/globex-data")
 }
 
-@Test func `a relative path is only standardized, never resolved against the working folder`() {
+/// This is all `resolved` promises for such a path, and the root holds every
+/// path, so the folder rule refuses one before resolving it. See "Paths that
+/// are not absolute" in ProjectFoldersTests.
+@Test func `a path that is not absolute is only standardized, and an empty one gives the root`() {
     #expect(FolderPath.resolved("code/./acme-web/") == "/code/acme-web")
+    #expect(FolderPath.resolved("~/code/acme-web") == "/~/code/acme-web")
     #expect(FolderPath.resolved("") == "/")
+    #expect(FolderPath.path("/code/acme-web", isInside: FolderPath.resolved("")))
 }
 
 // MARK: - Standardizing
@@ -67,12 +76,13 @@ import Testing
 }
 
 @Test func `standardizing keeps a symlink as it is`() throws {
-    let temporary = try TemporaryFolder()
-    let target = try temporary.make("code/acme-web")
-    let link = temporary.path("acme-link")
-    try FileManager.default.createSymbolicLink(atPath: link, withDestinationPath: target)
+    try withTemporaryFolder { temporary in
+        let target = try temporary.make("code/acme-web")
+        let link = temporary.path("acme-link")
+        try FileManager.default.createSymbolicLink(atPath: link, withDestinationPath: target)
 
-    #expect(FolderPath.standardized(link) == link)
+        #expect(FolderPath.standardized(link) == link)
+    }
 }
 
 // MARK: - Containment
