@@ -11,20 +11,22 @@ public enum HookTarget: String, Sendable {
     /// The development build.
     case dev
 
-    /// The target `arguments` and `environment` name, or `nil` when they name
-    /// one that does not exist.
+    /// The target `arguments` and `environment` name, or `nil` when they do
+    /// not name exactly one that exists.
     ///
-    /// `--target <name>` among `arguments` wins over `DONTBURN_TARGET`. When
-    /// neither names one, or the variable is empty, the target is ``release``.
-    /// An unknown name, or `--target` without one, gives `nil`, so a typo
-    /// sends nothing rather than reaching the other build.
+    /// `arguments` are the tool's arguments without its own path. They are
+    /// either none, or exactly `--target dev` or `--target release`, which
+    /// wins over `DONTBURN_TARGET`. Without arguments, `DONTBURN_TARGET`
+    /// names the target, `dev` or `release`, and when it is unset or empty the
+    /// target is ``release``. Anything else gives `nil`, so the tool sends
+    /// nothing rather than reach the other build: an unknown name, `--target`
+    /// without a name, another spelling such as `--target=dev` or `-t dev`, a
+    /// stray or extra argument, or a repeat.
     public init?(arguments: [String], environment: [String: String]) {
-        let name: String? = if let flag = arguments.firstIndex(of: "--target") {
-            arguments.indices.contains(flag + 1) ? arguments[flag + 1] : nil
-        } else if let variable = environment["DONTBURN_TARGET"], !variable.isEmpty {
-            variable
-        } else {
-            Self.release.rawValue
+        let name: String? = switch arguments.count {
+        case 0: environment["DONTBURN_TARGET"].flatMap { $0.isEmpty ? nil : $0 } ?? Self.release.rawValue
+        case 2 where arguments[0] == "--target": arguments[1]
+        default: nil
         }
         guard let target = name.flatMap(Self.init(rawValue:)) else { return nil }
         self = target

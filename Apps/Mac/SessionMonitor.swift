@@ -9,6 +9,12 @@ import os
 /// app runs on without sessions.
 @MainActor
 final class SessionMonitor {
+    /// The events the hook is installed for, the only names the log shows.
+    private static let knownEventNames: Set = [
+        "SessionStart", "UserPromptSubmit", "PermissionRequest", "Notification", "Stop",
+        "StopFailure", "SubagentStart", "SubagentStop", "SessionEnd",
+    ]
+
     /// The sessions as their events left them.
     private(set) var store: SessionStore
 
@@ -51,7 +57,9 @@ final class SessionMonitor {
             log.error("Refused a hook message: \(String(describing: error), privacy: .public)")
             return
         }
-        log.info("Received \(event.name, privacy: .public)")
+        // The name comes from outside the app, so only one of Claude Code's own goes to the log as it is.
+        let name = Self.knownEventNames.contains(event.name) ? event.name : "an unknown event"
+        log.info("Received \(name, privacy: .public)")
         store.prune(keepingAlive: Self.isAlive)
         guard let directory else { return }
         do {
