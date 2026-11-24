@@ -4,7 +4,9 @@ import Testing
 
 // The event orders of `docs/spikes/claude-hook.md`, replayed with the times
 // the spike gives, in seconds from the typed prompt. Each test asserts the
-// state at the moments the spike names.
+// state at the moments the spike names. A stopped turn reads as working
+// until the finish delay after its Stop has passed, so those moments are
+// written against the delay, and a test also holds just before it ends.
 
 private let typed = ["prompt": "Made-up prompt: add a field to the Acme form"]
 private let woken = ["prompt": "<task-notification>made-up</task-notification>"]
@@ -12,7 +14,11 @@ private var internalAgent: [String: Any] {
     HookLine.subagent("")
 }
 
-@Test func `a plain turn: working, then finished two seconds after its Stop`() throws {
+private let delay = AgentSession.finishDelay
+/// A moment just before a window ends.
+private let justBefore = 0.01
+
+@Test func `a plain turn: working, then finished once the finish delay after its Stop has passed`() throws {
     var replay = SessionReplay()
     try replay.send(-30, "SessionStart", ["source": "startup"])
     #expect(replay.state(at: -1) == .registered)
@@ -22,8 +28,8 @@ private var internalAgent: [String: Any] {
     try replay.send(1.5, "Stop", HookLine.tasks())
     #expect(replay.state(at: 1.5) == .working)
     try replay.send(2.5, "SubagentStop", internalAgent)
-    #expect(replay.state(at: 3.49) == .working)
-    #expect(replay.state(at: 3.5) == .finished)
+    #expect(replay.state(at: 1.5 + delay - justBefore) == .working)
+    #expect(replay.state(at: 1.5 + delay) == .finished)
     #expect(replay.session()?.lastActivity == HookLine.time(1.5))
 }
 
@@ -48,8 +54,8 @@ private var internalAgent: [String: Any] {
     #expect(replay.state(at: 18) == .waitingForYou)
 
     try replay.send(20, "Stop", HookLine.tasks())
-    #expect(replay.state(at: 21) == .working)
-    #expect(replay.state(at: 22) == .finished)
+    #expect(replay.state(at: 20 + delay - justBefore) == .working)
+    #expect(replay.state(at: 20 + delay) == .finished)
 }
 
 @Test func `a permission, denied: waiting for you until idle_prompt finishes the turn`() throws {
@@ -74,7 +80,7 @@ private var internalAgent: [String: Any] {
 
     try replay.send(3600, "UserPromptSubmit", typed)
     try replay.send(3601, "Stop", HookLine.tasks())
-    #expect(replay.state(at: 3603) == .finished)
+    #expect(replay.state(at: 3601 + delay) == .finished)
 }
 
 @Test func `case a: two background subagents keep the session working until the Stop that lists none`() throws {
@@ -98,8 +104,8 @@ private var internalAgent: [String: Any] {
     try replay.send(49, "UserPromptSubmit", woken)
     try replay.send(50, "Stop", HookLine.tasks())
     try replay.send(51, "SubagentStop", internalAgent)
-    #expect(replay.state(at: 51) == .working)
-    #expect(replay.state(at: 52) == .finished)
+    #expect(replay.state(at: 50 + delay - justBefore) == .working)
+    #expect(replay.state(at: 50 + delay) == .finished)
     #expect(replay.session()?.lastActivity == HookLine.time(50))
 }
 
@@ -110,6 +116,7 @@ private var internalAgent: [String: Any] {
     try replay.send(2, "SubagentStart", HookLine.subagent("general-purpose", id: "agent-b"))
     try replay.send(6, "Stop", HookLine.tasks("shell", "shell"))
     try replay.send(7, "SubagentStop", internalAgent)
+    #expect(replay.state(at: 6 + delay) == .finished)
     #expect(replay.state(at: 20) == .finished)
 
     for (shellEnd, agent) in [(33.0, "agent-a"), (44.0, "agent-b")] {
@@ -119,7 +126,8 @@ private var internalAgent: [String: Any] {
         try replay.send(shellEnd, "UserPromptSubmit", woken)
         #expect(replay.state(at: shellEnd + 1) == .working)
         try replay.send(shellEnd + 2, "Stop", agent == "agent-a" ? HookLine.tasks("shell") : HookLine.tasks())
-        #expect(replay.state(at: shellEnd + 4) == .finished)
+        #expect(replay.state(at: shellEnd + 2 + delay - justBefore) == .working)
+        #expect(replay.state(at: shellEnd + 2 + delay) == .finished)
     }
 }
 
@@ -134,8 +142,8 @@ private var internalAgent: [String: Any] {
     try replay.send(24, "PostToolUse", ["tool_name": "Agent", "tool_response": ["status": "completed"]])
     try replay.send(25, "Stop", HookLine.tasks())
     try replay.send(26, "SubagentStop", internalAgent)
-    #expect(replay.state(at: 26) == .working)
-    #expect(replay.state(at: 27) == .finished)
+    #expect(replay.state(at: 25 + delay - justBefore) == .working)
+    #expect(replay.state(at: 25 + delay) == .finished)
 }
 
 @Test func `case c: exit while a background subagent works makes the session gone, and prune drops it`() throws {
@@ -165,20 +173,24 @@ func `the end: SessionEnd from exit or a closed tab makes a session gone`(reason
     #expect(replay.state(at: 7) == .gone)
 }
 
-@Test func `two subagents that finish close together do not make the state flicker`() throws {
+/// The spike saw the other subagent's turn start "two seconds later", in a log
+/// that counts whole seconds, so the gap may be anything below three.
+@Test(arguments: [1.0, 2.0, 2.5, 2.9])
+func `two subagents that finish close together do not make the state flicker`(gap: TimeInterval) throws {
     var replay = SessionReplay()
     try replay.send(0, "UserPromptSubmit", typed)
     try replay.send(3, "Stop", HookLine.tasks("subagent", "subagent"))
     try replay.send(40, "UserPromptSubmit", woken)
     try replay.send(41, "Stop", HookLine.tasks())
-    #expect(replay.state(at: 42.9) == .working)
+    for moment in stride(from: 41, through: 41 + gap, by: 0.1) {
+        #expect(replay.state(at: moment) == .working, "\(moment)")
+    }
 
-    // The other subagent wakes the main thread just under two seconds after the Stop with an empty list.
-    try replay.send(42.9, "UserPromptSubmit", woken)
-    #expect(replay.state(at: 43.5) == .working)
-    try replay.send(44, "Stop", HookLine.tasks())
-    #expect(replay.state(at: 45.9) == .working)
-    #expect(replay.state(at: 46) == .finished)
+    try replay.send(41 + gap, "UserPromptSubmit", woken)
+    #expect(replay.state(at: 41 + gap) == .working)
+    try replay.send(42 + gap, "Stop", HookLine.tasks())
+    #expect(replay.state(at: 42 + gap + delay - justBefore) == .working)
+    #expect(replay.state(at: 42 + gap + delay) == .finished)
 }
 
 @Test func `a Stop inside the window of an earlier Stop starts the window again`() throws {
@@ -187,8 +199,9 @@ func `the end: SessionEnd from exit or a closed tab makes a session gone`(reason
     try replay.send(1, "Stop", HookLine.tasks())
     try replay.send(2, "Stop", HookLine.tasks())
 
-    #expect(replay.state(at: 3.5) == .working)
-    #expect(replay.state(at: 4) == .finished)
+    #expect(replay.state(at: 1 + delay) == .working)
+    #expect(replay.state(at: 2 + delay - justBefore) == .working)
+    #expect(replay.state(at: 2 + delay) == .finished)
 }
 
 @Test func `a Stop that lists a subagent inside the window of an earlier Stop keeps the session working`() throws {
@@ -204,9 +217,9 @@ func `the end: SessionEnd from exit or a closed tab makes a session gone`(reason
     var replay = SessionReplay()
     try replay.send(0, "UserPromptSubmit", typed)
     try replay.send(1, "Stop", HookLine.tasks())
-    try replay.send(2, "Notification", ["notification_type": "idle_prompt"])
+    try replay.send(1 + delay / 2, "Notification", ["notification_type": "idle_prompt"])
 
-    #expect(replay.state(at: 2.5) == .working)
-    #expect(replay.state(at: 3) == .finished)
+    #expect(replay.state(at: 1 + delay - justBefore) == .working)
+    #expect(replay.state(at: 1 + delay) == .finished)
     #expect(replay.session()?.lastActivity == HookLine.time(1))
 }

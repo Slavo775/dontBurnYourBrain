@@ -128,9 +128,10 @@ func `auth_success and other notifications change nothing, not even the last act
     try replay.send(5, "Stop", HookLine.tasks())
     try replay.send(6, "SubagentStop", HookLine.subagent("Explore"))
 
+    // The subagent's event does not move the end of the Stop's window.
     #expect(replay.session()?.lastActivity == HookLine.time(6))
-    #expect(replay.state(at: 6.9) == .working)
-    #expect(replay.state(at: 7) == .finished)
+    #expect(replay.state(at: 5 + AgentSession.finishDelay - 0.01) == .working)
+    #expect(replay.state(at: 5 + AgentSession.finishDelay) == .finished)
 }
 
 @Test func `events the app does not use change nothing, even for a session it has not seen`() throws {
@@ -261,6 +262,52 @@ func `any other event the app uses adds a session it has not seen`(
 
     replay.store.prune { $0.processID == 30102 }
     #expect(replay.store.sessions.map(\.id) == [HookLine.globex])
+}
+
+@Test(arguments: [
+    ("w0t1p0:\(HookLine.acmeTab)", HookLine.acmeTab),
+    ("w12t3p1:aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"),
+    ("w0t1p0", nil),
+    (HookLine.acmeTab, nil),
+    ("", nil),
+    ("w0t1p0:", nil),
+    ("w0t1p0:made-up-tab", nil),
+    ("w0t1p0:\(HookLine.acmeTab):made-up", nil),
+] as [(String, String?)])
+func `the tab ID is the UUID after the colon in ITERM_SESSION_ID, and nothing else is one`(
+    value: String,
+    tabID: String?,
+) throws {
+    var replay = SessionReplay()
+    let environment = ["__CFBundleIdentifier": "com.googlecode.iterm2", "ITERM_SESSION_ID": value]
+    try replay.send(0, "SessionStart", ["env": environment])
+
+    #expect(replay.session()?.tabID == tabID)
+}
+
+@Test func `a SessionEnd from another claude process leaves the session as it is, and its own ends it`() throws {
+    var replay = SessionReplay()
+    try replay.send(0, "UserPromptSubmit")
+    // The session is resumed in a second tab while its first tab stays open.
+    let secondTab: [String: Any] = [
+        "claude_pid": 31007, "tty": "ttys011", "env": ["__CFBundleIdentifier": "com.apple.Terminal"],
+    ]
+    try replay.send(10, "SessionStart", secondTab.merging(["source": "resume"]) { $1 })
+    try replay.send(11, "UserPromptSubmit", secondTab)
+    try replay.send(12, "Stop", secondTab.merging(HookLine.tasks()) { $1 })
+    let before = try #require(replay.session())
+
+    // The first tab closes.
+    try replay.send(13, "SessionEnd", ["reason": "other"])
+    #expect(replay.session() == before)
+    #expect(replay.state(at: 13) == .working)
+    #expect(replay.state(at: 12 + AgentSession.finishDelay) == .finished)
+    #expect(before.processID == 31007)
+    #expect(before.tty == "ttys011")
+    #expect(before.lastActivity == HookLine.time(12))
+
+    try replay.send(60, "SessionEnd", secondTab.merging(["reason": "prompt_input_exit"]) { $1 })
+    #expect(replay.state(at: 60) == .gone)
 }
 
 @Test func `a profile is shown by its folder's name, and the default one as .claude`() throws {

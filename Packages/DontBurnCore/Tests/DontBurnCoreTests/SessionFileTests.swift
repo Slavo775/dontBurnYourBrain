@@ -27,8 +27,9 @@ private func sessionsFile(in folder: TemporaryFolder) -> URL {
         let loaded = SessionStore.load(in: temporary.url)
 
         #expect(loaded == store)
-        #expect(loaded.sessions.map { $0.state(at: HookLine.time(2)) } == [.working, .waitingForYou])
-        #expect(loaded.sessions.map { $0.state(at: HookLine.time(3.375)) } == [.finished, .waitingForYou])
+        let windowEnd = 1.375 + AgentSession.finishDelay
+        #expect(loaded.sessions.map { $0.state(at: HookLine.time(windowEnd - 0.125)) } == [.working, .waitingForYou])
+        #expect(loaded.sessions.map { $0.state(at: HookLine.time(windowEnd)) } == [.finished, .waitingForYou])
         #expect(loaded.sessions.first?.lastActivity == HookLine.time(1.375))
     }
 }
