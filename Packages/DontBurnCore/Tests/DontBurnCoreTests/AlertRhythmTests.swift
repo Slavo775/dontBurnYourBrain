@@ -161,10 +161,52 @@ struct AlertPlanInARhythmTests {
         for minute in [1.0, 10, 24.99] {
             #expect(try plan(desk, at: at(minute)) == first)
         }
-        // Whether the next one waits until this break is taken or skipped is open here.
-        #expect(try plan(desk, at: at(25)).filter { $0.kind == .focusEnd && $0.date == at(25) }.isEmpty)
-        #expect(try plan(desk, at: at(27)).count { $0.kind == .focusEnd } <= 1)
         #expect(try plan(desk, at: at(31)).filter { $0.kind == .focusEnd }.map(\.date) == [at(55)])
+    }
+
+    /// Adding the next focus end's notification takes the one just shown off the screen.
+    @Test func `while a break is due no focus end is planned, and it returns once the break is skipped`() throws {
+        let desk = try runningOn25(minutes: 120)
+        for minute in [25.0, 25.01, 27, 29.99] {
+            #expect(try plan(desk, at: at(minute)).map(\.kind) == [.blockEnd])
+        }
+        for minute in [30.0, 31, 54.99] {
+            #expect(try plan(desk, at: at(minute)) == [
+                PlannedAlert(kind: .blockEnd, date: at(120), workspace: "Acme"),
+                PlannedAlert(kind: .focusEnd, date: at(55), workspace: "Acme", breakMinutes: 5),
+            ])
+        }
+        #expect(try plan(desk, at: at(55)).map(\.kind) == [.blockEnd])
+    }
+
+    @Test func `a due break taken brings the next focus end back at once`() throws {
+        let desk = try runningOn25(minutes: 120)
+        #expect(try plan(desk, at: at(27)).map(\.kind) == [.blockEnd])
+        try desk.engine.startBreak(minutes: 5, at: at(27))
+        #expect(try plan(desk, at: at(27)).filter { $0.kind == .focusEnd }.map(\.date) == [at(57)])
+
+        // Also when it is ended at once.
+        try desk.engine.endBreak(at: at(27.1))
+        #expect(try plan(desk, at: at(27.1)).filter { $0.kind == .focusEnd }.map(\.date) == [at(52.1)])
+    }
+
+    @Test func `neither +15 nor a pause while a break is due plans a focus end`() throws {
+        let desk = try runningOn25(minutes: 60)
+        try desk.engine.extend(by: 15, at: at(26))
+        #expect(try plan(desk, at: at(26)).map(\.date) == [at(75)])
+
+        try desk.engine.pause(at: at(27))
+        #expect(try plan(desk, at: at(35)).isEmpty)
+        try desk.engine.resume(at: at(40))
+        // Three minutes of the break's window are left.
+        #expect(try plan(desk, at: at(42.9)).map(\.date) == [at(88)])
+        #expect(try plan(desk, at: at(43)).map(\.date) == [at(88), at(68)])
+    }
+
+    @Test func `while a break that waits is due only the block's end is planned`() throws {
+        let desk = try runningOnWaiting(minutes: 120)
+        #expect(try plan(desk, at: at(26)).map(\.kind) == [.blockEnd])
+        #expect(try plan(desk, at: at(30)).map(\.date) == [at(120), at(55)])
     }
 
     @Test func `a long break's focus end names its own minutes`() throws {
