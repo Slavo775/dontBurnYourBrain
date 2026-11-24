@@ -34,19 +34,20 @@ private func neverSynced(_ configuration: ModelConfiguration) -> Bool {
 }
 
 @Test func `the local store on disk is Local.store beside the synced store, and is never synced`() throws {
-    let temporary = try TemporaryFolder()
-    let directory = temporary.url.appending(path: "Store", directoryHint: .isDirectory)
+    try withTemporaryFolder { temporary in
+        let directory = temporary.url.appending(path: "Store", directoryHint: .isDirectory)
 
-    let local = try ModelStore.localOnDisk(in: directory)
-    let synced = try ModelStore.onDisk(in: directory)
+        let local = try ModelStore.localOnDisk(in: directory)
+        let synced = try ModelStore.onDisk(in: directory)
 
-    let localURL = try #require(local.configurations.first?.url)
-    let syncedURL = try #require(synced.configurations.first?.url)
-    #expect(localURL.lastPathComponent == "Local.store")
-    #expect(localURL.deletingLastPathComponent() == syncedURL.deletingLastPathComponent())
-    #expect(try neverSynced(#require(local.configurations.first)))
-    #expect(!(local.configurations.first?.isStoredInMemoryOnly ?? true))
-    #expect(FileManager.default.fileExists(atPath: temporary.path("Store/Local.store")))
+        let localURL = try #require(local.configurations.first?.url)
+        let syncedURL = try #require(synced.configurations.first?.url)
+        #expect(localURL.lastPathComponent == "Local.store")
+        #expect(localURL.deletingLastPathComponent() == syncedURL.deletingLastPathComponent())
+        #expect(try neverSynced(#require(local.configurations.first)))
+        #expect(!(local.configurations.first?.isStoredInMemoryOnly ?? true))
+        #expect(FileManager.default.fileExists(atPath: temporary.path("Store/Local.store")))
+    }
 }
 
 @Test func `separate local stores in memory share nothing`() throws {
@@ -73,49 +74,50 @@ private func neverSynced(_ configuration: ModelConfiguration) -> Bool {
 // MARK: - After a restart
 
 @Test func `projects and their folders survive closing and reopening both stores on disk`() throws {
-    let temporary = try TemporaryFolder()
-    let directory = temporary.url.appending(path: "Store", directoryHint: .isDirectory)
-    let web = try temporary.make("code/acme-web")
-    let mobile = try temporary.make("code/acme-web/mobile")
+    try withTemporaryFolder { temporary in
+        let directory = temporary.url.appending(path: "Store", directoryHint: .isDirectory)
+        let web = try temporary.make("code/acme-web")
+        let mobile = try temporary.make("code/acme-web/mobile")
 
-    do {
+        do {
+            let synced = try ModelContext(ModelStore.onDisk(in: directory))
+            let local = try ModelContext(ModelStore.localOnDisk(in: directory))
+            let acme = Workspace(name: "Acme", color: .teal)
+            synced.insert(acme)
+            let roster = ProjectRoster(context: synced)
+            let webShop = try roster.create(baseName: "New project", in: acme)
+            webShop.name = "Web shop"
+            let mobileApp = try roster.create(baseName: "New project", in: acme)
+            mobileApp.name = "Mobile app"
+            mobileApp.isTimeTracked = false
+            try synced.save()
+            try roster.create(baseName: "Checkout", in: acme)
+            try roster.move(in: acme, fromOffsets: [2], toOffset: 0)
+            try roster.archive(webShop)
+            try roster.archive(mobileApp)
+            try roster.restore(mobileApp)
+            let projects = try synced.fetch(FetchDescriptor<Project>())
+            try ProjectFolders(context: local).add(web, to: webShop, among: projects)
+            try ProjectFolders(context: local).add(mobile, to: mobileApp, among: projects)
+        }
+
         let synced = try ModelContext(ModelStore.onDisk(in: directory))
         let local = try ModelContext(ModelStore.localOnDisk(in: directory))
-        let acme = Workspace(name: "Acme", color: .teal)
-        synced.insert(acme)
-        let roster = ProjectRoster(context: synced)
-        let webShop = try roster.create(baseName: "New project", in: acme)
-        webShop.name = "Web shop"
-        let mobileApp = try roster.create(baseName: "New project", in: acme)
-        mobileApp.name = "Mobile app"
-        mobileApp.isTimeTracked = false
-        try synced.save()
-        try roster.create(baseName: "Checkout", in: acme)
-        try roster.move(in: acme, fromOffsets: [2], toOffset: 0)
-        try roster.archive(webShop)
-        try roster.archive(mobileApp)
-        try roster.restore(mobileApp)
+        let acme = try #require(synced.fetch(FetchDescriptor<Workspace>()).first)
         let projects = try synced.fetch(FetchDescriptor<Project>())
-        try ProjectFolders(context: local).add(web, to: webShop, among: projects)
-        try ProjectFolders(context: local).add(mobile, to: mobileApp, among: projects)
-    }
+        let active = ProjectRoster.active(projects, in: acme)
+        #expect(active.map(\.name) == ["Checkout", "Mobile app"])
+        #expect(active.map(\.sortOrder) == [0, 1])
+        #expect(active.map(\.isTimeTracked) == [true, false])
+        #expect(ProjectRoster.archived(projects, in: acme).map(\.name) == ["Web shop"])
 
-    let synced = try ModelContext(ModelStore.onDisk(in: directory))
-    let local = try ModelContext(ModelStore.localOnDisk(in: directory))
-    let acme = try #require(synced.fetch(FetchDescriptor<Workspace>()).first)
-    let projects = try synced.fetch(FetchDescriptor<Project>())
-    let active = ProjectRoster.active(projects, in: acme)
-    #expect(active.map(\.name) == ["Checkout", "Mobile app"])
-    #expect(active.map(\.sortOrder) == [0, 1])
-    #expect(active.map(\.isTimeTracked) == [true, false])
-    #expect(ProjectRoster.archived(projects, in: acme).map(\.name) == ["Web shop"])
-
-    let folders = ProjectFolders(context: local)
-    #expect(try local.fetchCount(FetchDescriptor<ProjectFolder>()) == 2)
-    #expect(try folders.project(holding: mobile + "/ios", among: projects)?.name == "Mobile app")
-    #expect(try folders.project(holding: web + "/src", among: projects) == nil)
-    #expect(throws: ProjectFolderError.taken(byProjectNamed: "Web shop")) {
-        try folders.add(web, to: active[1], among: projects)
+        let folders = ProjectFolders(context: local)
+        #expect(try local.fetchCount(FetchDescriptor<ProjectFolder>()) == 2)
+        #expect(try folders.project(holding: mobile + "/ios", among: projects)?.name == "Mobile app")
+        #expect(try folders.project(holding: web + "/src", among: projects) == nil)
+        #expect(throws: ProjectFolderError.taken(byProjectNamed: "Web shop")) {
+            try folders.add(web, to: active[1], among: projects)
+        }
     }
 }
 
@@ -193,25 +195,27 @@ private func storeBytes(_ name: String, in directory: String) throws -> [Data] {
 }
 
 @Test func `with the sample data and its folders seeded, no text in the synced store is a path`() throws {
-    let temporary = try TemporaryFolder()
-    let directory = temporary.path("Store")
-    let root = temporary.url.appending(path: "sample", directoryHint: .isDirectory)
-    do {
-        let synced = try ModelContext(ModelStore.onDisk(in: URL(filePath: directory, directoryHint: .isDirectory)))
-        let local = try ModelContext(ModelStore.localOnDisk(in: URL(filePath: directory, directoryHint: .isDirectory)))
-        try SampleData.seed(into: synced, now: sampleNow)
-        try SampleData.seedFolders(into: local, projects: synced, root: root)
-        #expect(try local.fetchCount(FetchDescriptor<ProjectFolder>()) == 5)
+    try withTemporaryFolder { temporary in
+        let directory = temporary.path("Store")
+        let directoryURL = URL(filePath: directory, directoryHint: .isDirectory)
+        let root = temporary.url.appending(path: "sample", directoryHint: .isDirectory)
+        do {
+            let synced = try ModelContext(ModelStore.onDisk(in: directoryURL))
+            let local = try ModelContext(ModelStore.localOnDisk(in: directoryURL))
+            try SampleData.seed(into: synced, now: sampleNow)
+            try SampleData.seedFolders(into: local, projects: synced, root: root)
+            #expect(try local.fetchCount(FetchDescriptor<ProjectFolder>()) == 5)
+        }
+        let marker = Data((temporary.path as NSString).lastPathComponent.utf8)
+
+        let syncedTexts = try storedTexts(at: (directory as NSString).appendingPathComponent(ModelStore.fileName))
+        #expect(syncedTexts.contains("Web shop"))
+        #expect(syncedTexts.filter { $0.hasPrefix("/") || $0.hasPrefix("~") } == [])
+        #expect(try storeBytes(ModelStore.fileName, in: directory).allSatisfy { $0.range(of: marker) == nil })
+
+        // The same reading finds the paths where they belong, in the local store.
+        let localTexts = try storedTexts(at: (directory as NSString).appendingPathComponent(ModelStore.localFileName))
+        #expect(localTexts.count { $0.hasPrefix("/private/var/") } == 5)
+        #expect(try storeBytes(ModelStore.localFileName, in: directory).contains { $0.range(of: marker) != nil })
     }
-    let marker = Data((temporary.path as NSString).lastPathComponent.utf8)
-
-    let syncedTexts = try storedTexts(at: (directory as NSString).appendingPathComponent(ModelStore.fileName))
-    #expect(syncedTexts.contains("Web shop"))
-    #expect(syncedTexts.filter { $0.hasPrefix("/") || $0.hasPrefix("~") } == [])
-    #expect(try storeBytes(ModelStore.fileName, in: directory).allSatisfy { $0.range(of: marker) == nil })
-
-    // The same reading finds the paths where they belong, in the local store.
-    let localTexts = try storedTexts(at: (directory as NSString).appendingPathComponent(ModelStore.localFileName))
-    #expect(localTexts.count { $0.hasPrefix("/private/var/") } == 5)
-    #expect(try storeBytes(ModelStore.localFileName, in: directory).contains { $0.range(of: marker) != nil })
 }

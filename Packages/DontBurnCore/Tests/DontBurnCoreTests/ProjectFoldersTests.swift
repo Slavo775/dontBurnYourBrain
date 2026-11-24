@@ -130,166 +130,213 @@ private struct Store {
 }
 
 @Test func `the store resolves the path first, so the var spelling finds a private var folder`() throws {
-    let temporary = try TemporaryFolder()
-    let desk = Sample()
-    let store = try Store()
-    let web = try temporary.make("code/acme-web")
-    let mobile = try temporary.make("code/acme-web/mobile")
-    try store.folders.add(web, to: desk.webShop, among: desk.projects)
-    try store.folders.add(mobile, to: desk.mobileApp, among: desk.projects)
+    try withTemporaryFolder { temporary in
+        let desk = Sample()
+        let store = try Store()
+        let web = try temporary.make("code/acme-web")
+        let mobile = try temporary.make("code/acme-web/mobile")
+        try store.folders.add(web, to: desk.webShop, among: desk.projects)
+        try store.folders.add(mobile, to: desk.mobileApp, among: desk.projects)
 
-    #expect(try store.all().allSatisfy { $0.path.hasPrefix("/private/var/") })
-    #expect(try store.folders.project(holding: web + "/src", among: desk.projects)?.name == "Web shop")
-    #expect(try store.folders.project(holding: mobile + "/ios/not-made", among: desk.projects)?.name == "Mobile app")
-    #expect(try store.folders.project(holding: "/private" + web, among: desk.projects)?.name == "Web shop")
-    #expect(try store.folders.project(holding: temporary.path("code"), among: desk.projects) == nil)
+        #expect(try store.all().allSatisfy { $0.path.hasPrefix("/private/var/") })
+        #expect(try store.folders.project(holding: web + "/src", among: desk.projects)?.name == "Web shop")
+        #expect(try store.folders.project(holding: mobile + "/ios/not-made", among: desk.projects)?.name
+            == "Mobile app")
+        #expect(try store.folders.project(holding: "/private" + web, among: desk.projects)?.name == "Web shop")
+        #expect(try store.folders.project(holding: temporary.path("code"), among: desk.projects) == nil)
+    }
 }
 
 @Test func `the store finds the project through a symlink to its folder`() throws {
-    let temporary = try TemporaryFolder()
+    try withTemporaryFolder { temporary in
+        let desk = Sample()
+        let store = try Store()
+        let web = try temporary.make("code/acme-web")
+        let link = temporary.path("acme-link")
+        try FileManager.default.createSymbolicLink(atPath: link, withDestinationPath: web)
+        try store.folders.add(web, to: desk.webShop, among: desk.projects)
+
+        #expect(try store.folders.project(holding: link + "/src", among: desk.projects)?.name == "Web shop")
+    }
+}
+
+// MARK: - Paths that are not absolute
+
+/// Paths that name no one folder. Resolved, they would read as `/code/acme-web`,
+/// `/~/code/globex-data` and `/`.
+private let notAbsolute = ["code/acme-web", "~/code/globex-data", ""]
+
+@Test func `a relative or empty path belongs to no project, even where its resolved form would`() throws {
     let desk = Sample()
     let store = try Store()
-    let web = try temporary.make("code/acme-web")
-    let link = temporary.path("acme-link")
-    try FileManager.default.createSymbolicLink(atPath: link, withDestinationPath: web)
-    try store.folders.add(web, to: desk.webShop, among: desk.projects)
+    try store.folders.add("/", to: desk.sideProject, among: desk.projects)
+    try store.folders.add("/code/acme-web", to: desk.webShop, among: desk.projects)
+    #expect(try store.folders.project(holding: "/code/acme-web", among: desk.projects)?.name == "Web shop")
+    #expect(try store.folders.project(holding: "/", among: desk.projects)?.name == "Side project")
 
-    #expect(try store.folders.project(holding: link + "/src", among: desk.projects)?.name == "Web shop")
+    for path in notAbsolute + ["code/acme-web/src", "."] {
+        #expect(try store.folders.project(holding: path, among: desk.projects) == nil, "\(path)")
+    }
+}
+
+@Test func `adding a relative or empty path is refused, and nothing is stored`() throws {
+    let desk = Sample()
+    let store = try Store()
+    try store.folders.add("/code/acme-web", to: desk.webShop, among: desk.projects)
+
+    for path in notAbsolute {
+        #expect(throws: ProjectFolderError.notAbsolute, "\(path)") {
+            try store.folders.add(path, to: desk.mobileApp, among: desk.projects)
+        }
+        #expect(throws: ProjectFolderError.notAbsolute, "\(path)") {
+            try store.folders.add(path, to: desk.webShop, among: desk.projects)
+        }
+    }
+    #expect(try store.all().map(\.path) == [FolderPath.resolved("/code/acme-web")])
 }
 
 // MARK: - One project per folder
 
 @Test func `a folder is stored resolved and named by its project's identifier`() throws {
-    let temporary = try TemporaryFolder()
-    let desk = Sample()
-    let store = try Store()
-    let web = try temporary.make("code/acme-web")
+    try withTemporaryFolder { temporary in
+        let desk = Sample()
+        let store = try Store()
+        let web = try temporary.make("code/acme-web")
 
-    try store.folders.add(web + "/", to: desk.webShop, among: desk.projects)
+        try store.folders.add(web + "/", to: desk.webShop, among: desk.projects)
 
-    let stored = try store.all()
-    #expect(stored.map(\.path) == [FolderPath.resolved(web)])
-    #expect(stored.map(\.projectID) == [desk.webShop.id])
+        let stored = try store.all()
+        #expect(stored.map(\.path) == [FolderPath.resolved(web)])
+        #expect(stored.map(\.projectID) == [desk.webShop.id])
+    }
 }
 
 @Test func `a folder taken by another project is refused with that project's name`() throws {
-    let temporary = try TemporaryFolder()
-    let desk = Sample()
-    let store = try Store()
-    let web = try temporary.make("code/acme-web")
-    try store.folders.add(web, to: desk.webShop, among: desk.projects)
+    try withTemporaryFolder { temporary in
+        let desk = Sample()
+        let store = try Store()
+        let web = try temporary.make("code/acme-web")
+        try store.folders.add(web, to: desk.webShop, among: desk.projects)
 
-    #expect(throws: ProjectFolderError.taken(byProjectNamed: "Web shop")) {
-        try store.folders.add(web, to: desk.mobileApp, among: desk.projects)
+        #expect(throws: ProjectFolderError.taken(byProjectNamed: "Web shop")) {
+            try store.folders.add(web, to: desk.mobileApp, among: desk.projects)
+        }
+        #expect(throws: ProjectFolderError.taken(byProjectNamed: "Web shop")) {
+            try store.folders.add(web, to: desk.dataPlatform, among: desk.projects)
+        }
+        #expect(try store.all().map(\.projectID) == [desk.webShop.id])
     }
-    #expect(throws: ProjectFolderError.taken(byProjectNamed: "Web shop")) {
-        try store.folders.add(web, to: desk.dataPlatform, among: desk.projects)
-    }
-    #expect(try store.all().map(\.projectID) == [desk.webShop.id])
 }
 
 @Test func `a folder stays taken while its project or its workspace is archived`() throws {
-    let temporary = try TemporaryFolder()
-    let desk = Sample()
-    let store = try Store()
-    let web = try temporary.make("code/acme-web")
-    let data = try temporary.make("code/globex-data")
-    try store.folders.add(web, to: desk.webShop, among: desk.projects)
-    try store.folders.add(data, to: desk.dataPlatform, among: desk.projects)
-    desk.webShop.isArchived = true
-    desk.globex.isArchived = true
+    try withTemporaryFolder { temporary in
+        let desk = Sample()
+        let store = try Store()
+        let web = try temporary.make("code/acme-web")
+        let data = try temporary.make("code/globex-data")
+        try store.folders.add(web, to: desk.webShop, among: desk.projects)
+        try store.folders.add(data, to: desk.dataPlatform, among: desk.projects)
+        desk.webShop.isArchived = true
+        desk.globex.isArchived = true
 
-    #expect(throws: ProjectFolderError.taken(byProjectNamed: "Web shop")) {
-        try store.folders.add(web, to: desk.mobileApp, among: desk.projects)
+        #expect(throws: ProjectFolderError.taken(byProjectNamed: "Web shop")) {
+            try store.folders.add(web, to: desk.mobileApp, among: desk.projects)
+        }
+        #expect(throws: ProjectFolderError.taken(byProjectNamed: "Data platform")) {
+            try store.folders.add(data, to: desk.sideProject, among: desk.projects)
+        }
+        #expect(try store.all().count == 2)
     }
-    #expect(throws: ProjectFolderError.taken(byProjectNamed: "Data platform")) {
-        try store.folders.add(data, to: desk.sideProject, among: desk.projects)
-    }
-    #expect(try store.all().count == 2)
 }
 
 @Test func `the var spelling of a taken private var folder is refused too`() throws {
-    let temporary = try TemporaryFolder()
-    let desk = Sample()
-    let store = try Store()
-    let web = try temporary.make("code/acme-web")
-    try store.folders.add("/private" + web, to: desk.webShop, among: desk.projects)
+    try withTemporaryFolder { temporary in
+        let desk = Sample()
+        let store = try Store()
+        let web = try temporary.make("code/acme-web")
+        try store.folders.add("/private" + web, to: desk.webShop, among: desk.projects)
 
-    #expect(throws: ProjectFolderError.taken(byProjectNamed: "Web shop")) {
-        try store.folders.add(web, to: desk.mobileApp, among: desk.projects)
-    }
-    #expect(throws: ProjectFolderError.taken(byProjectNamed: "Web shop")) {
-        try store.folders.add(web + "/./", to: desk.mobileApp, among: desk.projects)
+        #expect(throws: ProjectFolderError.taken(byProjectNamed: "Web shop")) {
+            try store.folders.add(web, to: desk.mobileApp, among: desk.projects)
+        }
+        #expect(throws: ProjectFolderError.taken(byProjectNamed: "Web shop")) {
+            try store.folders.add(web + "/./", to: desk.mobileApp, among: desk.projects)
+        }
     }
 }
 
 @Test func `a symlink to a taken folder is refused`() throws {
-    let temporary = try TemporaryFolder()
-    let desk = Sample()
-    let store = try Store()
-    let web = try temporary.make("code/acme-web")
-    let link = temporary.path("acme-link")
-    try FileManager.default.createSymbolicLink(atPath: link, withDestinationPath: web)
-    try store.folders.add(web, to: desk.webShop, among: desk.projects)
+    try withTemporaryFolder { temporary in
+        let desk = Sample()
+        let store = try Store()
+        let web = try temporary.make("code/acme-web")
+        let link = temporary.path("acme-link")
+        try FileManager.default.createSymbolicLink(atPath: link, withDestinationPath: web)
+        try store.folders.add(web, to: desk.webShop, among: desk.projects)
 
-    #expect(throws: ProjectFolderError.taken(byProjectNamed: "Web shop")) {
-        try store.folders.add(link, to: desk.mobileApp, among: desk.projects)
+        #expect(throws: ProjectFolderError.taken(byProjectNamed: "Web shop")) {
+            try store.folders.add(link, to: desk.mobileApp, among: desk.projects)
+        }
     }
 }
 
 @Test func `adding a project's own folder again changes nothing`() throws {
-    let temporary = try TemporaryFolder()
-    let desk = Sample()
-    let store = try Store()
-    let web = try temporary.make("code/acme-web")
-    try store.folders.add(web, to: desk.webShop, among: desk.projects)
-    let first = try #require(store.all().first)
+    try withTemporaryFolder { temporary in
+        let desk = Sample()
+        let store = try Store()
+        let web = try temporary.make("code/acme-web")
+        try store.folders.add(web, to: desk.webShop, among: desk.projects)
+        let first = try #require(store.all().first)
 
-    try store.folders.add(web, to: desk.webShop, among: desk.projects)
-    try store.folders.add("/private" + web + "/", to: desk.webShop, among: desk.projects)
+        try store.folders.add(web, to: desk.webShop, among: desk.projects)
+        try store.folders.add("/private" + web + "/", to: desk.webShop, among: desk.projects)
 
-    #expect(try store.all().map(\.id) == [first.id])
+        #expect(try store.all().map(\.id) == [first.id])
+    }
 }
 
 @Test func `a folder inside another project's folder may be given to a project of its own`() throws {
-    let temporary = try TemporaryFolder()
-    let desk = Sample()
-    let store = try Store()
-    let web = try temporary.make("code/acme-web")
-    let mobile = try temporary.make("code/acme-web/mobile")
+    try withTemporaryFolder { temporary in
+        let desk = Sample()
+        let store = try Store()
+        let web = try temporary.make("code/acme-web")
+        let mobile = try temporary.make("code/acme-web/mobile")
 
-    try store.folders.add(web, to: desk.webShop, among: desk.projects)
-    try store.folders.add(mobile, to: desk.mobileApp, among: desk.projects)
+        try store.folders.add(web, to: desk.webShop, among: desk.projects)
+        try store.folders.add(mobile, to: desk.mobileApp, among: desk.projects)
 
-    #expect(try store.all().map(\.projectID) == [desk.webShop.id, desk.mobileApp.id])
+        #expect(try store.all().map(\.projectID) == [desk.webShop.id, desk.mobileApp.id])
+    }
 }
 
 @Test func `a removed folder belongs to no project and can be given to another`() throws {
-    let temporary = try TemporaryFolder()
-    let desk = Sample()
-    let store = try Store()
-    let web = try temporary.make("code/acme-web")
-    try store.folders.add(web, to: desk.webShop, among: desk.projects)
+    try withTemporaryFolder { temporary in
+        let desk = Sample()
+        let store = try Store()
+        let web = try temporary.make("code/acme-web")
+        try store.folders.add(web, to: desk.webShop, among: desk.projects)
 
-    try store.folders.remove(#require(store.all().first))
+        try store.folders.remove(#require(store.all().first))
 
-    #expect(try store.all().isEmpty)
-    #expect(try store.folders.project(holding: web, among: desk.projects) == nil)
-    try store.folders.add(web, to: desk.mobileApp, among: desk.projects)
-    #expect(try store.folders.project(holding: web, among: desk.projects)?.name == "Mobile app")
+        #expect(try store.all().isEmpty)
+        #expect(try store.folders.project(holding: web, among: desk.projects) == nil)
+        try store.folders.add(web, to: desk.mobileApp, among: desk.projects)
+        #expect(try store.folders.project(holding: web, among: desk.projects)?.name == "Mobile app")
+    }
 }
 
 @Test func `a folder whose project is gone no longer takes the folder`() throws {
-    let temporary = try TemporaryFolder()
-    let desk = Sample()
-    let store = try Store()
-    let web = try temporary.make("code/acme-web")
-    try store.folders.add(web, to: desk.webShop, among: desk.projects)
-    let without = desk.projects.filter { $0.id != desk.webShop.id }
+    try withTemporaryFolder { temporary in
+        let desk = Sample()
+        let store = try Store()
+        let web = try temporary.make("code/acme-web")
+        try store.folders.add(web, to: desk.webShop, among: desk.projects)
+        let without = desk.projects.filter { $0.id != desk.webShop.id }
 
-    try store.folders.add(web, to: desk.mobileApp, among: without)
+        try store.folders.add(web, to: desk.mobileApp, among: without)
 
-    #expect(try store.folders.project(holding: web, among: without)?.name == "Mobile app")
+        #expect(try store.folders.project(holding: web, among: without)?.name == "Mobile app")
+    }
 }
 
 @Test func `the holder is an exact match, never a parent folder`() {
@@ -301,59 +348,4 @@ private struct Store {
     #expect(ProjectFolders.holder(ofResolved: "/code/acme-web/mobile", folders: folders, projects: desk.projects)
         == nil)
     #expect(ProjectFolders.holder(ofResolved: "/code", folders: folders, projects: desk.projects) == nil)
-}
-
-// MARK: - The sample folders
-
-/// The sample set in memory with its folders below `root`, in a local store in memory.
-private func sampleFolders(root: URL) throws -> (projects: [Project], folders: [ProjectFolder]) {
-    let synced = try ModelContext(ModelStore.inMemory())
-    try SampleData.seed(into: synced, now: Date(timeIntervalSince1970: 1_768_466_490))
-    let local = try ModelContext(ModelStore.localInMemory())
-    try SampleData.seedFolders(into: local, projects: synced, root: root)
-    return try (synced.fetch(FetchDescriptor<Project>()), local.fetch(FetchDescriptor<ProjectFolder>()))
-}
-
-@Test func `every sample folder is made below the root it is given`() throws {
-    let temporary = try TemporaryFolder()
-    let root = FolderPath.resolved(temporary.path)
-
-    let (_, folders) = try sampleFolders(root: temporary.url)
-
-    #expect(folders.count == 5)
-    for folder in folders {
-        #expect(FolderPath.path(folder.path, isInside: root))
-        #expect(FileManager.default.fileExists(atPath: folder.path))
-    }
-}
-
-@Test func `the sample folders hold the nested pair, and Reading has none`() throws {
-    let temporary = try TemporaryFolder()
-    let root = FolderPath.resolved(temporary.path)
-
-    let (projects, folders) = try sampleFolders(root: temporary.url)
-
-    let names = Dictionary(uniqueKeysWithValues: projects.map { ($0.id, $0.name) })
-    let byProject = Dictionary(grouping: folders) { names[$0.projectID] ?? "?" }
-        .mapValues { $0.map { String($0.path.dropFirst(root.count)) }.sorted() }
-    #expect(byProject == [
-        "Web shop": ["/code/acme-web"],
-        "Mobile app": ["/code/acme-mobile", "/code/acme-web/mobile"],
-        "Data platform": ["/code/globex-data"],
-        "Side project": ["/code/side-project"],
-    ])
-    #expect(holding(root + "/code/acme-web/mobile/ios", folders, projects) == "Mobile app")
-    #expect(holding(root + "/code/acme-web/src", folders, projects) == "Web shop")
-}
-
-@Test func `seeding the sample folders twice adds nothing the second time`() throws {
-    let temporary = try TemporaryFolder()
-    let synced = try ModelContext(ModelStore.inMemory())
-    try SampleData.seed(into: synced, now: Date(timeIntervalSince1970: 1_768_466_490))
-    let local = try ModelContext(ModelStore.localInMemory())
-
-    try SampleData.seedFolders(into: local, projects: synced, root: temporary.url)
-    try SampleData.seedFolders(into: local, projects: synced, root: temporary.url)
-
-    #expect(try local.fetchCount(FetchDescriptor<ProjectFolder>()) == 5)
 }
