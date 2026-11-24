@@ -243,8 +243,8 @@ Claude Code also exports `CLAUDE_CODE_SESSION_ID`, equal to `session_id`, and `C
 
 **Gaps the app has to live with:**
 
-- **A turn can end without an event.** After a denied permission or an Esc, no `Stop` comes. The app would keep showing "waiting" or "working" until the next event. Options for phase 3: a `PostToolUse` hook on every tool, to leave "waiting" after an answer; the transcript file's modification time, read for its date only; or a timeout.
-- **Flicker** when two subagents finish close together. A debounce of about two seconds.
+- **A turn can end without an event.** After a denied permission or an Esc, no `Stop` comes. The app would keep showing "waiting" or "working" until the next event. Options for phase 3: a `PostToolUse` hook on every tool, to leave "waiting" after an answer; the transcript file's modification time, read for its date only; or a timeout. *24 Nov 2026:* card #47 took none of these. The `idle_prompt` notification ends the turn, and after an Esc the session stays "working" until its next event ([phase-0.md, question 1](phase-0.md#open-questions-for-the-owner)).
+- **Flicker** when two subagents finish close together. A debounce of about two seconds. *24 Nov 2026:* card #47 uses 3 s, because the log counts whole seconds.
 - **ttys are reused**, so the tty alone doesn't name a tab.
 
 **What went wrong during the spike:**

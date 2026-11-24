@@ -18,7 +18,7 @@ Card #8. A summary across the three phase 0 spikes. The steps, the raw results a
 
 ### What does not work
 
-- After a denied permission or an Esc, no `Stop` comes, so a session would stay "waiting" or "working". After an Esc nothing comes at all. After a denial only an `idle_prompt` comes, about three minutes after the prompt, and the app does not take it as the end of a turn ([card #5](claude-hook.md#event-orders-for-the-basic-cases)).
+- After a denied permission or an Esc, no `Stop` comes, so a session would stay "waiting" or "working". After an Esc nothing comes at all. After a denial only an `idle_prompt` comes, about three minutes after the prompt ([card #5](claude-hook.md#event-orders-for-the-basic-cases)). Since card #47 the app takes it as the end of the turn, and after an Esc a session stays "working" until its next event (question 1 below).
 - In VS Code and Cursor, a folder that is not exactly a window's folder, such as a subfolder, opens a new window instead of focusing one. Reasoned from VS Code's source, not measured ([card #7](editor-focus.md#the-cards-cases)).
 - A remote or container session in an editor names neither a folder on the Mac nor an editor, so it cannot be focused. Reasoned ([card #7](editor-focus.md#the-cards-cases)).
 - With VS Code's `window.openFoldersInNewWindow` set to `"off"`, a folder no window has replaces the folder of the user's last active window. Reasoned. `window.nativeTabs` was not tried ([card #7](editor-focus.md#the-focus-command)).
@@ -37,8 +37,8 @@ Card #8. A summary across the three phase 0 spikes. The steps, the raw results a
 
 **With a workaround:**
 
-- A turn that ends without a `Stop` needs a fallback. Which one is an open question below.
-- Two subagents that finish close together make the state flicker. A debounce of about two seconds covers it ([card #5](claude-hook.md#subagents-when-the-main-thread-stops-before-its-subagents)).
+- A turn that ends without a `Stop` needs a fallback. Card #47 took the `idle_prompt` notification, which comes after a denial but not after an Esc (question 1 below).
+- Two subagents that finish close together make the state flicker. A debounce covers it ([card #5](claude-hook.md#subagents-when-the-main-thread-stops-before-its-subagents)). The spike saw a gap of two seconds in a log that counts whole seconds, so card #47 keeps a stopped turn "working" for 3 s.
 - A tty is reused at once. Before every focus in Terminal, the app checks that the session's `claude` process still holds the tty ([card #6](terminal-focus.md#the-handle-for-each-app)).
 - Several profiles can share one settings file through a symlink. The hook is installed once per file, into the link's target, and the user is told which profiles it reaches ([card #5](claude-hook.md#rules-for-phase-3s-installer)).
 - A window on another Space or in full screen comes forward with a visible jump, as the owner judged by eye ([card #6](terminal-focus.md#awkward-cases)). The app does not focus while the screen is locked.
@@ -78,10 +78,10 @@ Claude Code passes each event to the hook as one JSON object on standard input. 
 | Working | `UserPromptSubmit`. It also comes, with a `<task-notification>` prompt nobody typed, when finished background work wakes the main thread |
 | Waiting for you | `PermissionRequest`, about 2 s after the prompt, and `Notification` with `permission_prompt`, about 6 s after the request. Sandbox network prompts send only the second |
 | Finished | `Stop`, unless its `background_tasks` still lists a subagent, a workflow or a teammate. `StopFailure` means finished with an error |
-| Gone | `SessionEnd` |
+| Gone | `SessionEnd`. Since card #47, one from another `claude` process than the session's changes nothing, because a resumed session can be open in two tabs |
 
 - The timings are from [card #5](claude-hook.md#events-and-what-each-one-means-for-the-app).
-- The app ignores `Notification` with `idle_prompt`, which comes 60 s after the last `Stop`, and `auth_success` ([card #5](claude-hook.md#event-orders-for-the-basic-cases)). It also ignores the `SubagentStop` with an empty `agent_type` that Claude Code's own agent sends.
+- `Notification` with `idle_prompt` comes 60 s after the last `Stop`, and then changes nothing. After a denied permission it is the only event that comes, and since card #47 it ends a turn that is working or waiting for you. It does not count as activity. The app ignores `auth_success` ([card #5](claude-hook.md#event-orders-for-the-basic-cases)), and the `SubagentStop` with an empty `agent_type` that Claude Code's own agent sends.
 - Subagents run in the background by default since Claude Code 2.1.302, which is why a `Stop` alone no longer means finished ([card #5](claude-hook.md#subagents-when-the-main-thread-stops-before-its-subagents)).
 - Phase 3's hook tool must exit at once when the app is not running, print nothing, finish well under 100 ms, and never send content or the whole environment. These are targets, not measurements ([card #5](claude-hook.md#release-and-dev), [the fields](claude-hook.md#the-event-format-and-the-fields-the-app-uses)). The only time measured was the spike hook's 0.16 s per call, 0.12 s of it for listing every process with `ps -A`. One `sysctl` call for the parent's tty can replace that ([card #5](claude-hook.md#which-terminal-and-which-tab)).
 
@@ -156,7 +156,7 @@ The code stays under [Spikes/](../../Spikes/) as a reference, next to each spike
 
 Merged from the three "Still open" lists, keeping those a phase 3 task depends on:
 
-1. Which fallback ends a turn that sends no `Stop`: a `PostToolUse` hook on every tool, the transcript's modification time, or a timeout ([card #5](claude-hook.md#for-card-8))?
+1. Which fallback ends a turn that sends no `Stop`: a `PostToolUse` hook on every tool, the transcript's modification time, or a timeout ([card #5](claude-hook.md#for-card-8))? *Answered 24 Nov 2026 by card #47:* none of the three. The `idle_prompt` notification ends a turn that is working or waiting for you, so a session leaves "waiting" when it comes after a denied permission. After an Esc no event comes at all, so the session stays "working" until its next event, a limit the owner accepted. [SessionReplayTests.swift](../../Packages/DontBurnCore/Tests/DontBurnCoreTests/SessionReplayTests.swift) replays both cases.
 2. What does the installer do with a settings file that does not survive the round trip, such as a hand-formatted one ([card #5](claude-hook.md#for-card-8))?
 3. Do running sessions pick up the installed hook without a restart? If not, the installer has to say so ([card #5](claude-hook.md#for-card-8)).
 4. Reading a session's title and last activity from its transcript was not tried. The spike confirmed the path and never read one ([card #5](claude-hook.md#for-card-8)).
@@ -166,7 +166,7 @@ Merged from the three "Still open" lists, keeping those a phase 3 task depends o
 8. Activate only and the `cli` route, and Cursor beyond the exact-folder case ([card #7](editor-focus.md#for-card-8)).
 9. Remote and container sessions: no Focus button, or activate only, which would need the editor from somewhere other than the hook ([card #7](editor-focus.md#the-subfolder-case-what-phase-3-should-do))?
 10. Whether a window opened on the `/var` spelling of a folder matches the hook's `cwd`, which has symlinks resolved ([card #7](editor-focus.md#the-cards-cases)). *Answered 23 Nov 2026 by card #46:* the app compares folders through `FolderPath.resolved`, which uses `realpath(3)`. It resolves both `/var/…` and `/private/var/…` to `/private/var/…`, and a path that does not exist yet resolves through its deepest existing parent. [FolderPathTests.swift](../../Packages/DontBurnCore/Tests/DontBurnCoreTests/FolderPathTests.swift) proves it.
-11. The events of "Move to background and exit", which keeps a session alive without a terminal, and the `resume`, `clear` and `compact` sources of `SessionStart` ([card #5](claude-hook.md#for-card-8)).
+11. The events of "Move to background and exit", which keeps a session alive without a terminal, and the `resume`, `clear` and `compact` sources of `SessionStart` ([card #5](claude-hook.md#for-card-8)). *Partly decided 24 Nov 2026 by card #47:* `compact` keeps the session's state, because compacting can happen in the middle of a turn, and every other source registers the session again. None of the sources was tried, and "Move to background and exit" is still open.
 12. Whether `workflow` and `teammate` entries look as Claude Code's documentation says ([card #5](claude-hook.md#for-card-8)).
 13. A split pane in iTerm2 ([card #6](terminal-focus.md#for-card-8)).
 14. Settings, Sessions in [design.md](../spec/design.md#sessions) and the prototype: "Terminals" shows an "Allow" for VS Code and Cursor, which need no permission, and each profile has its own "Install hook" button, though one install reaches every profile that shares the settings file ([card #5](claude-hook.md#rules-for-phase-3s-installer)). What should these show?
