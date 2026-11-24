@@ -11,6 +11,8 @@ struct DontBurnApp: App {
     @State private var statusItem: StatusItemController
     /// The agent sessions, or `nil` without a bundle identifier. Kept for the life of the app.
     @State private var sessions: SessionMonitor?
+    /// The Claude Code profiles and their hook, for Settings. Reads nothing until Settings shows it.
+    @State private var hookSetup: HookSetup
 
     /// The open store, or `nil` when it could not be opened.
     private let container: ModelContainer?
@@ -38,6 +40,7 @@ struct DontBurnApp: App {
         }
         _statusItem = State(initialValue: StatusItemController(countdown: countdown, mainWindow: mainWindow))
         _sessions = State(initialValue: Self.startSessions(sampleData: sampleData))
+        _hookSetup = State(initialValue: HookSetup.current(standIn: Self.launchArgument("DontBurnStandInHome")))
         switch Self.launchArgument("DontBurnAppearance").flatMap(Appearance.init(rawValue:)) {
         case .light: NSApplication.shared.appearance = NSAppearance(named: .aqua)
         case .dark: NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
@@ -51,7 +54,8 @@ struct DontBurnApp: App {
     /// applies to every launch.
     ///
     /// Always `nil` outside the Debug configuration, so a Release build never
-    /// runs a frozen clock, a forced appearance or the sample data.
+    /// runs a frozen clock, a forced appearance, the sample data or a stand-in
+    /// home folder for the Claude Code profiles.
     private static func launchArgument(_ name: String) -> String? {
         #if DEBUG
             UserDefaults.standard.volatileDomain(forName: UserDefaults.argumentDomain)[name] as? String
@@ -172,7 +176,7 @@ struct DontBurnApp: App {
 
     var body: some Scene {
         Settings {
-            SettingsView(container: container, localContainer: localContainer)
+            SettingsView(container: container, localContainer: localContainer, hookSetup: hookSetup)
         }
     }
 }

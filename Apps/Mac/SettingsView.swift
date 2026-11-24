@@ -3,12 +3,14 @@ import SwiftData
 import SwiftUI
 import UserNotifications
 
-/// The Settings window: General and Workspaces for now.
+/// The Settings window: General, Workspaces and Sessions for now.
 struct SettingsView: View {
     /// The open store, or `nil` when it could not be opened.
     let container: ModelContainer?
     /// The open local store, this Mac's own, or `nil` when it could not be opened.
     let localContainer: ModelContainer?
+    /// The Claude Code profiles and their hook.
+    let hookSetup: HookSetup
 
     var body: some View {
         TabView {
@@ -26,6 +28,9 @@ struct SettingsView: View {
                         description: Text("Workspaces can't be shown or changed right now."),
                     )
                 }
+            }
+            Tab("Sessions", systemImage: "terminal") {
+                SessionsPane(setup: hookSetup)
             }
         }
         // One fixed size for every tab, the prototype's 760 pt, so the window
@@ -187,9 +192,9 @@ extension ModelContainer {
 
 #Preview("Sample data") {
     let container = ModelContainer.sample
-    SettingsView(container: container, localContainer: .sampleFolders(for: container))
+    SettingsView(container: container, localContainer: .sampleFolders(for: container), hookSetup: .sample)
 }
 
 #Preview("No store") {
-    SettingsView(container: nil, localContainer: nil)
+    SettingsView(container: nil, localContainer: nil, hookSetup: .sample)
 }

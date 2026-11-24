@@ -31,6 +31,13 @@ public struct HookEvent: Codable, Equatable, Sendable {
     /// can take megabytes. Only the trimmed event has to fit ``maximumSize``.
     public static let maximumClaudeEventSize = 16 * 1024 * 1024
 
+    /// The events ``SessionStore`` acts on, so the hook is installed for
+    /// exactly these, in this order. A name added to the store's rules goes here too.
+    public static let handledNames = [
+        "SessionStart", "UserPromptSubmit", "PermissionRequest", "Notification", "Stop",
+        "StopFailure", "SubagentStart", "SubagentStop", "SessionEnd",
+    ]
+
     /// The event's name, such as `Stop`, from `hook_event_name`.
     public var name: String
     /// The session's identifier, from `session_id`.

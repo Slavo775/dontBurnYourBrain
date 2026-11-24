@@ -10,10 +10,7 @@ import os
 @MainActor
 final class SessionMonitor {
     /// The events the hook is installed for, the only names the log shows.
-    private static let knownEventNames: Set = [
-        "SessionStart", "UserPromptSubmit", "PermissionRequest", "Notification", "Stop",
-        "StopFailure", "SubagentStart", "SubagentStop", "SessionEnd",
-    ]
+    private static let knownEventNames = Set(HookEvent.handledNames)
 
     /// The sessions as their events left them.
     private(set) var store: SessionStore

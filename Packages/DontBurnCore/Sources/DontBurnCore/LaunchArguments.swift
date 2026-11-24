@@ -47,3 +47,31 @@ public enum Appearance: String, Sendable {
     /// The dark appearance.
     case dark
 }
+
+/// The stand-in for the home folder that the Dev build looks for Claude Code
+/// profiles in, so it never looks at the real one.
+///
+/// The value comes from a launch argument, which is input from outside the
+/// app, so its size and shape are checked before it is used.
+public enum ProfileStandIn {
+    /// The longest value that is used at all, `PATH_MAX`.
+    static let maximumLength = 1024
+
+    /// The folder `raw` names, with its symlinks resolved, or `nil` when it is
+    /// empty, too long, not absolute, holds a control character, or is the
+    /// real `home`, lies inside it or holds it.
+    ///
+    /// A path inside `home` is refused before it is resolved, so no real
+    /// profile folder is looked at.
+    public static func folder(from raw: String, home: String) -> String? {
+        guard raw.utf8.count <= maximumLength, raw.hasPrefix("/"),
+              !raw.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7F })
+        else { return nil }
+        let spelled = FolderPath.standardized(raw)
+        let homes = [FolderPath.standardized(home), FolderPath.resolved(home)]
+        guard !homes.contains(where: { FolderPath.path(spelled, isInside: $0) }) else { return nil }
+        let folder = FolderPath.resolved(spelled)
+        let overlaps = homes.contains { FolderPath.path(folder, isInside: $0) || FolderPath.path($0, isInside: folder) }
+        return overlaps ? nil : folder
+    }
+}
