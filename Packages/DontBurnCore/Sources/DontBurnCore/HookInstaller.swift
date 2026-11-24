@@ -112,10 +112,12 @@ public struct HookInstallRecord: Codable, Equatable, Sendable {
 ///
 /// Every file it touches is resolved to its real path first, so a symlinked
 /// `settings.json` has its target written and the link is never replaced.
-/// It writes atomically: a new file beside the target, with the target's
-/// mode, renamed over it. Its records and the backups live in ``folderName``
-/// inside `directory`, the app's own folder, never in a profile. A backup is
-/// never overwritten and never written back.
+/// It writes atomically: a new file beside the target, flushed to the disk
+/// with the target's mode, renamed over it. A file with more than one hard
+/// link is refused, since the rename would split it. Its records and the
+/// backups live in ``folderName`` inside `directory`, the app's own folder,
+/// never in a profile, readable by this user alone. A backup is never
+/// overwritten and never written back.
 public struct HookInstaller: Sendable {
     /// The folder inside the app's own folder that holds the records and the backups.
     public static let folderName = "HookInstalls"
@@ -157,13 +159,14 @@ public struct HookInstaller: Sendable {
     /// Throws ``HookInstallError/outsideAllowedFolder``,
     /// ``HookInstallError/toolMissing`` when the command's tool is not an
     /// executable file, ``HookInstallError/alreadyInstalled`` when an install
-    /// into the file is on record, the errors of reading it, and those of
+    /// into the file is on record, ``HookInstallError/hardLinked``, the
+    /// errors of reading it, and those of
     /// ``HookSettings/installing(command:marker:into:)``.
     public func plan(forSettingsFile path: String) throws -> HookInstallPlan {
         guard let path = scope.resolve(path) else { throw HookInstallError.outsideAllowedFolder }
         guard FileManager.default.isExecutableFile(atPath: command.toolPath) else { throw HookInstallError.toolMissing }
         guard record(for: path) == nil else { throw HookInstallError.alreadyInstalled }
-        let file = try SettingsFile(path: path)
+        let file = try SettingsFile.writable(path)
         let edit = try HookSettings.installing(command: command.text, marker: command.toolName, into: file.data)
         return HookInstallPlan(settingsFile: path, original: file.data, edit: edit)
     }
@@ -179,13 +182,14 @@ public struct HookInstaller: Sendable {
         guard let path = scope.resolve(plan.settingsFile) else { throw HookInstallError.outsideAllowedFolder }
         guard FileManager.default.isExecutableFile(atPath: command.toolPath) else { throw HookInstallError.toolMissing }
         guard record(for: path) == nil else { throw HookInstallError.alreadyInstalled }
-        let file = try SettingsFile(path: path)
+        let file = try SettingsFile.writable(path)
         guard file.data == plan.original else { throw HookInstallError.changedMeanwhile }
         let id = UUID().uuidString
         let staged = try file.stage(plan.edit.data)
         do {
             try FileManager.default.createDirectory(at: records, withIntermediateDirectories: true)
-            try plan.original.write(to: backup(id), options: .withoutOverwriting)
+            // The settings can hold tokens in `env`, so only this user may read the backup.
+            _ = try writeNewFile(plan.original, at: backup(id).path(percentEncoded: false), mode: 0o600)
             let record = HookInstallRecord(
                 settingsFile: path,
                 inode: staged.inode,
@@ -194,7 +198,9 @@ public struct HookInstaller: Sendable {
                 createdEvents: plan.edit.createdEvents,
                 wasEmpty: plan.edit.wasEmpty,
             )
-            try JSONEncoder().encode(record).write(to: recordFile(id), options: .withoutOverwriting)
+            _ = try writeNewFile(
+                JSONEncoder().encode(record), at: recordFile(id).path(percentEncoded: false), mode: 0o600,
+            )
             try file.replace(with: staged)
         } catch {
             unlink(staged.path)
@@ -207,20 +213,22 @@ public struct HookInstaller: Sendable {
 
     /// Removes the hook the recorded install put into the settings file at `path`.
     ///
-    /// Takes out only the groups whose command is the recorded one, then only
-    /// the containers the install created, and keeps every other change. When
+    /// Takes out only the groups whose command is the recorded one, from the
+    /// lists of the events the install writes to, then only the containers
+    /// the install created, and keeps every other change. When
     /// another file stands at the path since the install, its own groups are
     /// taken out all the same, and the result says so. Then compares the file
     /// with the backup. The backup is never written back. The record goes,
     /// and the backup too unless the file differs from it.
     ///
     /// Throws ``HookInstallError/notInstalled`` when no install into the file
-    /// is on record, and the errors of reading and checking it, which keep the record.
+    /// is on record, ``HookInstallError/hardLinked``, and the errors of
+    /// reading and checking it, which keep the record.
     public func uninstall(settingsFile path: String) throws -> HookUninstallResult {
         guard let path = scope.resolve(path) else { throw HookInstallError.outsideAllowedFolder }
         guard let found = record(for: path) else { throw HookInstallError.notInstalled }
         let id = found.id
-        let file = try SettingsFile(path: path)
+        let file = try SettingsFile.writable(path)
         let updated = try HookSettings.uninstalling(
             command: found.record.command,
             createdHooks: found.record.createdHooks,
@@ -273,97 +281,5 @@ public struct HookInstaller: Sendable {
 
     private func backup(_ id: String) -> URL {
         records.appending(path: "\(id).backup", directoryHint: .notDirectory)
-    }
-}
-
-/// The folder settings files may be read and written in.
-struct SettingsScope: Sendable {
-    /// The folder as given, standardized, or `nil` for none.
-    private let given: String?
-    /// The folder with its symlinks resolved, or `nil` for none.
-    private let real: String?
-
-    /// The folder `folder`, or none when it is `nil` or not absolute.
-    init(_ folder: String?) {
-        let folder = folder?.hasPrefix("/") == true ? folder : nil
-        given = folder.map(FolderPath.standardized)
-        real = folder.map(FolderPath.resolved)
-    }
-
-    /// The real path of `path`, or `nil` when it lies outside the folder.
-    ///
-    /// `path` is resolved only when its own spelling lies inside the folder,
-    /// so a path outside it is never looked at, and the real path must lie inside too.
-    func resolve(_ path: String) -> String? {
-        guard let given, let real, path.hasPrefix("/") else { return nil }
-        let spelled = FolderPath.standardized(path)
-        guard FolderPath.path(spelled, isInside: given) || FolderPath.path(spelled, isInside: real) else { return nil }
-        let resolved = FolderPath.resolved(spelled)
-        return FolderPath.path(resolved, isInside: real) ? resolved : nil
-    }
-}
-
-/// A settings file as it was read: its bytes, inode and mode.
-private struct SettingsFile {
-    let path: String
-    let data: Data
-    let inode: UInt64
-    let mode: mode_t
-
-    /// A new file beside the settings file, not yet renamed over it.
-    struct Staged {
-        let path: String
-        let inode: UInt64
-    }
-
-    init(path: String) throws {
-        var info = stat()
-        guard stat(path, &info) == 0 else {
-            throw errno == ENOENT ? HookInstallError.missing : HookInstallError.unreadable
-        }
-        guard info.st_mode & S_IFMT == S_IFREG else { throw HookInstallError.notAFile }
-        let data: Data
-        do {
-            let handle = try FileHandle(forReadingFrom: URL(filePath: path))
-            defer { try? handle.close() } // Closing a file that was only read loses nothing.
-            // One byte past the limit tells a file that is too large without reading all of it.
-            data = try handle.read(upToCount: HookSettings.maximumSize + 1) ?? Data()
-        } catch {
-            throw HookInstallError.unreadable
-        }
-        guard data.count <= HookSettings.maximumSize else { throw HookInstallError.tooLarge }
-        self.path = path
-        self.data = data
-        inode = UInt64(info.st_ino)
-        mode = info.st_mode & 0o7777
-    }
-
-    /// Writes `data` to a new file beside this one, with this one's mode.
-    func stage(_ data: Data) throws -> Staged {
-        let folder = (path as NSString).deletingLastPathComponent
-        let name = ".\((path as NSString).lastPathComponent).\(UUID().uuidString).tmp"
-        let staged = (folder as NSString).appendingPathComponent(name)
-        var info = stat()
-        do {
-            try data.write(to: URL(filePath: staged), options: .withoutOverwriting)
-        } catch {
-            throw HookInstallError.writeFailed
-        }
-        guard chmod(staged, mode) == 0, stat(staged, &info) == 0 else {
-            unlink(staged)
-            throw HookInstallError.writeFailed
-        }
-        return Staged(path: staged, inode: UInt64(info.st_ino))
-    }
-
-    /// Renames `staged` over this file, unless the file changed since it was read.
-    ///
-    /// ponytail: a write by another app between the last read and the rename
-    /// is lost. The gap is a few microseconds, and Claude Code writes its
-    /// settings rarely. A lock would need every writer to take it.
-    func replace(with staged: Staged) throws {
-        // A file that can no longer be read has changed too.
-        guard (try? Self(path: path))?.data == data else { throw HookInstallError.changedMeanwhile }
-        guard rename(staged.path, path) == 0 else { throw HookInstallError.writeFailed }
     }
 }

@@ -21,6 +21,9 @@ public enum HookInstallError: Error, Equatable, Sendable {
     case unusualFormatting
     /// `hooks` is not an object whose values are lists of groups.
     case hooksNotObjectOfLists
+    /// The settings file has more than one hard link, which a write would
+    /// split: the other name would keep the old text.
+    case hardLinked
     /// The file holds the hook already, or an install of it is on record.
     case alreadyInstalled
     /// No install of the hook into this file is on record.
@@ -42,7 +45,7 @@ public enum HookInstallError: Error, Equatable, Sendable {
     public var offersManualLines: Bool {
         switch self {
         case .missing, .notAFile, .unreadable, .tooLarge, .notJSONObject, .unusualFormatting,
-             .hooksNotObjectOfLists, .writeFailed: true
+             .hooksNotObjectOfLists, .hardLinked, .writeFailed: true
         case .alreadyInstalled, .notInstalled, .outsideAllowedFolder, .changedMeanwhile, .unsafeToolPath,
              .toolMissing: false
         }
@@ -147,7 +150,9 @@ public enum HookSettings {
     /// `data` without the groups the install of `command` added, and without
     /// the containers that install created once they are empty.
     ///
-    /// A group is removed only when every hook in it runs exactly `command`.
+    /// A group is removed only from the list of an event in
+    /// ``HookEvent/handledNames``, the lists the install writes to, and only
+    /// when every hook in it runs exactly `command`.
     /// An event list is removed only when it is in `createdEvents` and is
     /// empty, and `hooks` only when `createdHooks` and it is empty. When
     /// `wasEmpty` and nothing else is left, the result has zero bytes. Every
@@ -163,7 +168,10 @@ public enum HookSettings {
         var text = try SettingsText(data)
         guard var hooks = text.members["hooks"]?.members else { return data }
         var removed = 0
-        for index in hooks.indices {
+        // Only the lists the install writes to. ponytail: an event dropped
+        // from the list later keeps an older install's group there.
+        let events = Set(HookEvent.handledNames.map { Array($0.utf8) })
+        for index in hooks.indices where events.contains(Array(hooks[index].key.utf8)) {
             if let groups = hooks[index].value.values {
                 let kept = groups.filter { !isOwn($0, command: command) }
                 removed += groups.count - kept.count

@@ -75,3 +75,29 @@ public enum ProfileStandIn {
         return overlaps ? nil : folder
     }
 }
+
+/// Where one build looks for Claude Code profiles, and the folder it may read
+/// and write settings files in.
+public struct ProfileReach: Equatable, Sendable {
+    /// The folder whose top level holds the profiles, or `nil` for none.
+    public let home: String?
+    /// The folder settings files may be read and written in, as
+    /// ``HookInstaller/init(command:directory:allowedFolder:)`` takes it, or `nil` for none.
+    public let allowedFolder: String?
+
+    /// The reach of the Release build, when `isDev` is false: the real `home`,
+    /// and `/`. The reach of the Dev build: the folder `standIn` names, for
+    /// both, once ``ProfileStandIn/folder(from:home:)`` accepts it, and
+    /// otherwise none. So the Dev build never looks at the real home folder
+    /// and never gets `/`.
+    public init(isDev: Bool, standIn: String?, home: String) {
+        if isDev {
+            let folder = standIn.flatMap { ProfileStandIn.folder(from: $0, home: home) }
+            self.home = folder
+            allowedFolder = folder
+        } else {
+            self.home = home
+            allowedFolder = "/"
+        }
+    }
+}

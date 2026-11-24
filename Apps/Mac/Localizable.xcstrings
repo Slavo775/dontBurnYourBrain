@@ -596,6 +596,9 @@
     "settings.json could not be read." : {
 
     },
+    "settings.json has another hard link, which a write would split from it." : {
+
+    },
     "settings.json is formatted in a way the app would change, so it is left as it is." : {
 
     },

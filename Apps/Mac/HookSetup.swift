@@ -64,13 +64,16 @@ final class HookSetup {
     /// `-DontBurnStandInHome` launch argument.
     static func current(standIn: String?) -> HookSetup {
         let isDev = isDevBuild
-        let realHome = FileManager.default.homeDirectoryForCurrentUser.path(percentEncoded: false)
-        let folder = isDev ? standIn.flatMap { ProfileStandIn.folder(from: $0, home: realHome) } : "/"
+        let reach = ProfileReach(
+            isDev: isDev,
+            standIn: standIn,
+            home: FileManager.default.homeDirectoryForCurrentUser.path(percentEncoded: false),
+        )
         return HookSetup(
             isDev: isDev,
-            home: isDev ? folder : realHome,
-            allowedFolder: folder,
-            installer: makeInstaller(isDev: isDev, allowedFolder: folder),
+            home: reach.home,
+            allowedFolder: reach.allowedFolder,
+            installer: makeInstaller(isDev: isDev, allowedFolder: reach.allowedFolder),
             defaults: .standard,
         )
     }

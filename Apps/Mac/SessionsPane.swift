@@ -72,6 +72,8 @@ struct SessionsPane: View {
                 setup.add(urls)
             }
         }
+        // Profile folders such as .claude are hidden.
+        .fileDialogBrowserOptions(.includeHiddenFiles)
         .sheet(item: $sheet) { sheet in
             SessionsSheetView(
                 sheet: sheet,
@@ -331,6 +333,7 @@ private extension HookInstallError {
         case .notJSONObject: "settings.json is not a JSON object."
         case .unusualFormatting: "settings.json is formatted in a way the app would change, so it is left as it is."
         case .hooksNotObjectOfLists: "The hooks in settings.json are not in the form Claude Code writes."
+        case .hardLinked: "settings.json has another hard link, which a write would split from it."
         case .alreadyInstalled: "The hook is already in this file."
         case .notInstalled: "No install of the hook into this file is on record."
         case .outsideAllowedFolder: "The Dev build changes no settings file outside its stand-in folder."
