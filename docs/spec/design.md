@@ -367,7 +367,7 @@ What phase 3 builds:
 - **An archived workspace:** the page is read-only and says "Read-only while the workspace is archived." Nothing can be added, archived, moved or restored.
 - **No projects:** the page says "This workspace has no projects." and offers "Create a project", except in an archived workspace.
 - **The local store could not be opened:** the Folders row says "The folders could not be opened." Everything else works.
-- **The folder rule,** ready for the sessions later in phase 3: a path belongs to the project whose folder holds it, and the deepest folder wins. Whole path components are compared after symlinks are resolved, so `~/code/acme` does not hold `~/code/acme-web`. Archived projects and the projects of archived workspaces are skipped, but their folders stay taken.
+- **The folder rule,** ready for the sessions later in phase 3: a path belongs to the project whose folder holds it, and the deepest folder wins. Whole path components are compared after symlinks are resolved, so `~/code/acme` does not hold `~/code/acme-web`. Archived projects and the projects of archived workspaces are skipped, but their folders stay taken. Only an absolute path counts: a relative or empty path belongs to no project, and adding one as a folder is refused. The picker always gives absolute paths, so the user never sees this.
 
 The prototype does not draw this page. The owner chose the layout above. The rules live in `ProjectRoster` and `ProjectFolders` in `DontBurnCore`.
 

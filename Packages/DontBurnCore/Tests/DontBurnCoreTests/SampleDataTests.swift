@@ -106,6 +106,63 @@ func `the sample data stays off without the argument or with any other value`(ra
     #expect(second == first.map { $0.addingTimeInterval(86400) })
 }
 
+// MARK: - The sample folders
+
+/// The sample set in memory with its folders below `root`, in a local store in memory.
+private func sampleFolders(root: URL) throws -> (projects: [Project], folders: [ProjectFolder]) {
+    let synced = try seeded()
+    let local = try ModelContext(ModelStore.localInMemory())
+    try SampleData.seedFolders(into: local, projects: synced, root: root)
+    return try (synced.fetch(FetchDescriptor<Project>()), local.fetch(FetchDescriptor<ProjectFolder>()))
+}
+
+@Test func `every sample folder is made below the root it is given`() throws {
+    try withTemporaryFolder { temporary in
+        let root = FolderPath.resolved(temporary.path)
+
+        let (_, folders) = try sampleFolders(root: temporary.url)
+
+        #expect(folders.count == 5)
+        for folder in folders {
+            #expect(FolderPath.path(folder.path, isInside: root))
+            #expect(FileManager.default.fileExists(atPath: folder.path))
+        }
+    }
+}
+
+@Test func `the sample folders hold the nested pair, and Reading has none`() throws {
+    try withTemporaryFolder { temporary in
+        let root = FolderPath.resolved(temporary.path)
+
+        let (projects, folders) = try sampleFolders(root: temporary.url)
+
+        let names = Dictionary(uniqueKeysWithValues: projects.map { ($0.id, $0.name) })
+        let byProject = Dictionary(grouping: folders) { names[$0.projectID] ?? "?" }
+            .mapValues { $0.map { String($0.path.dropFirst(root.count)) }.sorted() }
+        #expect(byProject == [
+            "Web shop": ["/code/acme-web"],
+            "Mobile app": ["/code/acme-mobile", "/code/acme-web/mobile"],
+            "Data platform": ["/code/globex-data"],
+            "Side project": ["/code/side-project"],
+        ])
+        let holder = { ProjectFolders.project(holdingResolved: root + $0, folders: folders, projects: projects)?.name }
+        #expect(holder("/code/acme-web/mobile/ios") == "Mobile app")
+        #expect(holder("/code/acme-web/src") == "Web shop")
+    }
+}
+
+@Test func `seeding the sample folders twice adds nothing the second time`() throws {
+    try withTemporaryFolder { temporary in
+        let synced = try seeded()
+        let local = try ModelContext(ModelStore.localInMemory())
+
+        try SampleData.seedFolders(into: local, projects: synced, root: temporary.url)
+        try SampleData.seedFolders(into: local, projects: synced, root: temporary.url)
+
+        #expect(try local.fetchCount(FetchDescriptor<ProjectFolder>()) == 5)
+    }
+}
+
 // MARK: - Stored values
 
 @Test func `stored values keep the names the schema promises`() {

@@ -1,13 +1,25 @@
 import Foundation
 import Testing
 
-/// A folder made for one test in this user's temporary folder, and removed
-/// when the test lets go of it.
+/// Runs `body` with a folder made for it in this user's temporary folder,
+/// and removes the folder when `body` returns or throws.
+///
+/// The folder lives exactly as long as `body` runs. A `deinit` could run as
+/// soon as an optimized build sees the last use of the fixture, while the
+/// test still works in the folder.
+func withTemporaryFolder(_ body: (TemporaryFolder) throws -> Void) throws {
+    let folder = try TemporaryFolder()
+    defer { folder.remove() }
+    try body(folder)
+}
+
+/// A folder made for one test in this user's temporary folder. Only
+/// ``withTemporaryFolder(_:)`` makes one, and removes it.
 ///
 /// Made below the folder macOS hands every process of this user, which is
 /// spelled with `/var` while its real path starts with `/private/var`. That
 /// folder is asked for directly, so a changed `TMPDIR` changes nothing.
-final class TemporaryFolder {
+struct TemporaryFolder {
     /// The name every test folder starts with, so cleanup removes nothing else.
     private static let prefix = "DontBurnCoreTests-"
 
@@ -16,7 +28,7 @@ final class TemporaryFolder {
     /// The test's own folder, directly below ``base``.
     let path: String
 
-    init() throws {
+    fileprivate init() throws {
         base = try #require(Self.userTemporaryDirectory())
         path = (base as NSString).appendingPathComponent("\(Self.prefix)\(UUID().uuidString)")
         try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: false)
@@ -40,7 +52,7 @@ final class TemporaryFolder {
         (path as NSString).appendingPathComponent(relative)
     }
 
-    deinit {
+    fileprivate func remove() {
         // Looked at first: only this test's own folder, directly in the
         // user's temporary folder, is ever removed.
         let folder = path as NSString

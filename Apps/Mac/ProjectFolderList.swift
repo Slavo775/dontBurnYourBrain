@@ -84,7 +84,7 @@ struct ProjectFolderList: View {
         do {
             urls = try result.get()
         } catch {
-            logError("Could not pick a folder: \(error.localizedDescription)")
+            logFailure(to: "pick a folder", error)
             return
         }
         let store = ProjectFolders(context: context)
@@ -96,7 +96,7 @@ struct ProjectFolderList: View {
                 let holder = name.isEmpty ? String(localized: "Unnamed") : name
                 refusals.append(Refusal(path: displayPath(path), holder: holder))
             } catch {
-                logError("Could not add a folder: \(error.localizedDescription)")
+                logFailure(to: "add a folder", error)
             }
         }
     }
@@ -106,12 +106,15 @@ struct ProjectFolderList: View {
         do {
             try ProjectFolders(context: context).remove(folder)
         } catch {
-            logError("Could not remove a folder: \(error.localizedDescription)")
+            logFailure(to: "remove a folder", error)
         }
     }
 
-    private func logError(_ message: String) {
-        Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "projects").error("\(message)")
+    /// Logs that `action` failed. The action is public in the log, since it
+    /// is always a literal here. The error stays private: it can name a path.
+    private func logFailure(to action: StaticString, _ error: any Error) {
+        Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "projects")
+            .error("Could not \(action.description, privacy: .public): \(error.localizedDescription)")
     }
 }
 

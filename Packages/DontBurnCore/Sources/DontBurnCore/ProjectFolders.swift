@@ -13,7 +13,10 @@ public enum FolderPath {
     /// does not exist, the deepest folder above it that does is resolved and
     /// the rest appended, so a folder not made yet still matches its parent's
     /// project. A `path` that is not absolute gives ``standardized(_:)``,
-    /// never a path resolved against the app's working folder.
+    /// never a path resolved against the app's working folder: `code/acme-web`
+    /// gives `/code/acme-web`, and an empty path `/`, which holds every path.
+    /// So ``ProjectFolders`` refuses a path that is not absolute before it
+    /// gets here.
     public static func resolved(_ path: String) -> String {
         guard path.hasPrefix("/") else { return standardized(path) }
         if let real = realPath(path) {
@@ -70,6 +73,8 @@ public enum ProjectFolderError: Error, Equatable, Sendable {
     /// Another project, active or archived, in any workspace, holds the
     /// folder already. Carries that project's name.
     case taken(byProjectNamed: String)
+    /// The path does not start with `/`, so it names no one folder.
+    case notAbsolute
 }
 
 /// The projects' folders on this Mac, and which project a folder belongs to.
@@ -86,11 +91,12 @@ public struct ProjectFolders {
     }
 
     /// The project, among `projects`, whose folder holds `path`, or `nil`
-    /// when no folder does.
+    /// when no folder does or `path` is not absolute.
     ///
     /// `path` is resolved first. See ``project(holdingResolved:folders:projects:)``.
     public func project(holding path: String, among projects: [Project]) throws -> Project? {
-        try Self.project(
+        guard path.hasPrefix("/") else { return nil }
+        return try Self.project(
             holdingResolved: FolderPath.resolved(path),
             folders: context.fetch(FetchDescriptor<ProjectFolder>()),
             projects: projects,
@@ -100,9 +106,11 @@ public struct ProjectFolders {
     /// Gives the folder at `path` to `project`, with its symlinks resolved.
     ///
     /// `projects` is every project of every workspace, archived ones too.
-    /// Throws ``ProjectFolderError/taken(byProjectNamed:)`` when another of
+    /// Throws ``ProjectFolderError/notAbsolute`` when `path` is not absolute,
+    /// and ``ProjectFolderError/taken(byProjectNamed:)`` when another of
     /// them holds the folder. A folder the project holds already changes nothing.
     public func add(_ path: String, to project: Project, among projects: [Project]) throws {
+        guard path.hasPrefix("/") else { throw ProjectFolderError.notAbsolute }
         let resolved = FolderPath.resolved(path)
         let folders = try context.fetch(FetchDescriptor<ProjectFolder>())
         if let holder = Self.holder(ofResolved: resolved, folders: folders, projects: projects) {
