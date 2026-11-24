@@ -93,7 +93,9 @@ struct DontBurnApp: App {
             do {
                 try FocusPreset.seedDefaults(into: container.mainContext)
             } catch {
-                // The timer works without presets, so the store stays open.
+                // The timer works without presets, so the store stays open. The
+                // rollback drops the unsaved presets, so no later save carries them.
+                container.mainContext.rollback()
                 log.error("The focus presets could not be added: \(error.localizedDescription)")
             }
             return container

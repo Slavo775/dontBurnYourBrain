@@ -62,10 +62,15 @@ public struct FocusRhythm: Equatable, Sendable {
 extension FocusRhythm {
     /// The rhythm of `block` at `now`, when the block ends at `plannedEnd`, or
     /// `nil` when the block has no rhythm.
+    ///
+    /// A `now` before the block's latest stored time, its planned start or an
+    /// entry's start or end, as after the clock moved back, is read as that
+    /// time. `plannedEnd` is the same at both, so the plan still ends there.
     init?(of block: TimeBlock, plannedEnd: Date, at now: Date) {
         guard block.hasRhythm else { return nil }
         var walk = RhythmWalk(block)
         let entries = (block.entries ?? []).sorted { $0.start < $1.start }
+        let now = entries.reduce(max(now, block.plannedStart)) { max($0, $1.start, $1.end ?? $1.start) }
         var lastEnd = block.plannedStart
         for entry in entries {
             let start = max(entry.start, lastEnd)

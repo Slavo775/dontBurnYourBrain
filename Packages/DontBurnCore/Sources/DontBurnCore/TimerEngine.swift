@@ -115,6 +115,10 @@ public struct TimerEngine {
 
     /// Settles, then reports where the running block stands in its rhythm at
     /// `now`, or `nil` when no block runs or it has no rhythm. See ``FocusRhythm``.
+    ///
+    /// A `now` earlier than the block's stored times (a clock moved back) is
+    /// raised to the latest of them, as the operations raise it, so the rhythm
+    /// never runs backwards. The plan still ends at the block's planned end.
     public func rhythm(at now: Date) throws -> FocusRhythm? {
         try settle(at: now)
         guard let block = try runningBlocks().last else { return nil }
