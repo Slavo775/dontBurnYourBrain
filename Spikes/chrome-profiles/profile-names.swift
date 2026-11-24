@@ -3,7 +3,8 @@
 //   swift profile-names.swift <Local State file> --names   the same with each name, for a spike folder only
 // Decodes `profile.info_cache.<directory>.name` and nothing else: the decoder skips every other key without
 // keeping it, and the real file's info_cache also holds account emails and Google account names.
-// `--names` is refused for a file inside Chrome's own folder, so a real profile name is never printed.
+// `--names` is allowed only for a file whose path holds `/dontburn-chrome.`, the README's scratch folder, so a real
+// profile name is never printed, however the path to Chrome's own folder is spelled.
 // Exit status: 0 when the names were read, 1 when the file was refused or could not be read.
 import Foundation
 
@@ -34,10 +35,8 @@ guard (1 ... 2).contains(args.count), args.count == 1 || args[1] == "--names" el
 }
 
 let file = URL(fileURLWithPath: args[0]).resolvingSymlinksInPath()
-/// Not resolved, so a run against a spike folder never looks into Chrome's own folder.
-let chromeFolder = FileManager.default.homeDirectoryForCurrentUser.path + "/Library/Application Support/Google/"
-if args.count == 2, file.path.hasPrefix(chromeFolder) {
-    fail("--names is only for a spike folder. This file is inside Chrome's own folder.")
+if args.count == 2, !file.path.contains("/dontburn-chrome.") {
+    fail("--names is only for a spike folder: a path that holds /dontburn-chrome.")
 }
 
 /// A Local State file is a few hundred kilobytes. Anything far larger is not one.

@@ -11,7 +11,7 @@ It is not part of the app, not in `project.yml` and not built by the check. The 
 
 | File | What it is |
 |---|---|
-| `profile-names.swift` | Reads a `Local State` file and prints the number of profiles and their directories. With `--names` it prints each profile's name too, and it refuses `--names` for a file inside Chrome's own folder. It decodes `profile.info_cache.<directory>.name` and nothing else |
+| `profile-names.swift` | Reads a `Local State` file and prints the number of profiles and their directories. With `--names` it prints each profile's name too, and it allows `--names` only for a path that holds `/dontburn-chrome.`, the scratch folder. It decodes `profile.info_cache.<directory>.name` and nothing else |
 | `chrome-check.swift` | Makes the throwaway user data folder, then runs each way against a throwaway Chrome it starts and stops itself, and counts the hits. Run it with `swift`, nothing to build |
 
 **Tested on** macOS 27.2.1 and Google Chrome 157.0.8103.79, from scripts started in Terminal, on 2026-11-23. The Mac's interface is not in English, so every prompt below is given in English from the system's own string table.
@@ -65,7 +65,7 @@ The owner's Chrome is never quit, so this is measured as "the throwaway instance
 - **Focus will jump.** Every try brings a throwaway Chrome window to the front and then your terminal back. Keep hands off the keyboard and the mouse while a run goes: a throwaway window in front takes your typing, and a link clicked in another app may open in the throwaway Chrome. A run of ten tries takes one to two minutes.
 - **Start it from a terminal that is in front.** `chrome-check.swift` notes the frontmost app when it starts, refuses to start when that is a Chrome, and brings that app back with `open -b <its bundle id>` before each try. A try ends `DISCARDED` when, at its last reading, the frontmost app is neither the throwaway Chrome nor that app.
 - **Unlock the screen, and keep it unlocked.** The helper refuses to run while it is locked.
-- **Your own Chrome may keep running.** Every launch carries `--user-data-dir=<scratch>/ud`, so it reaches only the throwaway instance. The helper finds the throwaway browser by its command line, never by name, stops it with `kill <pid>` at the end of every try, and checks with `ps -p <pid>` that it is gone and that no process with the scratch folder is left. If a run is interrupted, `<scratch>/pid` holds the process ID to stop by hand. Never `pkill`, `killall`, or quitting Chrome by name.
+- **Your own Chrome may keep running.** Every launch carries `--user-data-dir=<scratch>/ud`, so it reaches only the throwaway instance. The helper finds the throwaway browser by its command line, never by name, stops it with `kill <pid>` at the end of every try, and checks with `ps -p <pid>` that it is gone and that no process with the scratch folder is left. Before that `kill` it checks again that the ID is still the throwaway browser, and sends nothing when it is not. If a run is interrupted, `<scratch>/pid` holds the process ID to stop by hand. The file can outlive the browser and name an ID that another process has taken since, so first check that `ps -ww -p <pid> -o command=` holds `$S/ud`, and `kill <pid>` only then. Without `-ww`, `ps` can cut the line before the folder. Never `pkill`, `killall`, or quitting Chrome by name.
 - **Apple events** go only to the throwaway process ID, through Scripting Bridge (`SBApplication(processIdentifier:)`) or an `NSAppleEventDescriptor(processIdentifier:)` target. They read only a window's `id`, `index`, `given name`, `mode`, `minimized`, `visible` and `bounds`, and the helper checks before each batch that the process ID still belongs to the throwaway instance. Never `tell application "Google Chrome"`: both instances share the bundle ID.
 - **Never `cold <scratch> binary` without a reason.** Chrome started as a child of your terminal makes macOS hold the terminal responsible for Chrome's own requests, and here that showed a Local Network prompt for Terminal (see "Permission prompts"). Every other mode starts the throwaway Chrome through LaunchServices.
 - **Flags.** Every launch also carries `--no-first-run --no-default-browser-check --use-mock-keychain --disable-search-engine-choice-screen`. The last one is not on the card: without it, a new profile in the EU opens Chrome's search engine choice dialog over its first window.
@@ -135,7 +135,7 @@ The `pgrep` that sets `P` matches only the throwaway browser's main process, who
 
 ## Results
 
-Measured on 2026-11-23, macOS 27.2.1, Chrome 157.0.8103.79, sent from Terminal. 54 throwaway instances were started and 136 throwaway windows opened. Every one was closed by stopping its instance with `kill <pid>`, and every stop was checked: the process gone and no process with the scratch folder left.
+Measured on 2026-11-23, macOS 27.2.1, Chrome 157.0.8103.79, sent from Terminal. 54 throwaway instances were started and 136 throwaway windows opened: the 52 instances and 134 windows of the runs in the table, and the two starts below it. Every one was closed by stopping its instance with `kill <pid>`, and every stop was checked: the process gone and no process with the scratch folder left.
 
 | Run | Tries | Result | Command | Settled |
 |---|---|---|---|---|
@@ -149,11 +149,16 @@ Measured on 2026-11-23, macOS 27.2.1, Chrome 157.0.8103.79, sent from Terminal. 
 
 "Command" is the time the command took. "Settled" runs from the command to the first reading at which the signals agreed.
 
+Two more starts are not in the table, both with `open -n` and one window each, and both stopped by `kill <pid>` and checked gone:
+
+- **The first `cold open` try,** before the helper counted only on-screen windows. Verdict `SEVERAL NEW`, new 2: the helper still counted every window of 300 by 200 or more, and Chrome keeps a hidden 500 by 500 window next to the real one, as the start by hand below showed. That run is why the helper counts only on-screen windows. It is counted here as one window, as in the ten tries after the change.
+- **One start by hand into `Default`,** to list the throwaway's windows in the window server, without their names: one 1200 by 847 window on screen, and 15 more that were not on screen, among them the hidden 500 by 500 one. No verdict: it measured nothing.
+
 ### Part 1: the profile names
 
 **Measured on the throwaway profiles.** `profile-names.swift` printed `3 profiles, 3 with a name` and the three names before Chrome ever ran, and again after 54 starts, when Chrome had rewritten the file around it (206 bytes before the first start, 5,766 after the last). The fourth profile, made by the missing-directory try, showed up the same way.
 
-- It decodes a `Decodable` type that holds only `profile.info_cache[<directory>].name`. `JSONDecoder` skips every other key without keeping it. Without `--names` it prints only the number of profiles and their directory keys. An error prints only the error's type.
+- It decodes a `Decodable` type that holds only `profile.info_cache[<directory>].name`. `JSONDecoder` skips every other key without keeping it. Without `--names` it prints only the number of profiles and their directory keys, and `--names` works only for a path that holds `/dontburn-chrome.`. A failed read prints only the error's domain and code. A file that is not a `Local State` file prints only the error's type.
 - No prompt and no permission for the throwaway file in `$TMPDIR`.
 - **The owner's real file is protected.** Run once from Terminal with his yes, the read of `~/Library/Application Support/Google/Chrome/Local State` failed and printed nothing but the error. The system log shows why: `sandboxd` checked `kTCCServiceSystemPolicyAppDataDetailed` for `com.google.Chrome`, with Terminal as the responsible app, and TCC denied it 12 ms later, so no prompt was on screen. No notification for it shows in the log. The file's size could be read, its content could not. Measured.
 - So macOS 27.2 treats Chrome's folder as Chrome's private data, as the card's way 1 did not expect. For the app, the system's string table has this prompt: "Allow “<app>” to access your “Google Chrome” data?" with "This will allow the app to access your data associated with “Google Chrome” on this Mac." When access is blocked, macOS may post "Data Access Blocked": "“<app>” tried to access your data from other apps and was blocked. You can manage this at any time in Files & Folders settings." Whether a third-party app such as this one gets that prompt, where Terminal got none, was not tried, and is for the feature card to find out: Terminal is one of Apple's own apps, and `tccd` logged that it does not prompt for those in another request. Reasoned, not tried.
@@ -176,7 +181,7 @@ Measured on 2026-11-23, macOS 27.2.1, Chrome 157.0.8103.79, sent from Terminal. 
 | Way | Permission | Measured |
 |---|---|---|
 | Reading `Local State` | None in `$TMPDIR`. In Chrome's own folder: "App Data" for Google Chrome. Terminal was denied without a prompt | Both |
-| `open -n -b com.google.Chrome --args …` | None. Chrome runs as its own responsible process | No prompt in 44 starts and 52 hand-overs on the throwaway, nor in the one run on the owner's Chrome |
+| `open -n -b com.google.Chrome --args …` | None. Chrome runs as its own responsible process | No prompt in 44 starts on the throwaway, the table's 42 and the two below it, and in 52 hand-overs, nor in the one run on the owner's Chrome |
 | Chrome's binary, started by the caller | None for the call. But Chrome then runs as the caller's child, and macOS holds the caller responsible for Chrome's requests: Chrome's local network discovery showed a Local Network prompt naming **Terminal**, in the first try of `cold … binary`. For the app it would name the app. Hand-overs to a running instance asked for nothing | Yes |
 | Apple events to Chrome | Automation, for the sending app and Chrome's bundle ID. One answer covers every Chrome instance, the owner's included | The check returned 0 before the first event: Terminal already had it. No prompt |
 | The window server's list without names | None | Yes |
@@ -209,7 +214,7 @@ window server: 3296 (264.0, 33.0, 1200.0, 847.0); 3292 (242.0, 77.0, 1200.0, 847
 
 ### What the feature must watch for
 
-- **A profile directory that does not exist creates a new profile.** Measured. The app must check the linked directory against `Local State` before every open, and say the profile is gone when it is missing. Without the App Data permission it cannot check, so it must not open a directory it could not confirm.
+- **A profile directory that does not exist creates a new profile.** Measured. The app must check the linked directory against `Local State` before every open, and say the profile is gone when it is missing. That check needs the App Data permission. Without it the app cannot check, so it offers no Chrome link at all and never opens a directory it could not confirm.
 - **Every open is a new window.** Ten clicks are ten windows. The app should say "Open a window in <profile>", never "Bring forward", unless it brings back a window it noted.
 - **Never start Chrome's binary as the app's child.** macOS then charges the app for Chrome's permissions. `open -n -b`, or `NSWorkspace.openApplication(at:configuration:)` with `createsNewApplicationInstance`, starts Chrome as its own process. The second is reasoned to be the same as the first.
 - **A second Chrome process for a moment.** `open -n` starts a second Chrome process that hands its arguments to the running one and ends. The binary's hand-over process ended in 0.21 to 0.22 s.
@@ -241,17 +246,23 @@ The command took 0.15 s, and the signals agreed at 0.67 s: Chrome frontmost with
 
 ## Recommendation
 
-**Build the smaller form.** The owner decides.
+**Build the smaller form, with the App Data permission.** The owner decides.
 
-The smaller form: a workspace can be linked to one Chrome profile, and then offers "Open a window in <profile>", which runs `open -n -b com.google.Chrome --args --profile-directory=<folder>`, or the same through `NSWorkspace.openApplication(at:configuration:)` with `createsNewApplicationInstance`. It sends no Apple event and needs no permission. It worked 20 of 20 on the throwaway, running and not running, and once on the owner's Chrome, in about 0.6 s. A workspace without a linked profile, or a Mac without Chrome, shows nothing about browsers.
+The smaller form: a workspace can be linked to one Chrome profile, picked from the list the app reads from `Local State`, and then offers "Open a window in <profile>". Before every open the app reads `Local State` again and checks that the linked folder is still listed. Then it runs `open -n -b com.google.Chrome --args --profile-directory=<folder>`, or the same through `NSWorkspace.openApplication(at:configuration:)` with `createsNewApplicationInstance`.
 
-What each choice costs:
+What it needs and what it costs:
 
-- **Listing and checking profiles needs the App Data permission for Google Chrome.** On macOS 27.2 the profile names live in Chrome's protected folder, and the read was denied. The app has to ask for it, with macOS's prompt "Allow “<app>” to access your “Google Chrome” data?". Whether macOS shows that prompt to this app was not tried. Without the permission the app can neither list the names nor check that a linked folder still exists. The user could then type the folder's name, the last part of the Profile Path on `chrome://version`, as the owner did for step 2.
-- **A missing folder silently makes a new profile.** Measured. With the permission, the app checks the folder before every open. Without it, a typo or a deleted profile gives the user an empty new Chrome profile.
+- **Opening needs no permission.** It sends no Apple event. It opened exactly one window, in front, 20 of 20 on the throwaway, settling in a median 1.12 s when Chrome was not running and 0.58 s when it was. It did the same once on the owner's Chrome, in 0.67 s.
+- **Listing and checking need the App Data permission for Google Chrome.** On macOS 27.2 the profile names live in Chrome's protected folder, and the read from Terminal was denied with no prompt. The app asks for it with macOS's prompt "Allow “<app>” to access your “Google Chrome” data?". Whether macOS shows that prompt to this app was not tried. The feature card has to find that out first.
+- **Without the permission, the Chrome part is left out.** No profile list, no link and no "Open a window" button, and nothing else in the app changes or nags, as rule 7 of `CLAUDE.md` asks. The same holds when the permission is taken back later, on a Mac without Chrome, and for a workspace without a linked profile. The app never opens a folder it could not confirm.
+- **A linked folder that is gone is not opened.** Measured: a missing folder makes Chrome create a new profile. The app says the profile is gone instead.
 - **Every open is a new window.** It never brings the profile's existing window forward. The button has to say "Open a window", and ten clicks are ten windows.
 - **Building it as drawn,** with the profile's existing window brought forward, is not possible for windows the user opened: nothing the card allows tells which profile a window belongs to. With Automation the app could bring back a window it opened itself, 10 of 10 on the throwaway. But Automation for Chrome also lets the app read every tab's URL and title and run JavaScript in any page of any profile, and macOS's prompt says so. That is a lot to ask for a convenience, so it is left out of the smaller form.
-- **Drop it** if the owner does not want the app to ask for Chrome's data, and a typed folder name is too easy to get wrong.
+
+The other choices for the owner:
+
+- **A typed folder name, without the App Data permission.** The user types the folder's name, the last part of the Profile Path on `chrome://version`, as the owner did for step 2, and the app opens it without reading `Local State`. The app cannot check the name. A mistyped name, or a profile deleted since, makes Chrome create a profile the user never asked for, with Chrome's default name, and open a window in it: measured with `Profile 9`. The owner weighs that against rule 10 of `CLAUDE.md`, "The app only asks": the app would change Chrome's profiles without the user asking for it.
+- **Drop it** if the owner does not want the app to ask for Chrome's data, and does not want the typed name either.
 
 ## Clean up
 

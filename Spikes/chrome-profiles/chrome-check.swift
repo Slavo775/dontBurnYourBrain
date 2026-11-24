@@ -74,7 +74,7 @@ let binary: String = {
 
 /// The throwaway browser's main process: Chrome's binary with the scratch user data folder, and no helper.
 func isThrowaway(_ pid: pid_t) -> Bool {
-    let line = run("/bin/ps", ["-p", "\(pid)", "-o", "command="])
+    let line = run("/bin/ps", ["-ww", "-p", "\(pid)", "-o", "command="])
     return line.hasPrefix(binary + " ") && line.contains("--user-data-dir=\(userData) ") && !line.contains("--type=")
 }
 
@@ -87,6 +87,7 @@ func stopInstance() {
     guard running != 0 else { return }
     let pid = running
     running = 0
+    guard isThrowaway(pid) else { return print("  \(pid) is no longer the throwaway Chrome: nothing sent to it") }
     kill(pid, SIGTERM)
     let gone = waitFor(10) { run("/bin/ps", ["-p", "\(pid)", "-o", "pid="]).isEmpty }
     _ = waitFor(5) { scratchProcesses().isEmpty }
@@ -338,9 +339,8 @@ case "probe":
         finish(launch(.open, other.folder))
         _ = waitFor(5) { windows(running).count == profiles.count }
     }
-    let check = scripting()
     for key in ["id", "index", "givenName", "mode", "minimized", "visible", "bounds"] {
-        print("windows' \(key): \(property(key, check))")
+        print("windows' \(key): \(property(key, scripting()))") // each batch checks the process ID again
     }
     print("window server: " + windows(running).map { "\($0.number) \($0.bounds)" }.joined(separator: "; "))
     print("errors \(failures.codes)")
