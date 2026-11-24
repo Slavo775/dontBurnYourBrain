@@ -24,7 +24,6 @@ private let root = URL(filePath: #filePath)
 
 @Test(arguments: [
     ([], [:]),
-    (["--other", "dev"], [:]),
     ([], ["DONTBURN_TARGET": ""]),
     ([], ["DONTBURN_TARGET": "release"]),
     (["--target", "release"], [:]),
@@ -42,7 +41,6 @@ func `the target is release when nothing names dev, and --target wins over DONTB
     (["--target", "dev"], [:]),
     (["--target", "dev"], ["DONTBURN_TARGET": "release"]),
     (["--target", "dev"], ["DONTBURN_TARGET": "devv"]),
-    (["--other", "--target", "dev"], [:]),
 ] as [([String], [String: String])])
 func `the target is dev when --target or DONTBURN_TARGET names it, and --target wins`(
     arguments: [String],
@@ -61,8 +59,24 @@ func `the target is dev when --target or DONTBURN_TARGET names it, and --target 
     ([], ["DONTBURN_TARGET": "devv"]),
     ([], ["DONTBURN_TARGET": "DEV"]),
     ([], ["DONTBURN_TARGET": " dev"]),
+    (["--target=dev"], [:]),
+    (["--target=release"], [:]),
+    (["--target=devv"], [:]),
+    (["--target="], [:]),
+    (["--target=dev"], ["DONTBURN_TARGET": "dev"]),
+    (["-t", "dev"], [:]),
+    (["--targetdev"], [:]),
+    (["--target-dev"], [:]),
+    (["--Target", "dev"], [:]),
+    (["dev"], [:]),
+    (["dev"], ["DONTBURN_TARGET": "dev"]),
+    (["--other", "dev"], [:]),
+    (["--other", "--target", "dev"], [:]),
+    (["--target", "dev", "extra"], [:]),
+    (["--target", "dev", "--target", "dev"], [:]),
+    (["--target", "release", "--target", "dev"], [:]),
 ] as [([String], [String: String])])
-func `an unknown target, or --target without one, gives no target, so nothing reaches the other build`(
+func `anything but no arguments or exactly --target and a known name gives no target, so nothing is sent`(
     arguments: [String],
     environment: [String: String],
 ) {
