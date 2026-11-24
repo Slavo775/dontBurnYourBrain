@@ -117,12 +117,13 @@ public struct PlannedAlert: Equatable, Sendable {
     /// warning ``AlertKind/warningLead`` before it while that lies ahead, on a
     /// break the break's end, unless the break is clipped at the block's end,
     /// which the block's end then announces alone, and with a `rhythm` the end
-    /// of the focus interval after which the next planned break is due. On a
-    /// break that leaves the block paused: the break's end alone, since the
-    /// rest moves later. On a break with no block: the break's end alone, with
-    /// no workspace. Paused or idle: none, since nothing runs out. Only the
-    /// kinds switched on in `settings` are planned. One kind is planned at most
-    /// once, so its notification can be replaced.
+    /// of the focus interval after which the next planned break is due, but
+    /// while a break is due none until it is taken or skipped. On a break that
+    /// leaves the block paused: the break's end alone, since the rest moves
+    /// later. On a break with no block: the break's end alone, with no
+    /// workspace. Paused or idle: none, since nothing runs out. Only the kinds
+    /// switched on in `settings` are planned. One kind is planned at most once,
+    /// so its notification can be replaced.
     public static func plan(
         for status: TimerStatus,
         rhythm: FocusRhythm? = nil,
@@ -142,7 +143,8 @@ public struct PlannedAlert: Equatable, Sendable {
         if status.state == .onBreak, let left = status.breakTimeLeft, now.addingTimeInterval(left) < end {
             dates[.breakEnd] = now.addingTimeInterval(left)
         }
-        let nextBreak = rhythm?.comingBreaks.first { $0.start > now }
+        // Adding the next focus end takes the one just shown off the screen, so it waits while a break is due.
+        let nextBreak = rhythm?.isBreakDue == false ? rhythm?.nextBreak : nil
         if !waits {
             dates[.blockEnd] = end
             dates[.warning] = end.addingTimeInterval(-AlertKind.warningLead)

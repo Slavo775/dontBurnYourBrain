@@ -330,9 +330,10 @@ final class Countdown {
         ) {
             alerts.play(kind)
         }
-        alerts.schedule(PlannedAlert.plan(
+        let plan = PlannedAlert.plan(
             for: status, rhythm: rhythm, workspace: workspace, settings: alerts.settings, at: now,
-        ))
+        )
+        alerts.schedule(plan, at: now)
     }
 }
 

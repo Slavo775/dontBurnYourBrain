@@ -60,12 +60,14 @@ final class AlertCenter {
         }
     }
 
-    /// Replaces the app's pending notifications with `plan`, when it changed.
+    /// Replaces the app's pending notifications with `plan`, the one for `now`, when it changed.
     ///
     /// ponytail: a permission given later in System Settings takes effect at
     /// the next change of the plan, such as the next start or pause.
-    func schedule(_ plan: [PlannedAlert]) {
-        guard plan.map(\.key) != wanted.map(\.key) else { return }
+    func schedule(_ plan: [PlannedAlert], at now: Date) {
+        // One whose moment has just come may still be on its way to the screen, so its removal waits for a later tick.
+        let old = wanted.filter { !(0 ..< 1).contains(now.timeIntervalSince($0.date)) }
+        guard plan.map(\.key) != old.map(\.key) else { return }
         wanted = plan
         enqueue { [self] in await replacePending(with: plan) }
     }
@@ -90,6 +92,8 @@ final class AlertCenter {
                 from: alert.date,
             )
             let trigger = UNCalendarNotificationTrigger(dateMatching: moment, repeats: false)
+            // Its second has begun, so it was shown already, and adding it again would only take it away.
+            guard trigger.nextTriggerDate() != nil else { continue }
             do {
                 try await center.add(UNNotificationRequest(
                     identifier: alert.kind.identifier, content: content, trigger: trigger,
