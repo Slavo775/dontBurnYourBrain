@@ -60,7 +60,9 @@ public struct AgentSession: Codable, Equatable, Identifiable, Sendable {
     public private(set) var tool = AgentTool.claude
     /// The session id.
     public let id: String
-    /// The profile folder, or `nil` for the default profile. See ``HookEvent/profile``.
+    /// The profile folder, or `nil` when the event named none. The default
+    /// profile normally comes as its path, `~/.claude`, since every event
+    /// carries `transcript_path`. See ``HookEvent/profile``.
     public private(set) var profile: String?
     /// The working folder the session started in, as the hook sent it. Empty when it sent none.
     public private(set) var folder = ""
@@ -71,8 +73,10 @@ public struct AgentSession: Codable, Equatable, Identifiable, Sendable {
     public private(set) var processID: Int32 = 0
     /// The tty of the `claude` process, such as `ttys004`. Terminal's handle for the tab.
     public private(set) var tty: String?
-    /// The terminal's own identifier for the tab: in iTerm2 the UUID after
-    /// the colon in `ITERM_SESSION_ID`. `nil` in other terminals.
+    /// iTerm2's identifier for the tab: the UUID after the colon in
+    /// `ITERM_SESSION_ID`, set whenever the environment held a valid one,
+    /// whatever the terminal. The variable is inherited, by tmux for one, so
+    /// only the iTerm2 adapter reads it.
     public private(set) var tabID: String?
     /// When the last event that showed activity came. A `Notification` with
     /// `idle_prompt` reports the lack of it, so it does not count.
@@ -84,7 +88,10 @@ public struct AgentSession: Codable, Equatable, Identifiable, Sendable {
 
     /// How long a stopped turn still reads as working, so two subagents that
     /// finish close together do not make the state flicker.
-    public static let finishDelay: TimeInterval = 2
+    ///
+    /// The spike saw the next turn start "two seconds later", in a log that
+    /// counts whole seconds, so the real gap may be anything below three.
+    public static let finishDelay: TimeInterval = 3
 
     /// The state at `now`: ``AgentSessionState/working`` for ``finishDelay``
     /// after a `Stop`, then the state the events set.
@@ -126,7 +133,8 @@ public struct AgentSession: Codable, Equatable, Identifiable, Sendable {
         folder = event.folder ?? ""
         terminalBundleIdentifier = event.environment?.bundleIdentifier
         tty = event.tty
-        tabID = event.environment?.iTermSessionID?.split(separator: ":").last.map(String.init)
+        let afterColon = event.environment?.iTermSessionID?.split(separator: ":", maxSplits: 1).dropFirst().first
+        tabID = afterColon.map(String.init).flatMap { UUID(uuidString: $0) == nil ? nil : $0 }
     }
 
     fileprivate mutating func apply(_ effect: Effect, at now: Date) {
@@ -198,8 +206,9 @@ private enum Effect: Equatable {
 /// Pure: the time of each event and the check whether a session's process
 /// still runs are passed in, and nothing is scheduled or read from the clock.
 /// A session the store has not seen is added by its first event, whatever
-/// the event, except a `SessionEnd`. Events the app does not use, and events
-/// without the `claude` process ID, change nothing.
+/// the event, except a `SessionEnd`. Events the app does not use, events
+/// without the `claude` process ID, and a `SessionEnd` from another process
+/// than the session's change nothing.
 public struct SessionStore: Codable, Equatable, Sendable {
     /// The file's name, next to ``ModelStore/localFileName`` in the same folder.
     public static let fileName = "Sessions.json"
@@ -223,6 +232,9 @@ public struct SessionStore: Codable, Equatable, Sendable {
             return
         }
         if sessions[index].processID != processID {
+            // A resumed session can be open in two tabs at once. The older
+            // tab's end must not take the live one with it.
+            guard effect != .end else { return }
             sessions[index].takeDetails(of: event, processID: processID)
         }
         sessions[index].apply(effect, at: now)

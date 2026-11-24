@@ -89,12 +89,15 @@ public struct HookEvent: Codable, Equatable, Sendable {
         return event
     }
 
-    /// The profile folder the session runs under, or `nil` for the default
-    /// profile, `~/.claude`.
+    /// The profile folder the session runs under, or `nil` when the event
+    /// names none.
     ///
     /// `CLAUDE_CONFIG_DIR` when it is set, otherwise the part of
     /// `transcript_path` before its last `/projects/`, which is
-    /// `<profile>/projects/<folder>/<session id>.jsonl`.
+    /// `<profile>/projects/<folder>/<session id>.jsonl`. Every event carries
+    /// `transcript_path`, so the default profile normally comes as its path,
+    /// `~/.claude`, and `nil` is left for an event without one, which
+    /// ``AgentSession/profileName`` shows as the default profile too.
     public var profile: String? {
         if let folder = environment?.configDirectory, !folder.isEmpty {
             return folder
