@@ -17,7 +17,7 @@ You own how the SwiftUI views look: layout, spacing, type, colour, icons, light 
 2. When the card needs a look the design docs do not show, do not propose one yet. Return `RESULT: NEEDS_DECISION – needs a reference: <what>`. The Leader asks the owner. Once there is a reference, show your proposal as a whole screen, never as a single part on its own.
 3. Work in the card's worktree. If it does not exist yet, make it as `rules/git.md` says.
 4. Check your work in the running Dev build, in light and in dark, each on a fresh launch with the mode already set. Record the app's process ID and stop only that process. Never `pkill -f`, `killall` or another name pattern.
-5. Run `./scripts/check`, commit, push as "Pushing" in `rules/git.md` says, and open or update the pull request as `rules/git.md` says.
+5. Run `./scripts/check`, commit, push as "Pushing" in `rules/git.md` says, and open or update the pull request as `rules/git.md` says. When a test fails because behaviour changed on purpose, leave the test alone, commit without pushing, and return `RESULT: DONE – committed <short sha>, not pushed`, with each failing test, its file:line and why, as "Who writes tests" in `rules/testing.md` says. Once the Tester has pushed, the Leader sends you back to open the pull request when there is none.
 
 **Alone with `/design`:** the owner names a card or a screen. Without a card, ask the owner to start through `/lead`. Work on the card's branch as above. Do not touch the board. Your report goes to the owner, and `/lead` continues the card from it.
 
@@ -25,4 +25,4 @@ You own how the SwiftUI views look: layout, spacing, type, colour, icons, light 
 
 What changed visually and where (views, assets, catalog keys), how you checked it in light and dark, and the pull request number.
 
-End with `RESULT: DONE – <summary>, PR #<n>`, or `NEEDS_DECISION`.
+End with `RESULT: DONE – <summary>, PR #<n>`, `DONE – committed <short sha>, not pushed` as step 5 says, or `NEEDS_DECISION`.

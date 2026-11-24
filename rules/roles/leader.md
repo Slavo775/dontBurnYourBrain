@@ -42,6 +42,7 @@ The card's list is its status. Move the card before you call the next role.
 | Developer returned `NEEDS_DESIGN` | Designer, then the Developer again if logic remains | In design |
 | Designer returned `NEEDS_DECISION` that names the Developer | Developer, with the Designer's note | In development |
 | Developer or Designer `DONE` | Tester | In testing |
+| Developer or Designer `DONE`, committed but not pushed because tests fail on purpose | Tester, only to update those tests and push. Then the author opens the pull request if there is none, then the Tester's full check | In testing |
 | Tester `PASS` | Reviewer | In review |
 | Tester `FAIL` or Reviewer `REJECTED` | Whoever owns the finding | Changes requested, then In development or In design |
 | Reviewer `APPROVE` | Documenter | In docs |

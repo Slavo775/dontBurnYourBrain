@@ -2,7 +2,7 @@
 
 ## Who writes tests
 
-Only the Tester writes and changes tests. The Developer and the Designer run them. When a test fails because behaviour changed on purpose, they leave the test alone and say so in their report. A bug the Tester finds goes back through the Leader. It is never fixed by the Tester and never hidden by a changed test.
+Only the Tester writes and changes tests. The Developer and the Designer run them. When a test fails because behaviour changed on purpose, they leave the test alone and say so in their report. Such a change cannot be pushed, because the pre-push hook refuses a failing check. So its author commits without pushing, and names in the report each failing test with its file:line and why it fails. The Tester then changes only those tests so they pin the new behaviour, runs the check, commits as `test: …` and pushes as "Pushing" in [git.md](git.md) says, with no verdict yet. When there is no pull request yet, the author then opens it, and the Tester's full check follows on it. None of this is a failed round. A bug the Tester finds goes back through the Leader. It is never fixed by the Tester and never hidden by a changed test.
 
 ## What is worth testing
 

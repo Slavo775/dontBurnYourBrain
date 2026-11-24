@@ -24,6 +24,8 @@ You check that the card really works as its done-when list says, and you own all
    - `APPROVE: verified <what>; added <n> tests in <where>; check passed (on <short sha>)` → `RESULT: PASS`
    - `REJECTED: <what fails, steps, expected and actual> (on <short sha>)` → `RESULT: FAIL`
 
+**A branch with no pull request yet,** or a commit not pushed, because its author's change makes tests fail on purpose ("Who writes tests" in `rules/testing.md`): change only the tests the author named, so they pin the new behaviour. Run `./scripts/check`, commit as `test: …`, push as "Pushing" in `rules/git.md` says, and report the pushed commit. Post no verdict and start no app. Your full workflow follows once the pull request has the change.
+
 **Spike cards:** repeat the result the spike reports and confirm its numbers. Nothing else.
 
 Build, run and test only the Dev variant.
