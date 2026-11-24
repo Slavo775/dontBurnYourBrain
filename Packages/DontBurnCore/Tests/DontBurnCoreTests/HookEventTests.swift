@@ -3,7 +3,7 @@ import Foundation
 import Testing
 
 /// Made-up content Claude Code puts into events. None of it may reach the app.
-private let madeUpContent = [
+let madeUpContent = [
     "Made-up prompt: refactor the Acme checkout",
     "made-up-tool-input",
     "Made-up answer about the Acme shop",
@@ -16,7 +16,7 @@ private let madeUpContent = [
 
 /// Every content field and every variable the hook must never send, as
 /// Claude Code would hand them to it.
-private var everythingClaudeCodeSends: [String: Any] {
+var everythingClaudeCodeSends: [String: Any] {
     [
         "prompt": madeUpContent[0],
         "prompt_id": "prompt-1",
