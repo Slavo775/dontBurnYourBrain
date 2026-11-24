@@ -98,3 +98,37 @@ func `a stand-in that is not an absolute path or holds a control character is re
     #expect(ProfileStandIn.folder(from: tooLong, home: "/Volumes/Acme/home") == nil)
     #expect(ProfileStandIn.folder(from: atLimit, home: "/Volumes/Acme/home") != nil)
 }
+
+// MARK: - Where each build reaches
+
+@Test func `the Dev build reaches its stand-in only, and never the home folder or the root in any spelling`() throws {
+    try withTemporaryFolder { temporary in
+        let homes = try Homes(temporary)
+        let linkedHome = temporary.path("home-link")
+        try FileManager.default.createSymbolicLink(atPath: linkedHome, withDestinationPath: homes.home)
+
+        for home in [homes.home, homes.home + "/", linkedHome, FolderPath.resolved(homes.home)] {
+            let refused: [String?] = [
+                nil, "", home, homes.home, homes.home + "/", homes.home + "/.", linkedHome,
+                FolderPath.resolved(homes.home), homes.home + "/.claude-acme", linkedHome + "/.claude-acme",
+                temporary.path("people"), temporary.path(""), "/var", "/private", "/", "//",
+            ]
+            for standIn in refused {
+                let reach = ProfileReach(isDev: true, standIn: standIn, home: home)
+                #expect(reach.home == nil, "\(home) \(standIn ?? "none")")
+                #expect(reach.allowedFolder == nil, "\(home) \(standIn ?? "none")")
+            }
+            let reach = ProfileReach(isDev: true, standIn: homes.standIn, home: home)
+            #expect(reach.home == FolderPath.resolved(homes.standIn))
+            #expect(reach.allowedFolder == FolderPath.resolved(homes.standIn))
+        }
+    }
+}
+
+@Test(arguments: [nil, "/Volumes/Acme/standin", "/"])
+func `the Release build reaches the home folder and the root, whatever stand-in it is given`(standIn: String?) {
+    let reach = ProfileReach(isDev: false, standIn: standIn, home: "/Volumes/Acme/home")
+
+    #expect(reach.home == "/Volumes/Acme/home")
+    #expect(reach.allowedFolder == "/")
+}

@@ -338,7 +338,7 @@ func `a tool path that is not absolute or holds a control character is refused`(
 @Test func `only refusals about the file offer the lines to change by hand`() {
     let offers: [HookInstallError] = [
         .missing, .notAFile, .unreadable, .tooLarge, .notJSONObject, .unusualFormatting, .hooksNotObjectOfLists,
-        .writeFailed,
+        .hardLinked, .writeFailed,
     ]
     let others: [HookInstallError] = [
         .alreadyInstalled, .notInstalled, .outsideAllowedFolder, .changedMeanwhile, .unsafeToolPath, .toolMissing,
