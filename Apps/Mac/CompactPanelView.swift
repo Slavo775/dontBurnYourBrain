@@ -85,8 +85,10 @@ private struct RunningBlock: View {
             .opacity(panel.state == .paused ? 0.45 : 1)
             .accessibilityElement(children: .combine)
 
+            // One line, so a long workspace name never pushes the actions.
             Text(line)
                 .foregroundStyle(Color.muted)
+                .lineLimit(1)
 
             ZStack {
                 Color.sunken
@@ -109,9 +111,13 @@ private struct RunningBlock: View {
                     countdown.perform(.pauseOrResume)
                 }
                 .disabled(!QuickAction.pauseOrResume.isAvailable(in: panel.state))
-                QuickButton(panel.state.isBreak ? "End break" : "Break", symbol: "cup.and.heat.waves") {
+                QuickButton(
+                    breakTitle,
+                    symbol: panel.dueBreakMinutes == nil ? "cup.and.heat.waves" : "cup.and.heat.waves.fill",
+                ) {
                     navigation.takeBreak(with: countdown)
                 }
+                .accessibilityLabel(panel.dueBreakMinutes.map { "Break now, \($0) minutes" } ?? breakTitle)
                 .disabled(!QuickAction.breakOrEndBreak.isAvailable(in: panel.state))
                 Button {
                     countdown.perform(.extend)
@@ -154,6 +160,15 @@ private struct RunningBlock: View {
         }
     }
 
+    /// Break's word. While a planned break is due it starts at once, and the
+    /// word says so, with the cup filled in.
+    private var breakTitle: LocalizedStringKey {
+        if panel.dueBreakMinutes != nil {
+            return "Break now"
+        }
+        return panel.state.isBreak ? "End break" : "Break"
+    }
+
     private var line: LocalizedStringKey {
         switch panel.line {
         case let .leftOf(length): "left of \(length)"
@@ -181,7 +196,7 @@ private struct BreakGaps: View {
     var body: some View {
         GeometryReader { strip in
             ForEach(Array(gaps.enumerated()), id: \.offset) { _, gap in
-                Color.surface.opacity(0.62)
+                Color.breakGap.opacity(0.62)
                     .frame(width: (gap.upperBound - gap.lowerBound) * strip.size.width)
                     .offset(x: gap.lowerBound * strip.size.width)
             }

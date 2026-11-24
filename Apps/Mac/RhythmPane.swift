@@ -183,37 +183,47 @@ private struct PresetForm: View {
                     label("Focus")
                     HStack {
                         NumberField("Focus minutes", value: value(\.focusMinutes), in: PresetRoster.minuteRange)
-                        Text("min")
+                        unit("min")
                     }
                 }
                 GridRow {
                     label("Break")
                     HStack {
                         NumberField("Break minutes", value: value(\.breakMinutes), in: PresetRoster.minuteRange)
-                        Text("min")
+                        unit("min")
                     }
                 }
                 GridRow {
                     label("Long break")
-                    VStack(alignment: .leading, spacing: 10) {
-                        Toggle("Long break", isOn: value(\.hasLongBreak))
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                            .controlSize(.small)
+                    // The owner's drawing: a checkbox beside its minutes and the
+                    // rounds below, both gone while there is no long break.
+                    Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 8, verticalSpacing: 8) {
+                        GridRow {
+                            Toggle("Long break", isOn: value(\.hasLongBreak))
+                                .labelsHidden()
+                                .toggleStyle(.checkbox)
+                            if preset.hasLongBreak {
+                                HStack {
+                                    NumberField(
+                                        "Long break minutes",
+                                        value: value(\.longBreakMinutes),
+                                        in: PresetRoster.minuteRange,
+                                    )
+                                    unit("min")
+                                }
+                            }
+                        }
                         if preset.hasLongBreak {
-                            HStack {
-                                NumberField(
-                                    "Long break minutes",
-                                    value: value(\.longBreakMinutes),
-                                    in: PresetRoster.minuteRange,
-                                )
-                                Text("min, after")
-                                NumberField(
-                                    "Rounds before the long break",
-                                    value: value(\.roundsBeforeLongBreak),
-                                    in: PresetRoster.roundRange,
-                                )
-                                Text("rounds")
+                            GridRow {
+                                unit("after")
+                                HStack {
+                                    NumberField(
+                                        "Rounds before the long break",
+                                        value: value(\.roundsBeforeLongBreak),
+                                        in: PresetRoster.roundRange,
+                                    )
+                                    unit("rounds")
+                                }
                             }
                         }
                     }
@@ -224,16 +234,21 @@ private struct PresetForm: View {
                         Text("Resume by itself").tag(true)
                         Text("Wait for me").tag(false)
                     }
+                    .pickerStyle(.radioGroup)
                     .labelsHidden()
-                    .fixedSize()
                 }
             }
             .controlSize(.large)
+            Spacer(minLength: 0)
+            // At the bottom, beside the − it explains.
             if !usedBy.isEmpty {
                 Text("Used by \(usedBy.formatted(.list(type: .and))), so it can't be removed.")
+                    .font(.callout)
                     .foregroundStyle(.secondary)
+                    // However many workspaces, the form stays where it is.
+                    .lineLimit(3)
+                    .truncationMode(.middle)
             }
-            Spacer(minLength: 0)
         }
         .padding(.horizontal, 28)
         .padding(.vertical, 26)
@@ -261,6 +276,12 @@ private struct PresetForm: View {
             .foregroundStyle(.secondary)
             .frame(width: 130, alignment: .trailing)
     }
+
+    /// A word beside a number. VoiceOver skips it, because the number's label says it.
+    private func unit(_ word: LocalizedStringKey) -> some View {
+        Text(word)
+            .accessibilityHidden(true)
+    }
 }
 
 /// A workspace's default rhythm, with its minutes below it, in the workspace's form.
@@ -278,7 +299,8 @@ struct WorkspaceRhythmPicker: View {
                 }
             }
             .labelsHidden()
-            .fixedSize()
+            // As wide as its name, and cut off rather than wider than the form.
+            .buttonSizing(.fitted)
             if let preset = workspace.focusPreset {
                 Text("\(preset.focusMinutes) min focus, \(preset.breakMinutes) min break")
                     .font(.callout)
@@ -310,6 +332,7 @@ private struct NumberField: View {
             } onDecrement: {
                 value = PresetRoster.number(value, steppedBy: -1, in: range)
             }
+            .accessibilityValue(Text(value, format: .number))
         }
         .labelsHidden()
     }

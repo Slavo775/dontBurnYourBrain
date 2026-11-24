@@ -275,7 +275,8 @@ struct CustomBlockForm: View {
                 }
                 .labelsHidden()
                 .buttonStyle(.borderless)
-                .fixedSize()
+                // As wide as the name, and cut off rather than wider than the panel.
+                .buttonSizing(.fitted)
             }
             StartRow(key: nil) {
                 Text("Length")
@@ -303,7 +304,7 @@ struct CustomBlockForm: View {
                     }
                     .labelsHidden()
                     .buttonStyle(.borderless)
-                    .fixedSize()
+                    .buttonSizing(.fitted)
                 }
             }
         }

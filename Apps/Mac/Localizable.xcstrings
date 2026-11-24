@@ -188,6 +188,31 @@
     "Break minutes" : {
 
     },
+    "Break now" : {
+
+    },
+    "Break now, %lld minutes" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Break now, %lld minute"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Break now, %lld minutes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Cancel" : {
 
     },
@@ -587,6 +612,9 @@
     "Workspaces can't be shown or changed right now." : {
 
     },
+    "after" : {
+
+    },
     "left of %@" : {
 
     },
@@ -614,9 +642,6 @@
 
     },
     "min" : {
-
-    },
-    "min, after" : {
 
     },
     "paused" : {
