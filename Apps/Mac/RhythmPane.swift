@@ -177,6 +177,7 @@ private struct PresetForm: View {
                     label("Name")
                     TextField("Name", text: value(\.name))
                         .labelsHidden()
+                        .accessibilityLabel("Name")
                         .focused($isNameFocused)
                 }
                 GridRow {
@@ -324,7 +325,9 @@ private struct NumberField: View {
 
     var body: some View {
         HStack(spacing: 4) {
+            // A hidden label gives a field no name for VoiceOver, unlike the stepper.
             TextField(title, value: edited, format: .number)
+                .accessibilityLabel(title)
                 .multilineTextAlignment(.trailing)
                 .frame(width: 56)
             Stepper(title) {
