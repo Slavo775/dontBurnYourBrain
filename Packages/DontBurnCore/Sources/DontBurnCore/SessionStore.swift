@@ -240,6 +240,18 @@ public struct SessionStore: Codable, Equatable, Sendable {
         sessions[index].apply(effect, at: now)
     }
 
+    /// Applies the hook tool's `message`, which the app received at `now`,
+    /// once ``HookEvent/decode(_:)`` accepts it, and returns its event.
+    ///
+    /// A message that is too large or has the wrong shape changes nothing,
+    /// and the ``HookEventError`` is thrown.
+    @discardableResult
+    public mutating func receive(_ message: Data, at now: Date) throws -> HookEvent {
+        let event = try HookEvent.decode(message)
+        apply(event, at: now)
+        return event
+    }
+
     /// Drops every session that ended, and every one whose `claude` process
     /// is gone, as `isAlive` tells.
     ///
