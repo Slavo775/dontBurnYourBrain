@@ -38,7 +38,7 @@ Exit: you run a full working day on it. Met on 19 November 2026, the first full 
 
 Length: 1 week. Runs side by side with phase 3.
 
-- Focus rhythm in the timer engine: presets such as 25 and 5 or 50 and 10, a workspace's default preset, planned focus intervals and breaks, and a long break after a number of rounds. Whether a meeting segment can be marked by hand now or waits for the calendar is asked when the work starts
+- Focus rhythm in the timer engine: presets such as 25 and 5 or 50 and 10, a workspace's default preset, planned focus intervals and breaks, and a long break after a number of rounds. A meeting inside a block is not marked by hand: it waits for the calendar in phase 5, the owner's decision on card 57
 - The rhythm in the panel, the menu bar and Settings: the planned breaks as gaps in the strip, "break in 19 min", the Rhythm tab, and an alert when a focus interval ends
 - Idle detection: after time away from the Mac during a block, the app asks what that time was, and changes nothing without an answer
 - Week and month charts with totals per workspace and project, splitting an entry, CSV export

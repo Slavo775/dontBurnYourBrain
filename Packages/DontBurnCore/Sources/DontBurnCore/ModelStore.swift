@@ -3,16 +3,19 @@ import SwiftData
 
 /// How the store moves from one schema version to the next.
 ///
-/// There is one version so far. A later version adds its schema and a stage here.
+/// A later version adds its schema and a stage here. Version 1 is what the
+/// stores of v0.1.0 hold, so it never changes.
 public enum DontBurnMigrationPlan: SchemaMigrationPlan {
     /// Every schema version, oldest first.
     public static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self]
+        [SchemaV1.self, SchemaV2.self]
     }
 
     /// The steps between versions.
     public static var stages: [MigrationStage] {
-        []
+        // Only added models and fields, each with a default or optional, so
+        // SwiftData fills them in by itself.
+        [.lightweight(fromVersion: SchemaV1.self, toVersion: SchemaV2.self)]
     }
 }
 
@@ -45,7 +48,7 @@ public enum ModelStore {
 
     /// The current schema.
     public static var schema: Schema {
-        Schema(versionedSchema: SchemaV1.self)
+        Schema(versionedSchema: SchemaV2.self)
     }
 
     /// The current local schema.

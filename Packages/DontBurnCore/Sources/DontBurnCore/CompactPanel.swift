@@ -91,7 +91,7 @@ public struct CompactPanel: Equatable, Sendable {
     ///
     /// The same total as the window's Today, see ``DayLog/total``. Work and
     /// meetings always count. A break counts only when its workspace counts
-    /// breaks (``SchemaV1/Workspace/breaksCount``).
+    /// breaks (``SchemaV2/Workspace/breaksCount``).
     public static func trackedToday(in context: ModelContext, now: Date, calendar: Calendar) throws -> TimeInterval {
         try DayLog(day: now, in: context, now: now, calendar: calendar).total
     }

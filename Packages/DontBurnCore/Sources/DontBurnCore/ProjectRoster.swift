@@ -5,7 +5,7 @@ import SwiftData
 ///
 /// A project is never deleted: its blocks and entries name it. Removing one
 /// archives it instead. The active projects of each workspace keep a dense
-/// ``SchemaV1/Project/sortOrder`` from 0. A project is renamed and its time
+/// ``SchemaV2/Project/sortOrder`` from 0. A project is renamed and its time
 /// tracking switched through its properties and a save of the context, which
 /// changes nothing on the blocks and entries that already name it. Every
 /// operation here saves the context.

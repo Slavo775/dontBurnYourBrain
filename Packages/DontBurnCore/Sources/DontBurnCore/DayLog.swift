@@ -18,7 +18,7 @@ public struct DayLog {
         public let end: Date
         /// Whether the entry is still running.
         public let isRunning: Bool
-        /// Whether the part counts toward the totals. See ``SchemaV1/TimeEntry/countsAsTracked``.
+        /// Whether the part counts toward the totals. See ``SchemaV2/TimeEntry/countsAsTracked``.
         public let counts: Bool
 
         /// The stored entry's identifier.
@@ -121,7 +121,7 @@ public extension TimeEntry {
     /// Whether the entry counts toward tracked time.
     ///
     /// Work and meetings always count. A break counts only when its
-    /// workspace counts breaks (``SchemaV1/Workspace/breaksCount``).
+    /// workspace counts breaks (``SchemaV2/Workspace/breaksCount``).
     var countsAsTracked: Bool {
         !(kind == .break && workspace?.breaksCount == false)
     }

@@ -198,15 +198,6 @@ public enum SchemaV1: VersionedSchema {
     }
 }
 
-/// A separate area of work. See ``SchemaV1/Workspace``.
-public typealias Workspace = SchemaV1.Workspace
-/// A piece of work inside a workspace. See ``SchemaV1/Project``.
-public typealias Project = SchemaV1.Project
-/// Planned time for one workspace. See ``SchemaV1/TimeBlock``.
-public typealias TimeBlock = SchemaV1.TimeBlock
-/// One real interval of tracked time. See ``SchemaV1/TimeEntry``.
-public typealias TimeEntry = SchemaV1.TimeEntry
-
 /// The palette of six workspace colors. The raw value is the stored key.
 public enum WorkspaceColor: String, CaseIterable, Sendable {
     /// Key `a`.

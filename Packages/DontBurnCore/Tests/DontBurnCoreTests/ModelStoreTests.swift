@@ -237,12 +237,14 @@ private func syncViolations(in schema: Schema) -> [String] {
     #expect(syncViolations(in: ModelStore.schema) == [])
 }
 
-@Test func `the schema holds exactly the four models`() {
+@Test func `the schema holds exactly the five models of version 2`() {
     let names = Set(ModelStore.schema.entities.map(\.name))
-    #expect(names == ["Workspace", "Project", "TimeBlock", "TimeEntry"])
+    #expect(names == ["Workspace", "Project", "TimeBlock", "TimeEntry", "FocusPreset"])
     #expect(SchemaV1.versionIdentifier == Schema.Version(1, 0, 0))
-    #expect(DontBurnMigrationPlan.schemas.count == 1)
-    #expect(DontBurnMigrationPlan.stages.isEmpty)
+    #expect(SchemaV2.versionIdentifier == Schema.Version(2, 0, 0))
+    let schemas = DontBurnMigrationPlan.schemas.map { ObjectIdentifier($0) }
+    #expect(schemas == [ObjectIdentifier(SchemaV1.self), ObjectIdentifier(SchemaV2.self)])
+    #expect(DontBurnMigrationPlan.stages.count == 1)
 }
 
 /// Models that break every sync rule, so the walk is shown to catch each one.
