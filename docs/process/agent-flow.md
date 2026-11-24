@@ -48,6 +48,8 @@ The roles cannot do each other's job: only the Tester writes tests, only the Dev
 5. **Documenter.** Docs updated in the same pull request, or a note that none are needed.
 6. **Release master.** The owner's yes, then the merge.
 
+A change that makes an existing test fail on purpose cannot be pushed by its author, because the pre-push hook refuses a failing check. The author commits it without pushing, the Tester changes only those tests and pushes, with no verdict yet, and then the pull request and the Tester's full check follow. This is not a failed round. The steps are in "Who writes tests" in [../../rules/testing.md](../../rules/testing.md).
+
 After three failed rounds of testing or review, the Leader moves the card to Needs decision and asks the owner.
 
 Every step ends with a comment on the card. Its form, and what never goes into one, are in [../../rules/README.md](../../rules/README.md) under "Comments on the card".

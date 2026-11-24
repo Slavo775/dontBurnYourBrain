@@ -98,7 +98,7 @@ It prints `success` for a commit that passed, and nothing for a commit nobody ch
 
 The pre-push hook refuses two things the check could not vouch for: a dirty working tree, and a push of a commit that is not the one checked out. A tag, annotated or lightweight, counts as the commit it points to, so a tag on the checked-out commit can be pushed with `git push origin <tag>`. A tag on any other commit is refused. A commit that already passed is not checked twice. A push that only deletes branches sends no commit, so it goes through without either guard or the check.
 
-`git commit --no-verify` and `git push --no-verify` would skip these hooks. The rule about that, and what happens when a hook is wrong, are in [../../rules/git.md](../../rules/git.md) under "Commits".
+`git commit --no-verify` and `git push --no-verify` would skip these hooks. The rule about that, and what happens when a hook is wrong, are in [../../rules/git.md](../../rules/git.md) under "Commits". A test that fails on purpose is no reason to skip them either: how such a change still reaches the branch is in [../../rules/testing.md](../../rules/testing.md) under "Who writes tests".
 
 ## What GitHub enforces
 
