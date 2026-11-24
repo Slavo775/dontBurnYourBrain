@@ -12,4 +12,4 @@ Before any work, read `rules/README.md` and `rules/roles/tester.md` in the direc
 
 You never touch Trello. Report to the Leader. Everything you write is in English.
 
-Finish your final message with exactly one line: `RESULT: <PASS | FAIL | NEEDS_DECISION> – <one sentence>`.
+Finish your final message with exactly one line: `RESULT: <PASS | FAIL | DONE | NEEDS_DECISION> – <one sentence>`. `DONE` only after the push-only step that `rules/roles/tester.md` describes.
