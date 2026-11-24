@@ -354,6 +354,23 @@ The chosen workspace lists its projects.
 - From phase 4, a project also names its issue tracker and the project or board there. A project without a tracker that keeps time never appears in time review.
 - A workspace without projects works as in phase 1, and nothing asks for one.
 
+What phase 3 builds:
+
+- **The switch.** A "Workspace | Projects" switch sits at the top of the chosen workspace's side. The Workspace page is the form from phase 1, unchanged. The switch keeps its page when another workspace is chosen, and + for a new workspace goes back to the Workspace page, with its name focused.
+- **The Projects page** is one bordered box under the switch: the project list, about 160 pt wide, with + and − below it, and the chosen project's form beside it. Rows are reordered by dragging. Archived projects sit in a collapsible "Archived" section under the list, with dimmed rows, by name.
+- **+** creates "New project", then "New project 2" and so on, counting the workspace's archived names too. Its time is tracked, it goes last, and its name is focused.
+- **The form** holds the name, the "Track time" switch with the note "Its entries stay when this is off." below it, and Folders. The labels sit in a column as wide as the widest one. The form scrolls when the folders make it taller than the window.
+- **A folder row** shows the folder's name, and below it the path, with `~` for the home folder and shortened in the middle. The full path is in a tooltip. A remove button ends the row, and removing takes no confirmation.
+- **"Add folder…"** opens the system picker, for folders only, one or several at once. A folder is kept with its symlinks resolved. A folder that another project already holds, in any workspace and archived or not, is refused below the button: "“<folder>” already belongs to <project>." A folder the project already holds changes nothing.
+- **−** archives after one confirmation: "Its history and its folders stay. You can restore it from the Archived list." Nothing deletes a project.
+- **An archived project** is shown read-only, with an "Archived" line and a Restore button. Restore puts it last.
+- **An archived workspace:** the page is read-only and says "Read-only while the workspace is archived." Nothing can be added, archived, moved or restored.
+- **No projects:** the page says "This workspace has no projects." and offers "Create a project", except in an archived workspace.
+- **The local store could not be opened:** the Folders row says "The folders could not be opened." Everything else works.
+- **The folder rule,** ready for the sessions later in phase 3: a path belongs to the project whose folder holds it, and the deepest folder wins. Whole path components are compared after symlinks are resolved, so `~/code/acme` does not hold `~/code/acme-web`. Archived projects and the projects of archived workspaces are skipped, but their folders stay taken.
+
+The prototype does not draw this page. The owner chose the layout above. The rules live in `ProjectRoster` and `ProjectFolders` in `DontBurnCore`.
+
 ### Rhythm
 
 The focus presets: a name, the minutes of focus and of break, and a long break after a number of rounds. The app comes with 25 and 5, 50 and 10, and "none". A workspace names its default preset in Workspaces, and "Custom block" may choose another for one block. A preset that a workspace uses cannot be removed. This arrives in phase 2.

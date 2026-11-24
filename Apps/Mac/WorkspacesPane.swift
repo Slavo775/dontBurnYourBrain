@@ -3,8 +3,12 @@ import os
 import SwiftData
 import SwiftUI
 
-/// The Workspaces tab: the list on the left, the chosen workspace on the right.
+/// The Workspaces tab: the list on the left, the chosen workspace on the right,
+/// its settings or its projects.
 struct WorkspacesPane: View {
+    /// The open local store, or `nil` when it could not be opened.
+    let localContainer: ModelContainer?
+
     @Environment(\.modelContext) private var context
     @Query(filter: #Predicate<Workspace> { !$0.isArchived }, sort: \Workspace.sortOrder)
     private var active: [Workspace]
@@ -12,6 +16,7 @@ struct WorkspacesPane: View {
     private var archived: [Workspace]
 
     @State private var selection: Workspace.ID?
+    @State private var page = WorkspacePage.workspace
     @State private var showsArchived = true
     @State private var archiveCandidate: Workspace?
     /// The workspace whose name field takes the focus next, set on create.
@@ -117,13 +122,18 @@ struct WorkspacesPane: View {
     @ViewBuilder
     private var detail: some View {
         if let selected {
-            WorkspaceForm(
-                workspace: selected,
-                quickStartKey: active.firstIndex { $0.id == selected.id }.flatMap(WorkspaceRoster.quickStartKey(at:)),
-                nameFocusRequest: $nameFocusRequest,
-                save: save,
-                restore: { restore(selected) },
-            )
+            WorkspaceDetail(page: $page) {
+                WorkspaceForm(
+                    workspace: selected,
+                    quickStartKey: active.firstIndex { $0.id == selected.id }
+                        .flatMap(WorkspaceRoster.quickStartKey(at:)),
+                    nameFocusRequest: $nameFocusRequest,
+                    save: save,
+                    restore: { restore(selected) },
+                )
+            } projects: {
+                ProjectsPane(workspace: selected, localContainer: localContainer)
+            }
             .id(selected.id)
         } else {
             Text("Choose a workspace")
@@ -135,6 +145,8 @@ struct WorkspacesPane: View {
         perform("create a workspace") {
             let workspace = try roster.create(baseName: String(localized: "New workspace"))
             selection = workspace.id
+            // Its name field is on the Workspace page.
+            page = .workspace
             nameFocusRequest = workspace.id
         }
     }
@@ -370,7 +382,7 @@ private struct NoWorkspacesView: View {
 
 #Preview("Sample data") {
     if let container = ModelContainer.sample {
-        WorkspacesPane()
+        WorkspacesPane(localContainer: .sampleFolders(for: container))
             .modelContainer(container)
             .frame(width: 760, height: 470)
     }
@@ -379,7 +391,7 @@ private struct NoWorkspacesView: View {
 #Preview("No workspaces") {
     // A preview without a store simply shows nothing.
     if let container = try? ModelStore.inMemory() {
-        WorkspacesPane()
+        WorkspacesPane(localContainer: nil)
             .modelContainer(container)
             .frame(width: 760, height: 470)
     }

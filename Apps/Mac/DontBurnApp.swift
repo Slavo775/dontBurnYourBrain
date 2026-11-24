@@ -12,6 +12,8 @@ struct DontBurnApp: App {
 
     /// The open store, or `nil` when it could not be opened.
     private let container: ModelContainer?
+    /// The open local store, this Mac's own, or `nil` when it could not be opened.
+    private let localContainer: ModelContainer?
 
     init() {
         let sampleData = SampleData.isRequested(by: Self.launchArgument("DontBurnSampleData"))
@@ -20,6 +22,7 @@ struct DontBurnApp: App {
         let now = Self.fixedTime ?? .now
         let container = Self.openStore(sampleData: sampleData, scenario: scenario, now: now)
         self.container = container
+        localContainer = Self.openLocalStore(sampleData: sampleData, sampleProjects: container)
         // The sample data keeps its breaks in memory, so a run with it leaves nothing in the defaults.
         let countdown = Countdown(
             container: container,
@@ -94,9 +97,49 @@ struct DontBurnApp: App {
         }
     }
 
+    /// The local store in memory with `-DontBurnSampleData YES`, holding the
+    /// sample folders for the projects in `sampleProjects`, otherwise the local
+    /// store on disk next to the synced one.
+    ///
+    /// The sample folders are made in a temporary folder named after the bundle
+    /// identifier, so no real folder shows. A local store that cannot be opened
+    /// is logged, and the app keeps running without one: projects still work,
+    /// without their folders.
+    private static func openLocalStore(sampleData: Bool, sampleProjects: ModelContainer?) -> ModelContainer? {
+        let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "store")
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier else {
+            log.error("No bundle identifier, so the local store has no folder of its own and is not opened")
+            return nil
+        }
+        do {
+            if sampleData {
+                let container = try ModelStore.localInMemory()
+                if let sampleProjects {
+                    let root = FileManager.default.temporaryDirectory
+                        .appending(path: "\(bundleIdentifier).sample", directoryHint: .isDirectory)
+                    try SampleData.seedFolders(
+                        into: container.mainContext, projects: sampleProjects.mainContext, root: root,
+                    )
+                }
+                log.info("Opened the sample folders in memory")
+                return container
+            }
+            let directory = StoreLocation.directory(
+                bundleIdentifier: bundleIdentifier,
+                applicationSupport: .applicationSupportDirectory,
+            )
+            let container = try ModelStore.localOnDisk(in: directory)
+            log.info("Opened the local store in its own folder")
+            return container
+        } catch {
+            log.error("The local store could not be opened: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
     var body: some Scene {
         Settings {
-            SettingsView(container: container)
+            SettingsView(container: container, localContainer: localContainer)
         }
     }
 }

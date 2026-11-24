@@ -41,7 +41,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 **Storage**
 
 - **SwiftData, synced**: Workspaces, projects, blocks, entries, issue links
-- **SwiftData, local only**: Agent sessions, terminal references, the folders of each project
+- **SwiftData, local only**: The folders of each project, kept in a second store for this Mac only: `Local.store`, next to `DontBurn.store` in the folder named after the bundle identifier, with its own `LocalSchemaV1` and migration plan. It is never synced, and no relationship crosses the two stores: a folder names its project by the project's identifier. Agent sessions and terminal references stay on this Mac too, and may join this store
 - **Keychain**: Issue tracker tokens
 - **The app's own defaults, this Mac only**: the alert switches, the last break length, and the latest break with nothing running, which is never a time entry
 
@@ -59,7 +59,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 | --- | --- | --- |
 | **Workspace** | name, color, sort order, archived flag, default block minutes, focus preset, rounding step, whether breaks count, calendar | Yes |
 | **Project** | name, workspace, sort order, archived flag, whether its time is tracked, optional tracker link: the tracker account and the project or board there | Yes |
-| **ProjectFolder** | the project's identifier, folder path | No, this Mac only |
+| **ProjectFolder** | its own id, the project's identifier, folder path with symlinks resolved | No, this Mac only, in the local store |
 | **TimeBlock** | workspace, planned start, planned minutes, focus preset, state (planned, running, done, cancelled) | Yes |
 | **TimeEntry** | start, end, kind (work, break, meeting), planned minutes (set on a break, so it survives a restart), workspace, project, block, issue link, note, source (timer, manual, calendar) | Yes |
 | **TimeOff** | start, end, workspace (empty means every workspace), source (calendar, manual), whether you worked anyway | Yes |
@@ -71,7 +71,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 
 CloudKit rules applied from the start: every property has a default or is optional, relationships are optional, no unique constraints, and fields are only ever added.
 
-Card 9 built Workspace, Project, TimeBlock and TimeEntry as `SchemaV1` in `DontBurnCore`, without the fields that belong to later phases (focus preset, calendar, tracker link, issue link). Their field names are fixed from now on, because sync cannot rename them. Folder paths never enter the synced model, because they belong to one Mac. Card 10 added the planned minutes of a TimeEntry. The other entities arrive with their phases. The rules for the model are also in `CLAUDE.md`.
+Card 9 built Workspace, Project, TimeBlock and TimeEntry as `SchemaV1` in `DontBurnCore`, without the fields that belong to later phases (focus preset, calendar, tracker link, issue link). Their field names are fixed from now on, because sync cannot rename them. Folder paths never enter the synced model, because they belong to one Mac. Card 10 added the planned minutes of a TimeEntry. Card 46 added ProjectFolder (`id`, `projectID`, `path`) as `LocalSchemaV1`, the local store's own schema, and left `SchemaV1` as it was. The other entities arrive with their phases. The rules for the model are also in `CLAUDE.md`.
 
 - **Delete rules:** deleting a workspace deletes its projects, blocks and entries. Deleting a project or a block keeps their entries and only clears the link.
 - **The project rule:** a block or entry names a project only through `assign(_:)`, and only a time-tracked project of its own workspace.
