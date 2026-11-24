@@ -33,7 +33,7 @@ struct SessionsPane: View {
             } header: {
                 Text("Claude Code profiles")
             } footer: {
-                Text("Sessions started before the install may need a restart.")
+                Text("Sessions that are already running pick up the hook with their next prompt.")
                     .foregroundStyle(.secondary)
             }
             if let error = setup.installerError {

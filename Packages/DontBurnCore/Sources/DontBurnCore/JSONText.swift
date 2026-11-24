@@ -126,12 +126,13 @@ public struct JSONMember: Equatable, Sendable {
 }
 
 extension [JSONMember] {
-    /// The value of the first member named `key`. Setting `nil` removes the
-    /// member, and setting a new key adds it at the end, as JavaScript does.
+    /// The value of the first member named `key`, compared by its bytes as
+    /// JavaScript does. Setting `nil` removes the member, and setting a new
+    /// key adds it at the end, as JavaScript does.
     subscript(key: String) -> JSONValue? {
-        get { first { $0.key == key }?.value }
+        get { first { $0.key.utf8.elementsEqual(key.utf8) }?.value }
         set {
-            guard let index = firstIndex(where: { $0.key == key }) else {
+            guard let index = firstIndex(where: { $0.key.utf8.elementsEqual(key.utf8) }) else {
                 if let newValue {
                     append(JSONMember(key, newValue))
                 }
@@ -214,11 +215,13 @@ private struct JSONParser {
             index += 1
             return .object(members)
         }
-        var keys: Set<String> = []
+        // By their bytes, as JavaScript compares keys. Swift's string equality
+        // would take é and e + U+0301 for one key.
+        var keys: Set<[UInt8]> = []
         while true {
             skipWhitespace()
             let key = try string()
-            guard keys.insert(key).inserted else { throw JSONTextError.repeatedKey }
+            guard keys.insert(Array(key.utf8)).inserted else { throw JSONTextError.repeatedKey }
             skipWhitespace()
             try expect(UInt8(ascii: ":"))
             skipWhitespace()

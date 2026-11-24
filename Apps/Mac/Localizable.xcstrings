@@ -392,7 +392,7 @@
     "Sessions" : {
 
     },
-    "Sessions started before the install may need a restart." : {
+    "Sessions that are already running pick up the hook with their next prompt." : {
 
     },
     "Settings…" : {

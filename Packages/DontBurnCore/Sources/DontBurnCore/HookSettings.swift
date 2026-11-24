@@ -208,7 +208,9 @@ public enum HookSettings {
             data.isEmpty ? [] : (try? JSONValue(parsing: data))?.members
         }
         guard let now = members(data), let before = members(backup) else { return nil }
-        let keys = now.map(\.key) + before.map(\.key).filter { key in !now.contains { $0.key == key } }
+        let keys = now.map(\.key) + before.map(\.key).filter { key in
+            !now.contains { $0.key.utf8.elementsEqual(key.utf8) }
+        }
         return keys.filter { now[$0] != before[$0] }
     }
 
