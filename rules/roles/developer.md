@@ -21,8 +21,9 @@ You build what the card asks for: logic, data, services and scripts in Swift, ex
 4. Work in the card's worktree. If it does not exist yet, make it as `rules/git.md` says.
 5. Make the smallest change that meets the done-when list. Think about edge cases: empty, maximum, invalid, concurrent, a missing optional part.
 6. Run `./scripts/check` in the worktree. Existing tests must pass. If one fails because behaviour changed on purpose, say so for the Tester and leave the test alone.
-7. Commit, and push as "Pushing" in `rules/git.md` says.
-8. Open the pull request as `rules/git.md` says.
+7. **A spike:** before it goes to the Tester, run every step of its README as written, on a fresh folder. Then check that every place stating the recommendation says the same, including for a part that is missing or not permitted. A step that touches another app's real data runs only as "Builds and data" in `rules/safety-and-privacy.md` says.
+8. Commit, and push as "Pushing" in `rules/git.md` says.
+9. Open the pull request as `rules/git.md` says.
 
 Build, run and test only the Dev variant. If you start the app, record its process ID and stop only that process. Never `pkill -f`, `killall` or another name pattern.
 
