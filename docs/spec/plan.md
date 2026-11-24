@@ -67,7 +67,7 @@ Length: 2 to 3 weeks. Runs side by side with phase 2.
 - Needs-you alerts: the amber badge, the needs-you strip and a notification, also with no block running and for projects whose time is not tracked. Profile labels
 - The Focus button proven from the menu bar app with live sessions, the editors' case end to end
 - A release, then a week of daily use
-- A spike: whether a workspace can name a Chrome profile and bring its window forward. A feature card is written only from what it finds
+- A spike: whether a workspace can name a Chrome profile and bring its window forward. The app can open a new window in a profile, but not bring the user's own window forward, and listing the profiles needs macOS's App Data permission for Chrome. A feature card is written only from what it finds and the owner's choice: [../spikes/chrome-profiles.md](../spikes/chrome-profiles.md)
 
 What this phase builds on, and what is still open, is in [../spikes/phase-0.md](../spikes/phase-0.md).
 
