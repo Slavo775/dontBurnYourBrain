@@ -17,7 +17,7 @@ How the app is versioned, and how a development build and the maintainer's daily
 
 - **The build number** is `CURRENT_PROJECT_VERSION`. It is `1` in development builds. The release script sets it to the number of commits on `main` (`git rev-list --count HEAD`, on a full clone). It only ever grows, which TestFlight requires.
 - **Mac and iPhone always share version and build**, because they share data through iCloud.
-- **The app says what is running.** Settings, General shows version, build and variant: "Version 0.1.0 (1) · Dev · 1a2b3c4" in Dev, "Version 0.1.0 (412) · Release" in Release. Only Dev shows the short commit hash. The hook tool prints `dontburn-hook 0.1.0 (1)`.
+- **The app says what is running.** Settings, General shows version, build and variant: "Version 0.1.0 (1) · Dev · 1a2b3c4" in Dev, "Version 0.1.0 (412) · Release" in Release. Only Dev shows the short commit hash. `dontburn-hook --version` prints `dontburn-hook 0.1.0 (1)`.
 - **A release is a git tag** `vX.Y.Z` on `main`, annotated, with a section in `CHANGELOG.md` written from the Conventional Commits since the previous tag.
 
 ## Build variants
@@ -47,18 +47,24 @@ Because the identifiers differ, macOS treats Dev and Release as two separate app
 - `project.yml` sets `APP_VARIANT` per configuration: `Dev` for Debug, `Release` for Release.
 - A build phase, "Variant and commit", writes it into the built Info.plist as `DontBurnVariant`. In Dev it also writes `DontBurnCommit`, the short git hash. Release, or a build without git, carries no `DontBurnCommit`.
 - `BuildInfo` in `DontBurnCore` reads the version, build, variant and commit from the bundle. A missing or unknown variant counts as Release.
+- `project.yml` names both bundle identifiers once, as `DONTBURN_RELEASE_BUNDLE_IDENTIFIER` and `DONTBURN_DEV_BUNDLE_IDENTIFIER`, which is the Release one plus `.dev`. The app takes one per configuration. The hook tool takes its own, the Release one plus `.hook`, and carries both in its Info.plist as `DontBurnReleaseBundleIdentifier` and `DontBurnDevBundleIdentifier`, so it reaches either build whichever configuration built it.
 
 ### Everything with a name outside the app follows the bundle identifier
 
 So that Dev and Release never answer each other's messages:
 
 - the data folder (already in `StoreLocation`)
-- the channel the hook tool talks to
+- the channel the hook tool talks to: `Hook.socket` in the data folder, such as `~/Library/Application Support/io.github.slavo775.dontburn.dev/Hook.socket` for Dev
 - the URL scheme: `dontburn://` for Release, `dontburn-dev://` for Dev
 - Keychain service names, defaults suites and the logging subsystem
 - notification names and anything registered with launchd
 
-The hook tool sends to Release by default. `--target dev` or `DONTBURN_TARGET=dev` sends to Dev. Hooks installed in the maintainer's real Claude Code profiles therefore always reach his daily copy. Dev is tested from a scratch project.
+The hook tool sends to Release by default. Only two forms name a target:
+
+- **No arguments.** `DONTBURN_TARGET` decides, `dev` or `release`. Unset or empty means Release.
+- **Exactly `--target dev` or `--target release`.** It wins over `DONTBURN_TARGET`.
+
+Anything else sends nothing, so an event never reaches the other build by mistake: another spelling such as `--target=dev` or `-t dev`, `--target` without a name, an unknown name, or an extra or repeated argument. Hooks installed in the maintainer's real Claude Code profiles therefore always reach his daily copy. Dev is tested from a scratch project.
 
 ## On the Mac
 

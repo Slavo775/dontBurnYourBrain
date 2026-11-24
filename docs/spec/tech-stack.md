@@ -24,7 +24,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 
 - **Mac app**: Menu bar panel, main window, settings
 - **iPhone app**: Timer, today, history, Live Activity
-- **dontburn-hook**: Tiny CLI called by Claude Code hooks, later by other agents
+- **dontburn-hook**: Tiny CLI called by Claude Code hooks, later by other agents. It reads the event on stdin, keeps only the fields of `HookEvent`, adds the `claude` process and its tty, and sends one datagram to the app's hook channel. It prints nothing and always exits 0, whether the app runs or not. Which build it reaches is in [../process/releases.md](../process/releases.md#everything-with-a-name-outside-the-app-follows-the-bundle-identifier)
 
 **Shared package**
 
@@ -33,6 +33,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 **Mac-only services**
 
 - **SessionMonitor**: Receives hook events, reads transcripts, and finds each session's project through the projects' folders. One adapter per agent tool and profile folder
+- **HookSocket**: The hook channel, a Unix datagram socket, `Hook.socket`, in the folder named after the bundle identifier, with mode 0600. It refuses a message over 64 KB or of the wrong shape. A socket left behind by a crash or a `kill` is replaced at the next launch, and quitting removes it. A socket another running copy listens on is left alone, and the second copy runs without a channel. So does a copy whose socket path is longer than the 103 bytes a socket address holds. Both cases are logged
 - **TerminalFocus**: One adapter per terminal host
 - **CalendarService**: EventKit
 - **InsightFlowBridge**: Reads the current task per repo from the CLI
@@ -42,7 +43,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 
 - **SwiftData, synced**: Workspaces, projects, blocks, entries, focus presets, issue links
 - **SwiftData, local only**: The folders of each project, kept in a second store for this Mac only: `Local.store`, next to `DontBurn.store` in the folder named after the bundle identifier, with its own `LocalSchemaV1` and migration plan. It is never synced, and no relationship crosses the two stores: a folder names its project by the project's identifier
-- **A JSON file, this Mac only**: The agent sessions, with their terminal and tab, in `Sessions.json` next to `Local.store`. Not SwiftData, so it has no schema and no migration. A file that is missing, larger than 1 MiB or broken gives an empty list, because each session comes back with its next event. Card 47 built its loading and saving in `SessionStore`, and the app does not use it yet
+- **A JSON file, this Mac only**: The agent sessions, with their terminal and tab, in `Sessions.json` next to `Local.store`. Not SwiftData, so it has no schema and no migration. A file that is missing, larger than 1 MiB or broken gives an empty list, because each session comes back with its next event. Card 47 built its loading and saving in `SessionStore`. Since card 48 the app loads it at launch and saves it after each hook event, and drops sessions whose `claude` process is gone. With the sample data the sessions stay in memory
 - **Keychain**: Issue tracker tokens
 - **The app's own defaults, this Mac only**: the alert switches, the last break length, and the latest break with nothing running, which is never a time entry
 

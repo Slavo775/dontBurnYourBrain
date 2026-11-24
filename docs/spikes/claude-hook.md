@@ -128,7 +128,7 @@ The hook's direct parent is always the `claude` process, for subagent events too
 - Terminal and iTerm2 were each checked in at least two tabs or windows, and the handles matched every time. Two Terminal tabs had different ttys and different `TERM_SESSION_ID`s.
 - VS Code and Cursor set the same `TERM_PROGRAM` and the same `VSCODE_*` variables, and neither sets a `CURSOR_*` variable. The bundle id or the ancestor names tell them apart. Both set `CLAUDE_CODE_SSE_PORT` when Claude Code's IDE extension is connected.
 - **A tty is reused at once.** In the spike, a closed Terminal tab's tty went to a new iTerm2 window within a minute. So the app knows a tab by its tty together with the `claude` pid and the session id.
-- The spike hook found the tty by listing every process with `ps -A`. That took 0.12 of its 0.16 seconds per call. Phase 3 can read the parent's tty with one `sysctl` call instead.
+- The spike hook found the tty by listing every process with `ps -A`. That took 0.12 of its 0.16 seconds per call. Phase 3 can read the parent's tty with one `sysctl` call instead. *24 Nov 2026:* card #48 does. The hook tool reads the tty of the process `CLAUDE_PID` names with one `sysctl` call.
 
 ## Which profile
 
@@ -201,12 +201,12 @@ The product rules behind these, that hooks are reversible and are installed only
 
 How the hook tool chooses between the two builds is set in [docs/process/releases.md](../process/releases.md), and the rule for agents is in [rules/releases.md](../../rules/releases.md). The spike adds these points for phase 3:
 
-- Real profiles get `dontburn-hook` with no target, which reaches the Release app. Scratch projects get `dontburn-hook --target dev` or `DONTBURN_TARGET=dev`.
-- The tool derives its channel from the bundle identifier, such as a socket under `~/Library/Application Support/<bundle id>/`.
-- When the channel is missing or refuses the connection, the tool exits 0 at once. The app may not be running, and a session must never wait for it.
+- Real profiles get `dontburn-hook` with no target, which reaches the Release app. Scratch projects get `dontburn-hook --target dev` or `DONTBURN_TARGET=dev`. *24 Nov 2026:* card #48 takes a target only from no arguments or exactly `--target dev` or `--target release`. Any other form, such as `--target=dev`, sends nothing.
+- The tool derives its channel from the bundle identifier, such as a socket under `~/Library/Application Support/<bundle id>/`. *24 Nov 2026:* card #48 made it `Hook.socket`, a Unix datagram socket in that folder, and the tool sends each event as one datagram ([tech-stack.md](../spec/tech-stack.md#architecture)).
+- When the channel is missing or refuses the connection, the tool exits 0 at once. The app may not be running, and a session must never wait for it. *24 Nov 2026:* card #48 sends without waiting. With no app, a socket left behind or a full queue, the event is lost.
 - It prints nothing. Anything a `SessionStart` or `UserPromptSubmit` hook prints goes into Claude's context.
-- It finishes well under 100 ms. All `SessionEnd` hooks share a budget of 1.5 seconds.
-- It sends only the fields listed in the next section.
+- It finishes well under 100 ms. All `SessionEnd` hooks share a budget of 1.5 seconds. *24 Nov 2026:* card #48 measured the Debug build, 50 calls at a time with an event of 300 to 371 bytes: median 11 to 14 ms, p90 about 16 ms, at most 30 ms, whether the app ran or not. An empty command took 5 to 8 ms in the same harness. A 3 MB event took 26 ms.
+- It sends only the fields listed in the next section. *24 Nov 2026:* card #48 sends fewer, the fields of `HookEvent` from card #47. From the event: `hook_event_name`, `session_id`, `cwd`, `transcript_path`, `source`, `notification_type`, `agent_type`, and the `type` of each entry in `background_tasks`. From the environment: `CLAUDE_CONFIG_DIR`, `__CFBundleIdentifier` and `ITERM_SESSION_ID`. From the process: the `claude` pid from `CLAUDE_PID`, and its tty.
 
 ## The event format and the fields the app uses
 
