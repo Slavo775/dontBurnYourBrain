@@ -19,6 +19,11 @@ public struct FocusInterval: Equatable, Sendable {
     public let start: Date
     /// When the stretch is planned to end. A pause moves it later.
     public let end: Date
+
+    /// How long the stretch lasts, in whole minutes, rounded down.
+    var minutes: Int {
+        MenuBarLabel.wholeSeconds(end.timeIntervalSince(start)) / 60
+    }
 }
 
 /// Where a block with a rhythm stands at one moment, and its plan from there
@@ -57,6 +62,10 @@ public struct FocusRhythm: Equatable, Sendable {
     /// gaps. What follows ``current`` assumes no pause, and that every planned
     /// break is taken at its planned length and ends by itself.
     public let plan: [FocusInterval]
+    /// Whether the break being taken ends with the block paused until Resume,
+    /// as a preset that waits asks for. Never for a break cut off at the
+    /// block's end, because the block is over then.
+    public private(set) var pausesAfterBreak = false
 }
 
 extension FocusRhythm {
@@ -97,6 +106,7 @@ extension FocusRhythm {
             from = max(now, min(planned ?? plannedEnd, plannedEnd))
             walk.used += from.timeIntervalSince(now)
             walk.enter(.focus, for: walk.focus, at: from)
+            pausesAfterBreak = block.waitsAfterBreak && from < plannedEnd
         }
         walk.work(for: plannedEnd.timeIntervalSince(from), from: from)
         // Closes the last stretch at the block's end, so the plan ends exactly there.
@@ -111,6 +121,51 @@ extension FocusRhythm {
         nextBreakMinutes = nextBreak.map { $0.kind == .longBreak ? block.longBreakMinutes : block.breakMinutes }
         self.roundsDone = roundsDone
         plan = walk.plan
+    }
+
+    /// The planned breaks that become due later, earliest first: not the one
+    /// being taken, nor one that is due already.
+    var comingBreaks: [FocusInterval] {
+        plan.dropFirst().filter { $0.kind != .focus }
+    }
+
+    /// The breaks of `block` as fractions of its planned length, in the
+    /// block's own time, where pauses do not count, earliest first.
+    ///
+    /// `block` and `plannedEnd` are the ones this rhythm was made from. The
+    /// breaks up to now are the ones really taken, and the running one reaches
+    /// as far as it lasts. Those ahead are the planned ones, and one that is
+    /// due counts as planned. A skipped break is not among them.
+    func breakFractions(of block: TimeBlock, plannedEnd: Date) -> [ClosedRange<Double>] {
+        let length = TimeInterval(block.plannedMinutes) * 60
+        guard length > 0 else { return [] }
+        var breaks: [(start: TimeInterval, end: TimeInterval)] = []
+        var used: TimeInterval = 0
+        var lastEnd = block.plannedStart
+        for entry in (block.entries ?? []).sorted(by: { $0.start < $1.start }) {
+            // The running break is the first interval of the plan.
+            guard let end = entry.end else { continue }
+            let duration = max(0, end.timeIntervalSince(max(entry.start, lastEnd)))
+            if entry.kind == .break {
+                breaks.append((used, used + duration))
+            }
+            used += duration
+            lastEnd = max(lastEnd, end)
+        }
+        for interval in plan where interval.kind != .focus {
+            let end = length - plannedEnd.timeIntervalSince(interval.end)
+            var duration = interval.end.timeIntervalSince(interval.start)
+            if isBreakDue, interval == nextBreak, let nextBreakMinutes {
+                // Its window holds the pause, if any, which is not the block's own time.
+                duration = TimeInterval(nextBreakMinutes) * 60
+            }
+            breaks.append((end - duration, end))
+        }
+        return breaks.compactMap { start, end in
+            let lower = min(1, max(0, start / length))
+            let upper = min(1, max(0, end / length))
+            return lower < upper ? lower ... upper : nil
+        }
     }
 }
 
@@ -230,6 +285,12 @@ extension TimeBlock {
         focusMinutes > 0 && breakMinutes > 0
     }
 
+    /// Whether a break that ends by itself leaves the block paused until
+    /// Resume. A block without a rhythm always resumes.
+    var waitsAfterBreak: Bool {
+        hasRhythm && !resumesAfterBreak
+    }
+
     /// Copies the rhythm of `preset` into the block, so a later change to the
     /// preset leaves the block alone.
     func follow(_ preset: FocusPreset) {
@@ -257,9 +318,6 @@ public extension FocusPreset {
     /// presets, and sync can fold them together. No workspace is given one:
     /// "none" is no preset.
     static func seedDefaults(into context: ModelContext) throws {
-        // ponytail: a store whose presets were all deleted gets these two back
-        // at the next launch. Remember the seeding, such as in the defaults, if
-        // that ever matters.
         guard try context.fetchCount(FetchDescriptor<FocusPreset>()) == 0 else { return }
         let presets = [
             FocusPreset(
@@ -272,5 +330,18 @@ public extension FocusPreset {
             context.insert(preset)
         }
         try context.save()
+    }
+
+    /// Adds the presets the app comes with once, see ``seedDefaults(into:)``,
+    /// and remembers it in `isSeeded`, so presets that were all removed stay
+    /// removed. A store that already has presets counts as seeded.
+    ///
+    /// ponytail: a store deleted by hand while the caller still remembers the
+    /// seeding starts without presets. Remember it in the store if that ever
+    /// matters, which is a schema change.
+    static func seedDefaults(into context: ModelContext, isSeeded: inout Bool) throws {
+        guard !isSeeded else { return }
+        try seedDefaults(into: context)
+        isSeeded = true
     }
 }

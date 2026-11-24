@@ -27,6 +27,19 @@ public enum TimerScenario: String, CaseIterable, Sendable {
     /// Acme runs a six-minute block that starts at `now`, to watch on the
     /// live clock through the switch to seconds and to its end.
     case short
+    /// Acme follows 25/5 and runs a two-hour block, 36 minutes in, with its
+    /// first break taken, so the next one comes in 19 minutes.
+    case rhythm
+    /// Acme follows 25/5 and runs a two-hour block whose first break has been
+    /// due for a minute and is not taken.
+    case rhythmDue = "rhythm-due"
+    /// Acme follows 25/5 and is on its first planned break, with 4:12 of it left.
+    case rhythmBreak = "rhythm-break"
+    /// Acme follows a preset of one minute of focus and one of break, and runs
+    /// a six-minute block that starts at `now`, to watch two rounds on the live clock.
+    case rhythmShort = "rhythm-short"
+    /// As ``rhythmShort``, with a preset that waits for Resume after a break.
+    case rhythmWait = "rhythm-wait"
 
     /// The scenario a launch argument's value names, such as `break` in
     /// `-DontBurnTimerState break`.
@@ -44,13 +57,19 @@ public enum TimerScenario: String, CaseIterable, Sendable {
     /// through ``TimerEngine``, so the blocks and entries are the ones a
     /// user's own steps would leave.
     public func apply(to context: ModelContext, now: Date) throws {
+        let engine = TimerEngine(context: context)
+        let workspaces = try context.fetch(FetchDescriptor<Workspace>(sortBy: [SortDescriptor(\.sortOrder)]))
+        guard let acme = workspaces.first else { return }
+        try run(acme, in: context, with: engine, now: now)
+        try engine.settle(at: now)
+    }
+
+    /// Takes the steps of the scenario in `acme`, up to `now`.
+    private func run(_ acme: Workspace, in context: ModelContext, with engine: TimerEngine, now: Date) throws {
         func ago(_ seconds: TimeInterval) -> Date {
             now.addingTimeInterval(-seconds)
         }
 
-        let engine = TimerEngine(context: context)
-        let workspaces = try context.fetch(FetchDescriptor<Workspace>(sortBy: [SortDescriptor(\.sortOrder)]))
-        guard let acme = workspaces.first else { return }
         switch self {
         case .running:
             try engine.start(acme, minutes: 120, at: ago(36 * 60))
@@ -74,8 +93,34 @@ public enum TimerScenario: String, CaseIterable, Sendable {
             try engine.start(acme, minutes: 120, at: ago(36 * 60))
         case .short:
             try engine.start(acme, minutes: 6, at: now)
+        case .rhythm, .rhythmDue, .rhythmBreak, .rhythmShort, .rhythmWait:
+            try runRhythm(acme, in: context, with: engine, now: now)
         }
-        try engine.settle(at: now)
+    }
+
+    /// Gives `workspace` the scenario's preset and starts its block with it.
+    private func runRhythm(
+        _ workspace: Workspace, in context: ModelContext, with engine: TimerEngine, now: Date,
+    ) throws {
+        if self == .rhythmShort || self == .rhythmWait {
+            let preset = FocusPreset(
+                name: "1/1", focusMinutes: 1, breakMinutes: 1, resumesAfterBreak: self == .rhythmShort,
+            )
+            context.insert(preset)
+            workspace.focusPreset = preset
+            try engine.start(workspace, minutes: 6, at: now)
+            return
+        }
+        // 25/5, the first of the presets the app comes with.
+        let presets = try context.fetch(FetchDescriptor<FocusPreset>())
+        workspace.focusPreset = presets.first { $0.id == FocusPreset.seededIDs.first }
+        let minutesIn = self == .rhythm ? 36 : 26
+        try engine.start(workspace, minutes: 120, at: now.addingTimeInterval(TimeInterval(-minutesIn * 60)))
+        switch self {
+        case .rhythm: try engine.startBreak(minutes: 5, at: now.addingTimeInterval(-11 * 60))
+        case .rhythmBreak: try engine.startBreak(minutes: 5, at: now.addingTimeInterval(-48))
+        default: break
+        }
     }
 
     /// The break with no block this scenario runs at `now`, or `nil`.

@@ -19,11 +19,12 @@ final class PanelNavigation {
 
     var page = Page.main
 
-    /// The custom block's workspace. Choosing one preselects its default length.
+    /// The custom block's workspace. Choosing one preselects its default length and rhythm.
     var customWorkspace: Workspace? {
         didSet {
             if let customWorkspace, customWorkspace != oldValue {
                 customMinutes = customWorkspace.defaultBlockMinutes
+                customPreset = customWorkspace.focusPreset?.id
             }
         }
     }
@@ -31,10 +32,14 @@ final class PanelNavigation {
     /// The custom block's length in minutes.
     var customMinutes = WorkspaceRoster.defaultBlockMinutes
 
+    /// The preset the custom block follows, or `nil` for none.
+    var customPreset: FocusPreset.ID?
+
     /// Opens the custom block form with the first of `workspaces` chosen.
     func openCustomBlock(_ workspaces: [Workspace]) {
         customWorkspace = workspaces.first
         customMinutes = workspaces.first?.defaultBlockMinutes ?? WorkspaceRoster.defaultBlockMinutes
+        customPreset = workspaces.first?.focusPreset?.id
         page = .customBlock
     }
 
@@ -42,7 +47,20 @@ final class PanelNavigation {
     func startCustomBlock(with countdown: Countdown) {
         guard let customWorkspace else { return }
         page = .main
-        countdown.start(customWorkspace, minutes: customMinutes)
+        countdown.start(customWorkspace, minutes: customMinutes, presetID: customPreset)
+    }
+
+    /// Break, on its button or on B: starts the planned break that is due,
+    /// opens "Break for" where a break can start, and ends the running break.
+    func takeBreak(with countdown: Countdown) {
+        let state = countdown.state
+        if let minutes = countdown.panel?.dueBreakMinutes {
+            countdown.startPlannedBreak(minutes: minutes)
+        } else if QuickAction.canStartBreak(in: state) {
+            page = .breakLength
+        } else if QuickAction.breakOrEndBreak.isAvailable(in: state) {
+            countdown.perform(.breakOrEndBreak)
+        }
     }
 
     /// Starts a break of `minutes` on `countdown` and returns to the main page.
@@ -233,8 +251,9 @@ private struct KeyCap: View {
     }
 }
 
-/// The custom block form: a workspace and a length, then Start. Return starts,
-/// Escape goes back to the list; the panel's keys handle both.
+/// The custom block form: a workspace, a length and a rhythm, then Start.
+/// Without any preset there is no rhythm to choose. Return starts, Escape goes
+/// back to the list; the panel's keys handle both.
 struct CustomBlockForm: View {
     let countdown: Countdown
     @Bindable var navigation: PanelNavigation
@@ -270,6 +289,22 @@ struct CustomBlockForm: View {
                 .labelsHidden()
                 .buttonStyle(.borderless)
                 .fixedSize()
+            }
+            if !countdown.presets.isEmpty {
+                StartRow(key: nil) {
+                    Text("Rhythm")
+                        .foregroundStyle(Color.muted)
+                    Spacer(minLength: 0)
+                    Picker("Rhythm", selection: $navigation.customPreset) {
+                        Text("None").tag(FocusPreset.ID?.none)
+                        ForEach(countdown.presets) { preset in
+                            Text(verbatim: preset.name).tag(Optional(preset.id))
+                        }
+                    }
+                    .labelsHidden()
+                    .buttonStyle(.borderless)
+                    .fixedSize()
+                }
             }
         }
 

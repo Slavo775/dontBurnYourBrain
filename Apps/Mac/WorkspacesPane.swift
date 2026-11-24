@@ -229,9 +229,8 @@ private struct WorkspaceForm: View {
                 }
             }
             // The prototype's form: a 130 pt column of muted, right-aligned
-            // labels and 16 pt between rows. Later phases add Rhythm, Folders,
-            // Jira, Round to, Breaks and Calendar between Default block and
-            // Quick start.
+            // labels and 16 pt between rows. Later phases add Folders, Jira,
+            // Round to, Breaks and Calendar between Rhythm and Quick start.
             Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 16, verticalSpacing: 16) {
                 GridRow {
                     label("Name")
@@ -256,6 +255,10 @@ private struct WorkspaceForm: View {
                     .labelsHidden()
                     .fixedSize()
                 }
+                GridRow {
+                    label("Rhythm")
+                    WorkspaceRhythmPicker(workspace: workspace)
+                }
                 if !workspace.isArchived {
                     GridRow {
                         label("Quick start")
@@ -279,6 +282,7 @@ private struct WorkspaceForm: View {
         .onChange(of: workspace.name) { save() }
         .onChange(of: workspace.colorKey) { save() }
         .onChange(of: workspace.defaultBlockMinutes) { save() }
+        .onChange(of: workspace.focusPreset?.id) { save() }
         .onChange(of: nameFocusRequest, initial: true) {
             guard nameFocusRequest == workspace.id else { return }
             nameFocusRequest = nil
@@ -295,19 +299,6 @@ private struct WorkspaceForm: View {
             .foregroundStyle(.secondary)
             .frame(width: 130, alignment: .trailing)
     }
-}
-
-/// A block length such as `25 min`, `1 h` or `1 h 30`, already localized.
-func blockLength(_ minutes: Int) -> String {
-    let hours = minutes / 60
-    let rest = minutes % 60
-    if hours == 0 {
-        return String(localized: "\(minutes) min")
-    }
-    if rest == 0 {
-        return String(localized: "\(hours) h")
-    }
-    return String(localized: "\(hours) h \(String(format: "%02d", rest))")
 }
 
 /// The six palette colors as round buttons, the chosen one ringed.

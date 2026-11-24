@@ -38,6 +38,12 @@ final class Countdown {
     /// or an archived workspace from Settings each time it opens.
     private(set) var workspaces: [Workspace] = []
 
+    /// The presets a custom block can follow, in their order. Empty without a store.
+    ///
+    /// Names, not models: a preset can be removed in Settings while a closed
+    /// panel still holds the form, and a removed model must not be read.
+    private(set) var presets: [PresetName] = []
+
     /// Today's tracked time, such as `0:10`, or `nil` without a store.
     private(set) var trackedToday: String?
 
@@ -62,9 +68,9 @@ final class Countdown {
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var wakeObserver: (any NSObjectProtocol)?
     @ObservationIgnored private var defaultsObserver: (any NSObjectProtocol)?
-    /// The status the last settle reported, and when. `nil` after a user's
-    /// action, so only a block or a break that runs out by itself plays a sound.
-    @ObservationIgnored private var settled: (status: TimerStatus, at: Date)?
+    /// What the last settle reported, and when. `nil` after a user's action,
+    /// so only what runs out by itself plays a sound.
+    @ObservationIgnored private var settled: Settled?
     /// The latest break with nothing running, still running or finished, or
     /// `nil`. A finished one keeps the end it really had, where untracked time
     /// starts. The views read it through ``panel`` and ``label``.
@@ -164,11 +170,32 @@ final class Countdown {
         alerts?.askPermissionIfUndetermined()
     }
 
-    /// Starts a block for `workspace` now, of `minutes` or its default length.
+    /// Takes the planned break that is due now, of `minutes`. It leaves the
+    /// remembered length alone, because he did not choose this one.
+    func startPlannedBreak(minutes: Int) {
+        act("take a planned break") { try $0.startBreak(minutes: minutes, at: $1) }
+        alerts?.askPermissionIfUndetermined()
+    }
+
+    /// Starts a block for `workspace` now at its default length and rhythm.
     /// Whatever runs ends first, so this also switches, and it ends a break
     /// with nothing running, silently.
-    func start(_ workspace: Workspace, minutes: Int? = nil) {
-        act("start a block") { try $0.start(workspace, minutes: minutes, at: $1) }
+    func start(_ workspace: Workspace) {
+        startBlock { try $0.start(workspace, at: $1) }
+    }
+
+    /// Starts a block for `workspace` now, of `minutes`, following the preset
+    /// with `presetID`, or with no rhythm when it is `nil`. Otherwise as ``start(_:)``.
+    func start(_ workspace: Workspace, minutes: Int, presetID: FocusPreset.ID?) {
+        guard let context else { return }
+        startBlock { engine, now in
+            let rhythm = try PresetRoster(context: context).rhythm(ofPreset: presetID)
+            try engine.start(workspace, minutes: minutes, rhythm: rhythm, at: now)
+        }
+    }
+
+    private func startBlock(_ body: (TimerEngine, Date) throws -> Void) {
+        act("start a block", body)
         // The first start asks for the permission to notify, never the launch.
         alerts?.askPermissionIfUndetermined()
     }
@@ -217,6 +244,7 @@ final class Countdown {
             label = .idle(untracked: nil)
             panel = nil
             workspaces = []
+            presets = []
             trackedToday = nil
             return now.addingTimeInterval(MenuBarLabel.untrackedThreshold)
         }
@@ -231,15 +259,17 @@ final class Countdown {
                 in: context, appStart: appStart, now: now, calendar: .current, idleBreak: idleBreak,
             )
             let block = try engine.runningBlock()
-            announce(status, workspace: block?.workspace?.name ?? "", at: now)
+            let rhythm = try engine.rhythm(at: now)
+            announce(status, rhythm: rhythm, workspace: block?.workspace?.name ?? "", at: now)
             label = MenuBarLabel(status: status, workspace: block?.workspace, untrackedSince: since, at: now)
             let tracked = try CompactPanel.trackedToday(in: context, now: now, calendar: .current)
             panel = running.map { CompactPanel(idleBreak: $0, at: now, tracked: tracked) }
-                ?? CompactPanel(status: status, block: block, tracked: tracked)
+                ?? CompactPanel(status: status, block: block, rhythm: rhythm, tracked: tracked)
             trackedToday = MenuBarLabel.hoursAndMinutes(tracked)
             workspaces = try WorkspaceRoster(context: context).activeWorkspaces()
+            presets = try PresetRoster(context: context).presets().map(PresetName.init)
             saveBreaks()
-            let next = MenuBarLabel.nextRedraw(status: status, untrackedSince: since, after: now)
+            let next = MenuBarLabel.nextRedraw(status: status, rhythm: rhythm, untrackedSince: since, after: now)
             guard isPanelOpen, let tick = CompactPanel.nextRedraw(status: status, after: now) else { return next }
             return min(next, tick)
         } catch {
@@ -248,9 +278,16 @@ final class Countdown {
             label = .idle(untracked: nil)
             panel = nil
             workspaces = []
+            presets = []
             trackedToday = nil
             return now.addingTimeInterval(60)
         }
+    }
+
+    private struct Settled {
+        let status: TimerStatus
+        let rhythm: FocusRhythm?
+        let time: Date
     }
 
     private static let breakMinutesKey = "break.lastMinutes"
@@ -285,12 +322,28 @@ final class Countdown {
 
     /// Plays the sound of an alert whose moment passed since the last settle,
     /// and replans the pending notifications.
-    private func announce(_ status: TimerStatus, workspace: String, at now: Date) {
-        defer { settled = (status, now) }
+    private func announce(_ status: TimerStatus, rhythm: FocusRhythm?, workspace: String, at now: Date) {
+        defer { settled = Settled(status: status, rhythm: rhythm, time: now) }
         guard let alerts else { return }
-        if let settled, let kind = AlertKind.due(from: settled.status, at: settled.at, to: status, at: now) {
+        if let settled, let kind = AlertKind.due(
+            from: settled.status, rhythm: settled.rhythm, at: settled.time, to: status, at: now,
+        ) {
             alerts.play(kind)
         }
-        alerts.schedule(PlannedAlert.plan(for: status, workspace: workspace, settings: alerts.settings, at: now))
+        alerts.schedule(PlannedAlert.plan(
+            for: status, rhythm: rhythm, workspace: workspace, settings: alerts.settings, at: now,
+        ))
+    }
+}
+
+/// A preset as a pop-up lists it.
+struct PresetName: Identifiable, Equatable {
+    let id: FocusPreset.ID
+    /// The name shown: the preset's own, or "Unnamed" when it has none.
+    let name: String
+
+    init(_ preset: FocusPreset) {
+        id = preset.id
+        name = preset.name.isEmpty ? String(localized: "Unnamed") : preset.name
     }
 }

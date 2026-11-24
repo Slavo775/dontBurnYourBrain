@@ -120,6 +120,7 @@ extension AlertKind {
         switch self {
         case .blockEnd: "Submarine"
         case .breakEnd: "Glass"
+        case .focusEnd: "Ping"
         case .warning: "Purr"
         }
     }
@@ -150,10 +151,10 @@ extension AlertKind {
 }
 
 private extension PlannedAlert {
-    /// What makes two plans the same notifications: the kind, the second and the workspace or none.
+    /// What makes two plans the same notifications: the kind, the second and what the text says.
     var key: String {
         // The rounded seconds stay a Double: a far date must not trap in a conversion to Int.
-        "\(kind.rawValue) \(date.timeIntervalSinceReferenceDate.rounded()) \(String(describing: workspace))"
+        "\(kind.rawValue) \(date.timeIntervalSinceReferenceDate.rounded()) \(text)"
     }
 
     /// The title and the body.
@@ -170,9 +171,21 @@ private extension PlannedAlert {
                 named ? String(localized: "\(workspace) block finished") : String(localized: "Block finished"),
                 String(localized: "Time to stop or start the next one."),
             )
+        case .breakEnd where waitsForResume: (
+                String(localized: "Break is over"),
+                named
+                    ? String(localized: "Press Resume to go back to \(workspace).")
+                    : String(localized: "Press Resume to go back to work."),
+            )
         case .breakEnd: (
                 String(localized: "Break is over"),
                 named ? String(localized: "Back to \(workspace).") : String(localized: "Back to work."),
+            )
+        case .focusEnd: (
+                String(localized: "Time for a break"),
+                named
+                    ? String(localized: "\(breakMinutes ?? 0) min break from \(workspace).")
+                    : String(localized: "\(breakMinutes ?? 0) min break."),
             )
         case .warning: (
                 String(localized: "5 minutes left"),

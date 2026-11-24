@@ -9,10 +9,22 @@ public struct CompactPanel: Equatable, Sendable {
     public enum Line: Equatable, Sendable {
         /// Working: the block's planned length, such as `2:00` in "left of 2:00".
         case leftOf(String)
+        /// Working: the block's planned length, and the minutes until the next
+        /// planned break, 0 for less than one.
+        case breakIn(String, minutes: Int)
+        /// Working while a planned break is due: the block's planned length,
+        /// and the planned minutes of the break.
+        case breakDue(String, minutes: Int)
         /// The block is paused.
         case paused
         /// A break is running, and work continues in the named workspace after it.
         case onBreak(returnTo: String)
+        /// A break of `minutes` is running in a block with a rhythm, and work
+        /// continues in the named workspace after it.
+        case rhythmBreak(minutes: Int, returnTo: String)
+        /// A break of `minutes` is running in a block with a rhythm, and the
+        /// block waits for Resume after it.
+        case rhythmBreakThenPaused(minutes: Int)
         /// A break is running with no block, and nothing runs after it.
         case idleBreak
     }
@@ -34,16 +46,24 @@ public struct CompactPanel: Equatable, Sendable {
     /// How much of the block's planned length is used up, from 0 to 1, or
     /// of the break's on a break with no block.
     public let progress: Double
+    /// The breaks in the strip as fractions of the block's planned length,
+    /// from 0 to 1, earliest first: taken ones up to now, planned ones after
+    /// it. Empty for a block without a rhythm and for a break with no block.
+    public let gaps: [ClosedRange<Double>]
+    /// The planned length of the break that is due while working, in minutes,
+    /// which Break then starts at once, or `nil` while none is due.
+    public let dueBreakMinutes: Int?
     /// Today's tracked time in hours and minutes, such as `0:10`.
     public let trackedToday: String
 
     /// What the panel shows for `status`, or `nil` when nothing runs.
     ///
-    /// `block` is the running block, see ``TimerEngine/runningBlock()``.
-    /// `tracked` is today's tracked time, see
+    /// `block` is the running block, see ``TimerEngine/runningBlock()``, and
+    /// `rhythm` where it stands in its rhythm, if it has one, see
+    /// ``TimerEngine/rhythm(at:)``. `tracked` is today's tracked time, see
     /// ``trackedToday(in:now:calendar:)``. Every time is rounded down to the
-    /// whole second, as in the menu bar.
-    public init?(status: TimerStatus, block: TimeBlock?, tracked: TimeInterval) {
+    /// whole second, as in the menu bar, and those in the line to the whole minute.
+    public init?(status: TimerStatus, block: TimeBlock?, rhythm: FocusRhythm? = nil, tracked: TimeInterval) {
         guard status.state != .idle, let block, let blockLeft = status.blockTimeLeft else { return nil }
         let workspace = block.workspace
         name = workspace?.name ?? ""
@@ -52,12 +72,10 @@ public struct CompactPanel: Equatable, Sendable {
         let shown = status.state == .onBreak ? status.breakTimeLeft ?? blockLeft : blockLeft
         (clock, seconds) = Self.split(shown)
         let planned = TimeInterval(max(0, block.plannedMinutes)) * 60
-        line = switch status.state {
-        case .paused: .paused
-        case .onBreak: .onBreak(returnTo: name)
-        default: .leftOf(MenuBarLabel.hoursAndMinutes(planned))
-        }
+        dueBreakMinutes = status.state == .working && rhythm?.isBreakDue == true ? rhythm?.nextBreakMinutes : nil
+        line = Self.line(status: status, rhythm: rhythm, planned: planned, name: name)
         progress = planned > 0 ? min(1, max(0, 1 - blockLeft / planned)) : 1
+        gaps = status.plannedEnd.flatMap { rhythm?.breakFractions(of: block, plannedEnd: $0) } ?? []
         trackedToday = MenuBarLabel.hoursAndMinutes(tracked)
     }
 
@@ -72,7 +90,40 @@ public struct CompactPanel: Equatable, Sendable {
         (clock, seconds) = Self.split(idleBreak.timeLeft(at: now))
         line = .idleBreak
         progress = idleBreak.progress(at: now)
+        gaps = []
+        dueBreakMinutes = nil
         trackedToday = MenuBarLabel.hoursAndMinutes(tracked)
+    }
+
+    /// The line under the countdown for a block of `planned` seconds in the
+    /// workspace named `name`.
+    ///
+    /// A break that the block's end cuts off below a minute has no length to
+    /// name, so its line is the one without.
+    private static func line(
+        status: TimerStatus, rhythm: FocusRhythm?, planned: TimeInterval, name: String,
+    ) -> Line {
+        let length = MenuBarLabel.hoursAndMinutes(planned)
+        switch status.state {
+        case .paused:
+            return .paused
+        case .onBreak:
+            guard let rhythm, rhythm.current.minutes > 0 else { return .onBreak(returnTo: name) }
+            let minutes = rhythm.current.minutes
+            return rhythm.pausesAfterBreak
+                ? .rhythmBreakThenPaused(minutes: minutes)
+                : .rhythmBreak(minutes: minutes, returnTo: name)
+        default:
+            guard let rhythm, let next = rhythm.nextBreak, let minutes = rhythm.nextBreakMinutes,
+                  let blockLeft = status.blockTimeLeft, let plannedEnd = status.plannedEnd
+            else { return .leftOf(length) }
+            if rhythm.isBreakDue {
+                return .breakDue(length, minutes: minutes)
+            }
+            // Both count to the block's planned end, so this is the time from now to the break.
+            let left = blockLeft - plannedEnd.timeIntervalSince(next.start)
+            return .breakIn(length, minutes: MenuBarLabel.wholeSeconds(left) / 60)
+        }
     }
 
     /// When the panel's seconds change next after `now`, or `nil` while

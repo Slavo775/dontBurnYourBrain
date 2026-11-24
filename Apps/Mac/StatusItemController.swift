@@ -130,14 +130,15 @@ final class StatusItemController: NSObject, NSWindowDelegate {
     }
 
     /// While a block runs: P pauses and resumes, B opens "Break for" while
-    /// working and ends a break, + adds 15 minutes, S switches and E ends the
-    /// block. On a break with nothing running, B ends it, + lengthens it and S
-    /// switches. In a list of workspaces, 1 to 9 start the workspace on that
-    /// key. In "Break for", 1 to 4 start a break of that length, and Return or
-    /// the keypad's Enter the preselected one. With nothing running, B opens
-    /// "Break for", and ⌘N the custom block form, where Return starts and
-    /// Escape goes back. Elsewhere Escape closes. ⌘O closes the panel and
-    /// opens the window. Returns whether the key was used.
+    /// working, starts a planned break that is due and ends a break, + adds 15
+    /// minutes, S switches and E ends the block. On a break with nothing
+    /// running, B ends it, + lengthens it and S switches. In a list of
+    /// workspaces, 1 to 9 start the workspace on that key. In "Break for", 1
+    /// to 4 start a break of that length, and Return or the keypad's Enter the
+    /// preselected one. With nothing running, B opens "Break for", and ⌘N the
+    /// custom block form, where Return starts and Escape goes back. Elsewhere
+    /// Escape closes. ⌘O closes the panel and opens the window. Returns
+    /// whether the key was used.
     ///
     /// A held key acts once. Repeats would extend again and again, pause and
     /// resume into near-empty entries, or start block after block.
@@ -253,10 +254,9 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         let action: QuickAction
         switch key {
         case "p": action = .pauseOrResume
-        case "b" where QuickAction.canStartBreak(in: state):
-            navigation.page = .breakLength
+        case "b":
+            navigation.takeBreak(with: countdown)
             return
-        case "b": action = .breakOrEndBreak
         case "+": action = .extend
         case "s" where !countdown.workspaces.isEmpty:
             navigation.page = .switching
