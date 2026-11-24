@@ -86,10 +86,11 @@ public struct TimerEngine {
     /// Applies everything that became due by `now` and reports the state at `now`.
     ///
     /// A break whose time is up ends at its planned end and a work entry starts
-    /// there. A block past its planned end closes at the planned end, with its
-    /// running entry, even when `now` is much later: time asleep or quit counts
-    /// as worked up to the planned end. A break is clipped at the block's end.
-    /// A paused block never times out.
+    /// there, or, in a block whose rhythm waits after a break, the block stays
+    /// paused until ``resume(at:)``. A block past its planned end closes at the
+    /// planned end, with its running entry, even when `now` is much later: time
+    /// asleep or quit counts as worked up to the planned end. A break is
+    /// clipped at the block's end. A paused block never times out.
     @discardableResult
     public func settle(at now: Date) throws -> TimerStatus {
         for block in try runningBlocks() {
@@ -112,11 +113,20 @@ public struct TimerEngine {
         try runningBlocks().last
     }
 
+    /// Settles, then reports where the running block stands in its rhythm at
+    /// `now`, or `nil` when no block runs or it has no rhythm. See ``FocusRhythm``.
+    public func rhythm(at now: Date) throws -> FocusRhythm? {
+        try settle(at: now)
+        guard let block = try runningBlocks().last else { return nil }
+        return FocusRhythm(of: block, plannedEnd: plannedEnd(of: block, at: now), at: now)
+    }
+
     /// Starts a block for `workspace` with a running work entry.
     ///
     /// Whatever runs ends first, at the same instant. The new block starts at
     /// `now`, or after the latest timer entry when the clock moved back. The length is
-    /// `minutes`, or the workspace's default length when `nil`. Throws
+    /// `minutes`, or the workspace's default length when `nil`. The block copies
+    /// the rhythm of the workspace's preset, when it has one, and keeps it. Throws
     /// ``TimerEngineError/invalidMinutes`` or a ``ProjectAssignmentError``
     /// before changing anything.
     public func start(_ workspace: Workspace, minutes: Int? = nil, project: Project? = nil, at now: Date) throws {
@@ -137,6 +147,9 @@ public struct TimerEngine {
         let block = TimeBlock(workspace: workspace, plannedStart: start, plannedMinutes: minutes, state: .running)
         context.insert(block)
         block.project = project
+        if let preset = workspace.focusPreset {
+            block.follow(preset)
+        }
         begin(.work, in: block, at: start)
         try context.save()
     }
@@ -321,7 +334,10 @@ public struct TimerEngine {
         while let open = openEntry(of: block) {
             let blockEnd = plannedEnd(of: block, at: now)
             if let breakEnd = breakEnd(of: open), breakEnd < blockEnd, breakEnd <= now {
-                begin(.work, in: block, at: close(open, at: breakEnd))
+                let end = close(open, at: breakEnd)
+                // A rhythm that waits leaves the block paused, so its end moves later.
+                guard block.resumesAfterBreak || !block.hasRhythm else { return }
+                begin(.work, in: block, at: end)
                 continue
             }
             if blockEnd <= now {

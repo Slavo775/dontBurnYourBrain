@@ -5,7 +5,7 @@ import SwiftData
 ///
 /// A workspace is never deleted: its blocks and entries would go with it.
 /// Removing one archives it instead. The active workspaces keep a dense
-/// ``SchemaV1/Workspace/sortOrder`` from 0, which is also the order of quick
+/// ``SchemaV2/Workspace/sortOrder`` from 0, which is also the order of quick
 /// start and its number keys. Every operation saves the context.
 public struct WorkspaceRoster {
     /// The default block length of a new workspace, in minutes.

@@ -16,8 +16,10 @@ public enum SampleData {
     ///
     /// Every block and entry is placed relative to `now`: finished entries in
     /// the hours before it, one manual entry a day before it, and planned
-    /// blocks after it. Nothing is running.
+    /// blocks after it. Nothing is running. The presets the app comes with are
+    /// there too, and no workspace names one.
     public static func seed(into context: ModelContext, now: Date) throws {
+        try FocusPreset.seedDefaults(into: context)
         func minutes(_ value: Int) -> Date {
             now.addingTimeInterval(TimeInterval(value * 60))
         }

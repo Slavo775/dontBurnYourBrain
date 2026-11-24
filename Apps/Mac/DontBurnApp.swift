@@ -59,7 +59,7 @@ struct DontBurnApp: App {
 
     /// The sample set in memory with `-DontBurnSampleData YES`, seeded at
     /// `now`, otherwise the store on disk in the folder named after the bundle
-    /// identifier.
+    /// identifier, with the presets the app comes with when it has none.
     ///
     /// With the sample set, `scenario`, from `-DontBurnTimerState <scenario>`,
     /// also puts the timer into one of the ``TimerScenario`` states.
@@ -90,6 +90,12 @@ struct DontBurnApp: App {
             )
             let container = try ModelStore.onDisk(in: directory)
             log.info("Opened the store in its own folder")
+            do {
+                try FocusPreset.seedDefaults(into: container.mainContext)
+            } catch {
+                // The timer works without presets, so the store stays open.
+                log.error("The focus presets could not be added: \(error.localizedDescription)")
+            }
             return container
         } catch {
             log.error("The store could not be opened: \(error.localizedDescription)")
