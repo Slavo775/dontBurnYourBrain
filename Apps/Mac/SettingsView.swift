@@ -167,12 +167,16 @@ extension ModelContainer {
 
     /// A local store in memory with the sample folders of the projects in
     /// `projects`, for previews, or `nil` when it could not be made.
+    ///
+    /// The folders are made in a temporary folder named after the bundle
+    /// identifier, as the app's own sample folders are. Without a bundle
+    /// identifier there is none to name it after, so nothing is made.
     static func sampleFolders(for projects: ModelContainer?) -> ModelContainer? {
-        guard let projects else { return nil }
+        guard let projects, let bundleIdentifier = Bundle.main.bundleIdentifier else { return nil }
         do {
             let container = try ModelStore.localInMemory()
             let root = FileManager.default.temporaryDirectory
-                .appending(path: "DontBurnPreview.sample", directoryHint: .isDirectory)
+                .appending(path: "\(bundleIdentifier).sample", directoryHint: .isDirectory)
             try SampleData.seedFolders(into: container.mainContext, projects: projects.mainContext, root: root)
             return container
         } catch {

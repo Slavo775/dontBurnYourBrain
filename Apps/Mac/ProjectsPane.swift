@@ -230,12 +230,14 @@ struct ProjectsPane: View {
         }
     }
 
-    private func perform(_ action: String, _ body: () throws -> Void) {
+    /// Runs `body`, and logs it when it fails. The action is public in the
+    /// log, since it is always a literal here. The error stays private.
+    private func perform(_ action: StaticString, _ body: () throws -> Void) {
         do {
             try body()
         } catch {
             Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "projects")
-                .error("Could not \(action): \(error.localizedDescription)")
+                .error("Could not \(action.description, privacy: .public): \(error.localizedDescription)")
         }
     }
 }
