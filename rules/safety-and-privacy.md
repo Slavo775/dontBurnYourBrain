@@ -15,6 +15,7 @@ The Mac the agents work on is the one the maintainer uses every day, for more th
 
 - Run only the Dev build. It has its own bundle identifier, its own data folder, its own settings and its own permissions. See [releases.md](releases.md).
 - Never open, copy or change the data of the copy the maintainer uses daily.
+- Another app's real data, such as a browser's profile folder, is touched only by the exact commands the maintainer approved in this session. A proof that code refuses such data uses a stand-in with made-up contents at another path, never a copy of the real data, and never the real path under any spelling.
 - Anything that deletes or rewrites data runs against a throwaway store: in memory, or in a temporary folder that is removed afterwards.
 - Look at a temporary folder before removing it, and remove it by its literal path. Claude Code refuses a recursive delete of a variable such as `rm -rf "$WORK"`.
 - Screenshots come from the Dev build with the seeded sample data.
@@ -32,6 +33,7 @@ The Mac the agents work on is the one the maintainer uses every day, for more th
 
 - macOS permission prompts (Automation, Accessibility, Calendars, Notifications) are answered by the maintainer. Say that a prompt is coming and why.
 - Never reset permissions, change System Settings or edit login items.
+- Start another app through LaunchServices with `open`: `-g` keeps it in the background, and `-n` starts a second instance. Never run the executable inside its bundle as your own child, because macOS then charges that app's permission requests, such as Local Network, to your terminal.
 - AppleScript that drives a terminal or an editor runs only in the tasks that are about it.
 - Type by script only into a tab or window you opened yourself. In iTerm2, send the text with `write text … newline NO`, check the input line through iTerm2's AppleScript, then send Return on its own. Terminal's AppleScript cannot send text without Return, so use its `do script` only to start a command. To type into a running agent session in Terminal, stop and report it instead. Never use System Events keystrokes, which type into whatever window is in front. An unexpected menu or dialog gets Escape and a report, never a choice.
 - An AppleScript call that fails with error −1712 (an Apple event timeout) usually means a dialog is open on screen. Retry once, then stop and report it.
