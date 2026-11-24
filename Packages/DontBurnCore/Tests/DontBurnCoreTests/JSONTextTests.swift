@@ -128,3 +128,37 @@ func `text outside strict JSON is refused`(text: String) {
     #expect(members["personal"] == .number("4"))
     #expect(members["globex"] == nil)
 }
+
+// MARK: - Keys compared by their bytes
+
+/// `é` as one scalar, U+00E9, and as `e` and the combining U+0301. Swift's
+/// string equality takes them for one string. JSON and JavaScript do not.
+private let composed = "\u{E9}"
+private let decomposed = "e\u{301}"
+
+@Test func `two keys that differ only in Unicode normalization are two members and come back byte for byte`() throws {
+    let text = "{\n  \"\(composed)\": 1,\n  \"\(decomposed)\": 2\n}"
+
+    let value = try parsed(text)
+
+    #expect(value.members?.map { Array($0.key.utf8) } == [[0xC3, 0xA9], [0x65, 0xCC, 0x81]])
+    #expect(Data(value.formatted.utf8) == Data(text.utf8))
+}
+
+@Test func `a member is found and changed by its key's bytes`() throws {
+    var members = try #require(parsed(#"{"\#(composed)": 1, "\#(decomposed)": 2}"#).members)
+
+    #expect(members[composed] == .number("1"))
+    #expect(members[decomposed] == .number("2"))
+
+    members[decomposed] = .number("3")
+    members[composed] = nil
+
+    #expect(members.map { Array($0.key.utf8) } == [Array(decomposed.utf8)])
+    #expect(members[decomposed] == .number("3"))
+    #expect(members[composed] == nil)
+}
+
+@Test func `the same key's bytes twice is still refused`() {
+    #expect(throws: JSONTextError.repeatedKey) { try parsed(#"{"\#(decomposed)": 1, "\#(decomposed)": 2}"#) }
+}

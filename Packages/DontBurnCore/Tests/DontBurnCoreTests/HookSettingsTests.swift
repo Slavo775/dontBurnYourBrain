@@ -235,6 +235,28 @@ func `text that holds no hooks object has no commands`(data: Data) {
     #expect(HookSettings.differingKeys(Data(), from: SettingsSample.lines("[]")) == nil)
 }
 
+@Test func `differing keys tell apart two keys that differ only in Unicode normalization`() throws {
+    let composed = "\u{E9}"
+    let decomposed = "e\u{301}"
+    let before = SettingsSample.lines("{", "  \"\(composed)\": 1", "}")
+    let both = SettingsSample.lines("{", "  \"\(composed)\": 1,", "  \"\(decomposed)\": 1", "}")
+    let other = SettingsSample.lines("{", "  \"\(decomposed)\": 1", "}")
+
+    let added = try #require(HookSettings.differingKeys(both, from: before))
+    let swapped = try #require(HookSettings.differingKeys(other, from: before))
+
+    #expect(added.map { Array($0.utf8) } == [Array(decomposed.utf8)])
+    #expect(swapped.map { Array($0.utf8) } == [Array(decomposed.utf8), Array(composed.utf8)])
+}
+
+@Test func `a file with keys that differ only in Unicode normalization comes back byte for byte`() throws {
+    let original = SettingsSample.lines("{", "  \"\u{E9}\": 1,", "  \"e\u{301}\": 2", "}")
+
+    let edit = try installing(into: original)
+
+    #expect(try uninstalling(edit, from: edit.data) == original)
+}
+
 // MARK: - The lines and the group
 
 @Test func `the group runs the command with a timeout`() {
