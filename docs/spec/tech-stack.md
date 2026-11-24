@@ -40,7 +40,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 
 **Storage**
 
-- **SwiftData, synced**: Workspaces, projects, blocks, entries, issue links
+- **SwiftData, synced**: Workspaces, projects, blocks, entries, focus presets, issue links
 - **SwiftData, local only**: The folders of each project, kept in a second store for this Mac only: `Local.store`, next to `DontBurn.store` in the folder named after the bundle identifier, with its own `LocalSchemaV1` and migration plan. It is never synced, and no relationship crosses the two stores: a folder names its project by the project's identifier. Agent sessions and terminal references stay on this Mac too, and may join this store
 - **Keychain**: Issue tracker tokens
 - **The app's own defaults, this Mac only**: the alert switches, the last break length, and the latest break with nothing running, which is never a time entry
@@ -57,21 +57,21 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 
 | Entity | Key fields | Synced |
 | --- | --- | --- |
-| **Workspace** | name, color, sort order, archived flag, default block minutes, focus preset, rounding step, whether breaks count, calendar | Yes |
+| **Workspace** | name, color, sort order, archived flag, default block minutes, default focus preset (empty means none), rounding step, whether breaks count, calendar | Yes |
 | **Project** | name, workspace, sort order, archived flag, whether its time is tracked, optional tracker link: the tracker account and the project or board there | Yes |
 | **ProjectFolder** | its own id, the project's identifier, folder path with symlinks resolved | No, this Mac only, in the local store |
-| **TimeBlock** | workspace, planned start, planned minutes, focus preset, state (planned, running, done, cancelled) | Yes |
+| **TimeBlock** | workspace, planned start, planned minutes, state (planned, running, done, cancelled), the focus preset it started with, and its own copy of that preset's plan: focus, break and long break minutes, rounds before the long break, whether work resumes by itself after a break | Yes |
 | **TimeEntry** | start, end, kind (work, break, meeting), planned minutes (set on a break, so it survives a restart), workspace, project, block, issue link, note, source (timer, manual, calendar) | Yes |
 | **TimeOff** | start, end, workspace (empty means every workspace), source (calendar, manual), whether you worked anyway | Yes |
 | **IssueLink** | tracker account, issue key or id, summary snapshot | Yes |
 | **WorklogPush** | entries covered, seconds tracked, seconds sent after your edits, comment, the tracker's worklog id, status, sent at. Only for a tracker that keeps time | Yes |
-| **FocusPreset** | name, work minutes, break minutes, long break rule, sounds | Yes |
+| **FocusPreset** | name, focus minutes, break minutes, long break minutes, rounds before the long break (0 for either means no long break), whether work resumes by itself after a break. Sounds come with card 58 | Yes |
 | **TrackerAccount** | tracker kind (Jira, Trello), base URL, account, Keychain reference (the token itself is not stored here) | Yes, without token |
 | **AgentSession** | tool (claude, codex), session id, account label, folder, state, last event, transcript path, terminal reference | No, this Mac only |
 
 CloudKit rules applied from the start: every property has a default or is optional, relationships are optional, no unique constraints, and fields are only ever added.
 
-Card 9 built Workspace, Project, TimeBlock and TimeEntry as `SchemaV1` in `DontBurnCore`, without the fields that belong to later phases (focus preset, calendar, tracker link, issue link). Their field names are fixed from now on, because sync cannot rename them. Folder paths never enter the synced model, because they belong to one Mac. Card 10 added the planned minutes of a TimeEntry. Card 46 added ProjectFolder (`id`, `projectID`, `path`) as `LocalSchemaV1`, the local store's own schema, and left `SchemaV1` as it was. The other entities arrive with their phases. The rules for the model are also in `CLAUDE.md`.
+Card 9 built Workspace, Project, TimeBlock and TimeEntry as `SchemaV1` in `DontBurnCore`, without the fields that belong to later phases (focus preset, calendar, tracker link, issue link). Their field names are fixed from now on, because sync cannot rename them. Folder paths never enter the synced model, because they belong to one Mac. Card 10 added the planned minutes of a TimeEntry. Card 46 added ProjectFolder (`id`, `projectID`, `path`) as `LocalSchemaV1`, the local store's own schema, and left `SchemaV1` as it was. Card 57 added FocusPreset, the default preset of a Workspace, and a TimeBlock's preset with its copy of the plan, as `SchemaV2`. `SchemaV1` stays exactly what v0.1.0 stores hold, and the migration plan moves a store to `SchemaV2` in one lightweight stage. The field is `focusMinutes`, not work minutes, because work is already an entry kind. At launch, a store with no presets gets 25/5 and 50/10, with fixed ids, so two Macs make the same two. No workspace is given one, so existing data runs as before. "None" is no preset, not a stored row. The other entities arrive with their phases. The rules for the model are also in `CLAUDE.md`.
 
-- **Delete rules:** deleting a workspace deletes its projects, blocks and entries. Deleting a project or a block keeps their entries and only clears the link.
+- **Delete rules:** deleting a workspace deletes its projects, blocks and entries. Deleting a project or a block keeps their entries and only clears the link. Deleting a focus preset only clears it from its workspaces and blocks, and a started block keeps its copy of the plan.
 - **The project rule:** a block or entry names a project only through `assign(_:)`, and only a time-tracked project of its own workspace.

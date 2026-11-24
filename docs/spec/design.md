@@ -119,7 +119,7 @@ What the actions do:
 | Action | Effect |
 |---|---|
 | **Pause** | The countdown stops and the running entry ends. The button becomes Resume, the digits dim, the menu bar says "paused". Resume starts a new entry, and the block ends later by the length of the pause. Pausing during a break ends the break, and Resume starts work |
-| **Break** | Opens "Break for", where the length is chosen. A break entry then starts inside the block, with its own countdown. The button becomes End break. When the break is over, work continues. The block still ends at its planned time, and a break that would run past it stops there, so for lunch the block is ended first. While the block is paused, Break is disabled in the button, the B key and the menu: resume first (the owner's decision) |
+| **Break** | Opens "Break for", where the length is chosen. A break entry then starts inside the block, with its own countdown. The button becomes End break. When the break is over, work continues, unless the block's rhythm waits for Resume (see [Rhythm](#rhythm)). The block still ends at its planned time, and a break that would run past it stops there, so for lunch the block is ended first. While the block is paused, Break is disabled in the button, the B key and the menu: resume first (the owner's decision) |
 | **+15 min** | Adds 15 minutes to the block. On a break it adds them to the break too, so the work left after the break stays the same. This is the owner's decision on card 44 |
 | **Switch** | Shows the quick start list under the title "Switch to", with a Back button. Choosing a workspace ends the current block and starts a new one for that workspace, at its default length |
 
@@ -373,7 +373,9 @@ The prototype does not draw this page. The owner chose the layout above. The rul
 
 ### Rhythm
 
-The focus presets: a name, the minutes of focus and of break, and a long break after a number of rounds. The app comes with 25 and 5, 50 and 10, and "none". A workspace names its default preset in Workspaces, and "Custom block" may choose another for one block. A preset that a workspace uses cannot be removed. This arrives in phase 2.
+The focus presets: a name, the minutes of focus and of break, a long break after a number of rounds, and what happens when a break ends: work resumes by itself, or the block waits paused for Resume. The app comes with 25 and 5, with a 15-minute long break after 4 rounds, and 50 and 10, with none. Both resume by themselves. "None" is not a preset: it is a workspace without one. A workspace names its default preset in Workspaces, and "Custom block" may choose another for one block. A preset that a workspace uses cannot be removed. The tab arrives with card 58.
+
+Card 57 built the rhythm in the timer engine and the two presets, with no screen yet. No workspace has a preset until the user chooses one, so every block runs as in phase 1. The rules are in [features.md](features.md#rules-worth-fixing-early), and they live in `FocusRhythm` and `TimerEngine` in `DontBurnCore`.
 
 ### Sessions
 
