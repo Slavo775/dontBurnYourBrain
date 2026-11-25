@@ -46,7 +46,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 - **SwiftData, local only**: The folders of each project, kept in a second store for this Mac only: `Local.store`, next to `DontBurn.store` in the folder named after the bundle identifier, with its own `LocalSchemaV1` and migration plan. It is never synced, and no relationship crosses the two stores: a folder names its project by the project's identifier
 - **A JSON file, this Mac only**: The agent sessions, with their terminal and tab, in `Sessions.json` next to `Local.store`. Not SwiftData, so it has no schema and no migration. A file that is missing, larger than 1 MiB or broken gives an empty list, because each session comes back with its next event. Card 47 built its loading and saving in `SessionStore`. Since card 48 the app loads it at launch and saves it after each hook event, and drops sessions whose `claude` process is gone. With the sample data the sessions stay in memory
 - **Keychain**: Issue tracker tokens
-- **The app's own defaults, this Mac only**: the alert switches, the last break length, the latest break with nothing running, which is never a time entry, and whether the presets the app comes with were added
+- **The app's own defaults, this Mac only**: the alert switches, the last break length, the latest break with nothing running, which is never a time entry, whether the presets the app comes with were added, and the Claude Code profile folders added by hand, as `ClaudeProfileFolders`
 
 **Outside**
 

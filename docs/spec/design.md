@@ -374,7 +374,7 @@ The order of the list is the order of the quick start presets and their number k
 
 #### What phase 1 builds
 
-The window has a fixed size of 760 × 470 pt and two tabs: General, with the alert switches described under [Sounds and notifications](#sounds-and-notifications) and the version at the bottom, and Workspaces. Phase 2 added the [Rhythm](#rhythm) tab. The other tabs and rows arrive with their phases.
+The window has a fixed size of 760 × 470 pt and two tabs: General, with the alert switches described under [Sounds and notifications](#sounds-and-notifications) and the version at the bottom, and Workspaces. Phase 2 added the [Rhythm](#rhythm) tab, and card 49 the [Sessions](#sessions) tab after it. The other tabs and rows arrive with their phases.
 
 - **The list** is 220 pt wide, with + and − below it. Rows are reordered by dragging.
 - **The form** holds the name, the six swatches, a "Default block" pop-up and "Shown on key N". From the tenth workspace on, it says "No number key".
@@ -445,7 +445,7 @@ The prototype does not draw this tab. The owner chose the layout above. The rule
 - **Other agents.** Codex is listed as "added later".
 - **Terminals.** iTerm2 and Terminal jump to the exact tab. VS Code and Cursor bring the window forward. Each shows whether macOS has allowed the app to control it, with an "Allow" button. VS Code and Cursor need no permission, so cards #51 and #52 decide what their rows show.
 
-What card 49 builds: the tab with the profiles and Codex. Terminals are not shown yet.
+What card 49 builds: the tab after Rhythm, with the profiles and Codex. Terminals are not shown yet.
 
 - **The profiles.** `.claude` and every `.claude-*` folder at the top of the home folder, by name, then the folders added by hand, in their order. Only the names in the home folder are read, and of a profile only its `settings.json`. A row shows the folder's name, its path with `~` for the home folder, shortened in the middle, and "Shares its settings file with .claude-globex" when other profiles' settings lead to the same file.
 - **The status** at the end of the row: "Install hook", or a green "hook installed" chip with Uninstall. A hook of the app's tool that the app has no record of shows the chip and "Added outside this app, so it is removed by hand." In the Dev build, a profile outside its stand-in folder shows "scratch project only".
