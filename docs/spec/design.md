@@ -389,9 +389,25 @@ Card 57 built the rhythm in the timer engine and the two presets, with no screen
 
 ### Sessions
 
-- **Claude Code profiles.** Each Claude account is its own profile folder. The app finds them, lists them with their path, and shows per profile whether its hook is installed, with an "Install hook" button. A profile can also be added by its folder.
+- **Claude Code profiles.** Each Claude account is its own profile folder. The app finds them, lists them with their path, and shows per profile whether its hook is installed, with an "Install hook" button. Profiles that share one settings file share one install. A profile can also be added by its folder.
 - **Other agents.** Codex is listed as "added later".
-- **Terminals.** iTerm2 and Terminal jump to the exact tab. VS Code and Cursor bring the window forward. Each shows whether macOS has allowed the app to control it, with an "Allow" button.
+- **Terminals.** iTerm2 and Terminal jump to the exact tab. VS Code and Cursor bring the window forward. Each shows whether macOS has allowed the app to control it, with an "Allow" button. VS Code and Cursor need no permission, so cards #51 and #52 decide what their rows show.
+
+What card 49 builds: the tab with the profiles and Codex. Terminals are not shown yet.
+
+- **The profiles.** `.claude` and every `.claude-*` folder at the top of the home folder, by name, then the folders added by hand, in their order. Only the names in the home folder are read, and of a profile only its `settings.json`. A row shows the folder's name, its path with `~` for the home folder, shortened in the middle, and "Shares its settings file with .claude-globex" when other profiles' settings lead to the same file.
+- **The status** at the end of the row: "Install hook", or a green "hook installed" chip with Uninstall. A hook of the app's tool that the app has no record of shows the chip and "Added outside this app, so it is removed by hand." In the Dev build, a profile outside its stand-in folder shows "scratch project only".
+- **The footer** says "Sessions that are already running pick up the hook with their next prompt." Seen for a project's settings, not yet for a profile's ([phase-0.md, question 3](../spikes/phase-0.md#open-questions-for-the-owner)).
+- **"Add a profile folder…"** opens the system picker for folders, one or several at once, with hidden folders shown. The folders are kept in this Mac's defaults as `ClaudeProfileFolders` and never synced. A folder found already is not added twice. The Dev build opens the picker in its stand-in folder, or in the temporary folder without one.
+- **Install** opens a sheet, "Install the hook?", with the file, the real one with every symlink resolved, every profile it affects, and each line that changes with its number, then "These lines change. Nothing else in the file does." Install writes the file once, and every profile that shares it then shows the hook as installed.
+- **A refusal** says "The hook was not installed", or "was not removed", with the reason and the file. When the change can be made by hand, as for a file that two-space JSON would not give back byte for byte, a missing `settings.json` or a file with a second hard link, it shows the lines to add, or to take out.
+- **Uninstall** says "The hook is removed", and "The file is byte for byte what it was before the install." when it is. Otherwise it says the difference was kept, names the top-level keys that differ, says when another file has replaced it since the install, and where the backup is kept.
+- **No profile:** "No Claude Code profile found." and "Add one by its folder, such as .claude in your home folder."
+- **The Dev build** never looks in the real home folder. It looks for profiles only in the stand-in folder named by `-DontBurnStandInHome` ([dev-setup.md](dev-setup.md#launch-arguments)), installs only into settings files inside it, and writes the command with `--target dev`. Without a stand-in, or for a profile outside it, a "Dev build" section shows the lines for a scratch project's `.claude/settings.json`.
+- **Without the hook tool** in the app, the tab says "The hook tool is missing from this copy of the app." and installs nothing.
+- **Without the hook** the rest of the app works as before. No profile is read until the tab shows.
+
+The prototype draws no Uninstall, no shared settings file and no sheets. The rows follow the owner's answer to question 14 in [phase-0.md](../spikes/phase-0.md#open-questions-for-the-owner). How a file is changed is in [../spikes/claude-hook.md](../spikes/claude-hook.md#rules-for-phase-3s-installer). The rules live in `HookSettings`, `HookInstaller`, `ClaudeProfile` and `ProfileReach` in `DontBurnCore`.
 
 ### Trackers
 

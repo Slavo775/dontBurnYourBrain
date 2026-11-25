@@ -24,16 +24,17 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 
 - **Mac app**: Menu bar panel, main window, settings
 - **iPhone app**: Timer, today, history, Live Activity
-- **dontburn-hook**: Tiny CLI called by Claude Code hooks, later by other agents. It reads the event on stdin, keeps only the fields of `HookEvent`, adds the `claude` process and its tty, and sends one datagram to the app's hook channel. It prints nothing and always exits 0, whether the app runs or not. Which build it reaches is in [../process/releases.md](../process/releases.md#everything-with-a-name-outside-the-app-follows-the-bundle-identifier)
+- **dontburn-hook**: Tiny CLI called by Claude Code hooks, later by other agents. It reads the event on stdin, keeps only the fields of `HookEvent`, adds the `claude` process and its tty, and sends one datagram to the app's hook channel. It prints nothing and always exits 0, whether the app runs or not. It ships inside the app, at `Contents/Helpers/dontburn-hook`, the path an installed hook runs. Which build it reaches is in [../process/releases.md](../process/releases.md#everything-with-a-name-outside-the-app-follows-the-bundle-identifier)
 
 **Shared package**
 
-- **DontBurnCore**: Data model, timer engine, rounding rules, session states from hook events, the issue tracker protocol and one adapter per tracker. Pure Swift, fully unit tested.
+- **DontBurnCore**: Data model, timer engine, rounding rules, session states from hook events, the hook installer, the issue tracker protocol and one adapter per tracker. Pure Swift, fully unit tested.
 
 **Mac-only services**
 
 - **SessionMonitor**: Receives hook events, reads transcripts, and finds each session's project through the projects' folders. One adapter per agent tool and profile folder
 - **HookSocket**: The hook channel, a Unix datagram socket, `Hook.socket`, in the folder named after the bundle identifier, with mode 0600. It refuses a message over 64 KB or of the wrong shape. A socket left behind by a crash or a `kill` is replaced at the next launch, and quitting removes it. A socket another running copy listens on is left alone, and the second copy runs without a channel. So does a copy whose socket path is longer than the 103 bytes a socket address holds. Both cases are logged
+- **HookSetup**: Finds the Claude Code profiles for Settings, Sessions, and installs or removes the hook through `HookInstaller` in `DontBurnCore`. Each install's record and the settings file's backup go to `HookInstalls/` in the folder named after the bundle identifier, with mode 0600. The profile folders added by hand go to the defaults as `ClaudeProfileFolders`. No profile is read until the tab shows
 - **TerminalFocus**: One adapter per terminal host
 - **CalendarService**: EventKit
 - **InsightFlowBridge**: Reads the current task per repo from the CLI

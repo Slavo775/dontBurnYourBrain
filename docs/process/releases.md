@@ -66,6 +66,8 @@ The hook tool sends to Release by default. Only two forms name a target:
 
 Anything else sends nothing, so an event never reaches the other build by mistake: another spelling such as `--target=dev` or `-t dev`, `--target` without a name, an unknown name, or an extra or repeated argument. Hooks installed in the maintainer's real Claude Code profiles therefore always reach his daily copy. Dev is tested from a scratch project.
 
+The app carries the hook tool inside its bundle, at `Contents/Helpers/dontburn-hook`, and Settings, Sessions writes that absolute path into a settings file. The Release build writes it with no target. The Dev build writes `--target dev`, and installs only inside the stand-in folder named by `-DontBurnStandInHome`, never into a real profile ([dev-setup.md](../spec/dev-setup.md#launch-arguments)). A hook names the app where it stood at the install, so a Release app that is moved later leaves a hook that runs a missing command. Backlog card #74 covers that.
+
 ## On the Mac
 
 **Until phase 8, without a paid Apple developer account:**

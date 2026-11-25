@@ -179,7 +179,7 @@ With the owner's yes, on profile 1. **Every profile on the test Mac links its `s
 - Installed for 50 seconds.
 - A proof session in iTerm2 under profile 1 logged `SessionStart startup`, `UserPromptSubmit`, `Stop` and `SessionEnd prompt_input_exit`. `CLAUDE_CONFIG_DIR` and `transcript_path` both named profile 1, and the tty and the iTerm2 UUID matched AppleScript.
 - After uninstall, none of the spike's groups was left, and the file was byte-identical to the backup. It was still identical at clean-up.
-- The log held four events, all from the proof session. No other session fired the hook during those 50 seconds, but they may simply have been idle. Whether running sessions pick up a changed settings file was not tested. In the scratch project, a permission rule added to the settings mid-session did take effect without a restart.
+- The log held four events, all from the proof session. No other session fired the hook during those 50 seconds, but they may simply have been idle. Whether running sessions pick up a changed settings file was not tested. In the scratch project, a permission rule added to the settings mid-session did take effect without a restart. *24 Nov 2026:* card #49 tried it in a scratch project on Claude Code 2.1.331. A session that was already running picked up a hook added to the project's `.claude/settings.json` at its next prompt, with no restart and no notice. A profile's own `settings.json` was not tried. Card #55 checks it, with the owner's own install from the Release build.
 
 ### Rules for phase 3's installer
 
@@ -195,13 +195,23 @@ From the spike and from the review of its two rounds:
 8. Remove only the app's own groups and the containers the install created.
 9. Compare after uninstall. If someone else changed the file meanwhile, keep the change and report it. Never restore a backup over it.
 
+*24 Nov 2026:* card #49 built the installer on these rules, in `HookSettings`, `HookInstaller` and `JSONText` in `DontBurnCore`, with Settings, Sessions on top ([design.md](../spec/design.md#sessions)). Where it differs from the spike:
+
+- **No `jq`.** `JSONText` keeps the order of keys and each number as written, and writes two-space JSON the way `JSON.stringify(value, null, 2)` does. Its parser is strict: it refuses a repeated key, compared by its bytes, nesting deeper than 256, and text that is not valid UTF-8. Every file it does not write back byte for byte is refused, with the lines to add by hand.
+- **Not in place.** The new text goes into a new file beside the target, made for this user alone and flushed to the disk, then given the target's mode. It is renamed over the target only after a fresh read shows the target unchanged. A link stays a link, and its target is written. The target gets a new inode.
+- **Hard links are refused**, because the rename would split them. The lines to add by hand are shown.
+- **Nine events**, the eight above and `StopFailure`, the list `HookEvent.handledNames`, which the app's own session rules use too. Each group runs the command with `"timeout": 5`, which only bounds a hang.
+- **The record and the backup** go to `HookInstalls/` in the app's own folder, the one named after the bundle identifier, never into a profile. Both are mode 0600 and never overwritten. The backup is removed after an uninstall that gives the file back byte for byte, and kept otherwise.
+- **Rule 7:** when another file stands at the path since the install, the uninstall still takes out the app's own groups, and says the file was replaced. It looks only in the lists of `HookEvent.handledNames`. A file that holds none of its groups is not written.
+- **A hook found without a record**, such as one added by hand, counts as installed and is removed by hand.
+
 The product rules behind these, that hooks are reversible and are installed only with consent, are in [rules/safety-and-privacy.md](../../rules/safety-and-privacy.md).
 
 ## Release and Dev
 
 How the hook tool chooses between the two builds is set in [docs/process/releases.md](../process/releases.md), and the rule for agents is in [rules/releases.md](../../rules/releases.md). The spike adds these points for phase 3:
 
-- Real profiles get `dontburn-hook` with no target, which reaches the Release app. Scratch projects get `dontburn-hook --target dev` or `DONTBURN_TARGET=dev`. *24 Nov 2026:* card #48 takes a target only from no arguments or exactly `--target dev` or `--target release`. Any other form, such as `--target=dev`, sends nothing.
+- Real profiles get `dontburn-hook` with no target, which reaches the Release app. Scratch projects get `dontburn-hook --target dev` or `DONTBURN_TARGET=dev`. *24 Nov 2026:* card #48 takes a target only from no arguments or exactly `--target dev` or `--target release`. Any other form, such as `--target=dev`, sends nothing. *24 Nov 2026:* card #49 puts the tool inside the app, at `Contents/Helpers/dontburn-hook`, and writes that absolute path in single quotes. The Release build writes no target. The Dev build writes `--target dev`, and installs only into a stand-in folder, never into a real profile ([dev-setup.md](../spec/dev-setup.md#launch-arguments)).
 - The tool derives its channel from the bundle identifier, such as a socket under `~/Library/Application Support/<bundle id>/`. *24 Nov 2026:* card #48 made it `Hook.socket`, a Unix datagram socket in that folder, and the tool sends each event as one datagram ([tech-stack.md](../spec/tech-stack.md#architecture)).
 - When the channel is missing or refuses the connection, the tool exits 0 at once. The app may not be running, and a session must never wait for it. *24 Nov 2026:* card #48 sends without waiting. With no app, a socket left behind or a full queue, the event is lost.
 - It prints nothing. Anything a `SessionStart` or `UserPromptSubmit` hook prints goes into Claude's context.
@@ -262,7 +272,7 @@ Claude Code also exports `CLAUDE_CODE_SESSION_ID`, equal to `session_id`, and `C
 - A session in the default profile through a terminal the spike drove. It was only seen in the owner's Cursor run.
 - The `resume`, `clear` and `compact` sources of `SessionStart`.
 - "Move to background and exit" in the exit dialog.
-- Whether running sessions pick up a change to the settings file.
+- Whether running sessions pick up a change to the settings file. *24 Nov 2026:* they do, for a project's settings ([on a real profile](#on-a-real-profile)).
 - A look at whether a profile folder already describes its live sessions. The owner left it out, because it would mean reading other files in the profile folder.
 - Background `workflow`, `teammate` and the other task types. Only `subagent` and `shell` were seen.
 - Selecting the tab. The spike proved the handles match AppleScript, not the focus itself.
@@ -310,8 +320,8 @@ Card #8 writes `docs/spikes/phase-0.md` across all the spikes and corrects the s
 **Still open:**
 
 - A fallback for a turn that ends without an event: `PostToolUse` on every tool, the transcript's modification time, or a timeout.
-- What the installer does with a settings file that doesn't survive the round trip, such as a hand-formatted one.
-- Whether running sessions pick up the installed hook without a restart.
+- What the installer does with a settings file that doesn't survive the round trip, such as a hand-formatted one. *24 Nov 2026:* card #49 refuses it and shows the lines to add by hand ([phase-0.md, question 2](phase-0.md#open-questions-for-the-owner)).
+- Whether running sessions pick up the installed hook without a restart. *24 Nov 2026:* yes for a project's settings, at the next prompt ([phase-0.md, question 3](phase-0.md#open-questions-for-the-owner)).
 - Selecting the tab in Terminal and iTerm2, and the window in VS Code and Cursor.
 - The events of "Move to background and exit", and the `resume`, `clear` and `compact` sources.
 - Whether `workflow` and `teammate` entries look as the documentation says.
