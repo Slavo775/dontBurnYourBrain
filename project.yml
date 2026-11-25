@@ -34,6 +34,16 @@ targets:
       - Apps/Mac
     dependencies:
       - package: DontBurnCore
+      # The hook tool rides inside the app, so a settings file names it by one
+      # fixed absolute path. Contents/Helpers is the place for a bundle's
+      # command line tools. The tool still reads the Info.plist built into its
+      # own binary, so it finds both builds' channels as before.
+      - target: dontburn-hook
+        embed: true
+        codeSign: true
+        copy:
+          destination: wrapper
+          subpath: Contents/Helpers
     settings:
       base:
         PRODUCT_NAME: DontBurn

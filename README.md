@@ -43,7 +43,7 @@ swift test --package-path Packages/DontBurnCore
 open -g DerivedData/Build/Products/Debug/DontBurn.app
 ```
 
-Launch arguments that freeze the clock, set light or dark, load sample data or put the timer into one state for one launch are in [docs/spec/dev-setup.md](docs/spec/dev-setup.md#launch-arguments).
+Launch arguments that freeze the clock, set light or dark, load sample data, put the timer into one state or give the Claude Code profiles a stand-in home folder for one launch are in [docs/spec/dev-setup.md](docs/spec/dev-setup.md#launch-arguments).
 
 No Apple developer account is needed. The build is signed to run locally.
 

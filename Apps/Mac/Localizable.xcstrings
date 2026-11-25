@@ -101,6 +101,9 @@
     "5 minutes left" : {
 
     },
+    "A file could not be written. settings.json is unchanged." : {
+
+    },
     "A preset splits a block into focus intervals and breaks." : {
 
     },
@@ -117,6 +120,9 @@
 
     },
     "Add a preset" : {
+
+    },
+    "Add a profile folder…" : {
 
     },
     "Add a project" : {
@@ -137,6 +143,15 @@
     "Add folder…" : {
 
     },
+    "Add one by its folder, such as .claude in your home folder." : {
+
+    },
+    "Add these entries to the file by hand:" : {
+
+    },
+    "Added outside this app, so it is removed by hand." : {
+
+    },
     "After a break" : {
 
     },
@@ -144,6 +159,9 @@
 
     },
     "An entry can't reach into the future." : {
+
+    },
+    "Another file stands at this path since the install, so another app may have written it." : {
 
     },
     "Archive" : {
@@ -228,6 +246,9 @@
     "Choose a workspace." : {
 
     },
+    "Claude Code profiles" : {
+
+    },
     "Color" : {
 
     },
@@ -264,6 +285,9 @@
     "Dev" : {
 
     },
+    "Dev build" : {
+
+    },
     "Edit entry" : {
 
     },
@@ -280,6 +304,9 @@
 
     },
     "Entries can't be shown or changed right now." : {
+
+    },
+    "File" : {
 
     },
     "Focus" : {
@@ -300,6 +327,15 @@
     "Indigo" : {
 
     },
+    "Install" : {
+
+    },
+    "Install hook" : {
+
+    },
+    "Install the hook?" : {
+
+    },
     "It leaves every menu, and its history stays. You can restore it from the Archived list." : {
 
     },
@@ -310,6 +346,9 @@
 
     },
     "Its history and its folders stay. You can restore it from the Archived list." : {
+
+    },
+    "Keys that differ: %@" : {
 
     },
     "Kind" : {
@@ -342,7 +381,13 @@
     "Next day" : {
 
     },
+    "No Claude Code profile found." : {
+
+    },
     "No block running" : {
+
+    },
+    "No install of the hook into this file is on record." : {
 
     },
     "No number key" : {
@@ -399,6 +444,9 @@
     "Orange" : {
 
     },
+    "Other agents" : {
+
+    },
     "Page" : {
 
     },
@@ -418,6 +466,9 @@
 
     },
     "Previous day" : {
+
+    },
+    "Profiles" : {
 
     },
     "Projects" : {
@@ -471,7 +522,16 @@
     "Save" : {
 
     },
+    "Sessions" : {
+
+    },
+    "Sessions that are already running pick up the hook with their next prompt." : {
+
+    },
     "Settings…" : {
+
+    },
+    "Shares its settings file with %@" : {
 
     },
     "Show menu" : {
@@ -504,10 +564,25 @@
     "Take a break" : {
 
     },
+    "Take each group with this command out of the file by hand:" : {
+
+    },
     "Teal" : {
 
     },
     "The %@ block ends soon." : {
+
+    },
+    "The Dev build changes no settings file outside its stand-in folder." : {
+
+    },
+    "The Dev build installs only into profiles in its stand-in folder." : {
+
+    },
+    "The app's path can't go into a hook command safely. Move the app to another folder." : {
+
+    },
+    "The backup from before the install is kept at %@." : {
 
     },
     "The block ends soon." : {
@@ -528,7 +603,40 @@
     "The entry was not deleted" : {
 
     },
+    "The file changed while it was being edited. Nothing was written. Try again." : {
+
+    },
+    "The file differs from before the install. The difference was kept." : {
+
+    },
+    "The file is byte for byte what it was before the install." : {
+
+    },
     "The folders could not be opened." : {
+
+    },
+    "The hook is already in this file." : {
+
+    },
+    "The hook is removed" : {
+
+    },
+    "The hook tool is missing from this copy of the app." : {
+
+    },
+    "The hook was not installed" : {
+
+    },
+    "The hook was not removed" : {
+
+    },
+    "The hooks in settings.json are not in the form Claude Code writes." : {
+
+    },
+    "The profile has no settings.json." : {
+
+    },
+    "These lines change. Nothing else in the file does." : {
 
     },
     "This entry's block is still running. Only its note can change until the block ends." : {
@@ -546,6 +654,9 @@
     "Time to stop or start the next one." : {
 
     },
+    "To try the hook in a scratch project, add these lines to its .claude/settings.json." : {
+
+    },
     "Today" : {
 
     },
@@ -556,6 +667,9 @@
 
     },
     "Track time" : {
+
+    },
+    "Uninstall" : {
 
     },
     "Unnamed" : {
@@ -612,7 +726,13 @@
     "Workspaces can't be shown or changed right now." : {
 
     },
+    "added later" : {
+
+    },
     "after" : {
+
+    },
+    "hook installed" : {
 
     },
     "left of %@" : {
@@ -648,6 +768,27 @@
 
     },
     "rounds" : {
+
+    },
+    "scratch project only" : {
+
+    },
+    "settings.json could not be read." : {
+
+    },
+    "settings.json has another hard link, which a write would split from it." : {
+
+    },
+    "settings.json is formatted in a way the app would change, so it is left as it is." : {
+
+    },
+    "settings.json is not a JSON object." : {
+
+    },
+    "settings.json is not a file." : {
+
+    },
+    "settings.json is too large to edit safely." : {
 
     },
     "“%@” already belongs to %@." : {
