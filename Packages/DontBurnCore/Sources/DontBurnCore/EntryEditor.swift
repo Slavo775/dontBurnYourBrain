@@ -15,6 +15,8 @@ public enum EntryChangeError: Error, Equatable, Sendable {
     /// The entry belongs to the running block, so only its note may change
     /// and it may not be deleted until the block ends.
     case runningBlock
+    /// The split time does not leave at least a whole minute on each side.
+    case splitNotInside
 }
 
 /// The fields of an entry as the edit form holds them.
@@ -47,7 +49,7 @@ public struct EntryDraft {
     }
 }
 
-/// Corrects, adds and deletes entries by hand, under the timer engine's rules
+/// Corrects, adds, splits and deletes entries by hand, under the timer engine's rules
 /// for intervals: the end is after the start, nothing lies in the future, and
 /// no two entries overlap.
 ///
@@ -127,6 +129,52 @@ public struct EntryEditor {
         guard !Self.isNoteOnly(entry) else { throw EntryChangeError.runningBlock }
         context.delete(entry)
         try context.save()
+    }
+
+    /// Splits `entry` at `time`, rounded down to its minute, into two entries
+    /// that together cover exactly the old one, and returns the second.
+    ///
+    /// Both keep the workspace, project, kind, note, source and block, so each
+    /// can then be changed on its own. Refused for an entry that runs or whose
+    /// block runs, for a time outside ``splitTimes(for:calendar:)``, and for
+    /// anything ``check(_:replacing:at:)`` refuses in either half.
+    @discardableResult
+    public func split(_ entry: TimeEntry, at time: Date, now: Date, calendar: Calendar) throws -> TimeEntry {
+        try TimerEngine(context: context).settle(at: now)
+        guard !Self.isNoteOnly(entry), let end = entry.end else { throw EntryChangeError.runningBlock }
+        let time = calendar.dateInterval(of: .minute, for: time)?.start ?? time
+        guard Self.splitTimes(for: entry, calendar: calendar)?.contains(time) == true else {
+            throw EntryChangeError.splitNotInside
+        }
+        let draft = EntryDraft(entry, now: now)
+        var first = draft
+        first.end = time
+        var second = draft
+        second.start = time
+        try check(first, replacing: entry, at: now)
+        try check(second, replacing: entry, at: now)
+        let rest = TimeEntry(
+            workspace: entry.workspace, start: time, end: end, kind: entry.kind, source: entry.source,
+            block: entry.block, note: entry.note,
+        )
+        // Not through `assign(_:)`: a half keeps the project even when it is no longer tracked.
+        rest.project = entry.project
+        entry.end = time
+        context.insert(rest)
+        try context.save()
+        return rest
+    }
+
+    /// The whole minutes `entry` can be split at, each leaving at least a
+    /// minute on both sides, or `nil` when it runs or is too short.
+    public static func splitTimes(for entry: TimeEntry, calendar: Calendar) -> ClosedRange<Date>? {
+        guard let end = entry.end else { return nil }
+        let earliest = entry.start.addingTimeInterval(60)
+        let latest = end.addingTimeInterval(-60)
+        let minute = calendar.dateInterval(of: .minute, for: earliest)
+        let first = minute?.start == earliest ? earliest : minute?.end ?? earliest
+        let last = calendar.dateInterval(of: .minute, for: latest)?.start ?? latest
+        return first <= last ? first ... last : nil
     }
 
     /// Throws the first rule `draft` breaks, with `entry` itself left out of the overlap check.

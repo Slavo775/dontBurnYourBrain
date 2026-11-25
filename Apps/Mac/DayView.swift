@@ -3,8 +3,8 @@ import os
 import SwiftData
 import SwiftUI
 
-/// One day's entries and totals, with Add, Edit and Delete. Today, or in
-/// History an earlier day chosen with a picker and previous and next.
+/// One day's entries and totals, with Add, Edit, Split and Delete. Today, or
+/// in History an earlier day chosen with a picker and previous and next.
 struct DayView: View {
     let context: ModelContext
     let fixedTime: Date?
@@ -12,17 +12,19 @@ struct DayView: View {
     let onChange: () -> Void
 
     /// The day shown in History. Today ignores it.
-    @State private var historyDay: Date
+    @Binding private var historyDay: Date
     @State private var form: EntryForm.Mode?
+    @State private var splitting: TimeEntry?
     @State private var deleting: TimeEntry?
     @State private var deleteError: EntryChangeError?
 
-    init(context: ModelContext, fixedTime: Date?, isHistory: Bool, onChange: @escaping () -> Void) {
+    /// Today with no `historyDay`, otherwise History on that day.
+    init(context: ModelContext, fixedTime: Date?, historyDay: Binding<Date>?, onChange: @escaping () -> Void) {
         self.context = context
         self.fixedTime = fixedTime
-        self.isHistory = isHistory
+        isHistory = historyDay != nil
         self.onChange = onChange
-        _historyDay = State(initialValue: DayLog.day(before: fixedTime ?? .now, calendar: .current))
+        _historyDay = historyDay ?? .constant(DayLog.day(before: fixedTime ?? .now, calendar: .current))
     }
 
     private var now: Date {
@@ -69,6 +71,9 @@ struct DayView: View {
         }
         .sheet(item: $form) { mode in
             EntryForm(mode: mode, context: context, fixedTime: fixedTime, onChange: onChange)
+        }
+        .sheet(item: $splitting) { entry in
+            SplitForm(entry: entry, context: context, fixedTime: fixedTime, onChange: onChange)
         }
         .confirmationDialog(
             "Delete this entry?",
@@ -128,6 +133,11 @@ struct DayView: View {
                                 .listRowSeparatorTint(Color.line)
                                 .contextMenu {
                                     Button("Edit…") { form = .edit(item.entry) }
+                                    Button("Split…") { splitting = item.entry }
+                                        .disabled(
+                                            EntryEditor.isNoteOnly(item.entry)
+                                                || EntryEditor.splitTimes(for: item.entry, calendar: .current) == nil,
+                                        )
                                     Button("Delete…", role: .destructive) { deleting = item.entry }
                                         .disabled(EntryEditor.isNoteOnly(item.entry))
                                 }
@@ -294,6 +304,8 @@ extension EntryChangeError {
             return String(
                 localized: "This entry's block is still running. Only its note can change until the block ends.",
             )
+        case .splitNotInside:
+            return String(localized: "Choose a time that leaves at least a minute on each side.")
         }
     }
 }
@@ -302,7 +314,7 @@ extension EntryChangeError {
     if let container = ModelContainer.sample {
         DayView(
             context: container.mainContext, fixedTime: Date(timeIntervalSince1970: 1_768_466_490),
-            isHistory: false, onChange: {},
+            historyDay: nil, onChange: {},
         )
         .frame(width: 700, height: 400)
     }

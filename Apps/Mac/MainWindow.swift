@@ -61,7 +61,7 @@ private enum WindowPage: Hashable {
     case history
 }
 
-/// The sidebar with Today and History, and the chosen page.
+/// The sidebar with Today and History and last week's totals, and the chosen page.
 struct MainWindowView: View {
     let container: ModelContainer?
     let fixedTime: Date?
@@ -76,6 +76,11 @@ struct MainWindowView: View {
                 Label("Today", systemImage: "clock").tag(WindowPage.today)
                 Label("History", systemImage: "chart.bar").tag(WindowPage.history)
             }
+            .safeAreaInset(edge: .bottom) {
+                if let context = container?.mainContext {
+                    LastWeekTotals(context: context, fixedTime: fixedTime)
+                }
+            }
             .navigationSplitViewColumnWidth(210)
             .scrollContentBackground(.hidden)
             .background(Color.sunken)
@@ -84,9 +89,11 @@ struct MainWindowView: View {
                 if let context = container?.mainContext {
                     switch page {
                     case .history:
-                        DayView(context: context, fixedTime: fixedTime, isHistory: true, onChange: onChange)
+                        HistoryView(context: context, fixedTime: fixedTime, onChange: onChange) {
+                            page = .today
+                        }
                     default:
-                        DayView(context: context, fixedTime: fixedTime, isHistory: false, onChange: onChange)
+                        DayView(context: context, fixedTime: fixedTime, historyDay: nil, onChange: onChange)
                     }
                 } else {
                     ContentUnavailableView(
@@ -99,6 +106,42 @@ struct MainWindowView: View {
             .foregroundStyle(Color.ink)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.surface)
+        }
+    }
+}
+
+/// Last week's time per workspace, at the bottom of the window's sidebar,
+/// where it doubles as the legend for the charts.
+struct LastWeekTotals: View {
+    let context: ModelContext
+    let fixedTime: Date?
+
+    var body: some View {
+        // Every second, so a correction to last week shows at once.
+        TimelineView(.periodic(from: .now, by: 1)) { timeline in
+            let now = fixedTime ?? timeline.date
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Last week")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.muted)
+                // A failed read reads as nothing tracked; History says why.
+                let week = HistoryRange.lastWeek(now: now, calendar: .current)
+                let totals = try? RangeTotals(week, in: context, now: now, calendar: .current)
+                if let totals, !totals.totals.isEmpty {
+                    ForEach(totals.totals) { total in
+                        HStack {
+                            WorkspaceName(workspace: total.workspace)
+                            Spacer()
+                            Text(verbatim: MenuBarLabel.hoursAndMinutes(total.time.tracked))
+                                .monospacedDigit()
+                        }
+                    }
+                } else {
+                    Text("Nothing tracked")
+                        .foregroundStyle(Color.muted)
+                }
+            }
+            .padding()
         }
     }
 }

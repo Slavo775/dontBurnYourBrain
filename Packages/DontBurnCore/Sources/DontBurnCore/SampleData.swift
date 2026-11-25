@@ -102,3 +102,78 @@ public enum SampleData {
         }
     }
 }
+
+public extension SampleData {
+    /// Adds finished entries on each of the 35 days before the day of `now`,
+    /// which always hold last week and the month so far, so History has full
+    /// weeks and a month to show.
+    ///
+    /// Weekdays hold Acme and Globex work with and without projects, an Acme
+    /// break and on Mondays and Wednesdays a Globex meeting. Tuesday and
+    /// Thursday evenings hold Personal work and a Personal break, which does
+    /// not count. Saturday is empty, and Sunday holds a little Personal work.
+    /// Three days back a Personal entry crosses midnight, and the latest
+    /// weekday's first Acme entry has a note with a comma, quotes and a line
+    /// break. Hours are read in `calendar`.
+    ///
+    /// Call it after ``seed(into:now:)``. An entry that would overlap one
+    /// already there, or end in the three hours before `now`, where the sample
+    /// set's own entries and the ``TimerScenario`` blocks lie, is left out.
+    static func seedHistory(into context: ModelContext, now: Date, calendar: Calendar) throws {
+        let workspaces = try Dictionary(
+            context.fetch(FetchDescriptor<Workspace>()).map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first },
+        )
+        guard let acme = workspaces["Acme"], let globex = workspaces["Globex"], let personal = workspaces["Personal"]
+        else { return }
+        let projects = try context.fetch(FetchDescriptor<Project>())
+        let existing = try context.fetch(FetchDescriptor<TimeEntry>())
+        let clearFrom = now.addingTimeInterval(-3 * 3600)
+        let today = calendar.startOfDay(for: now)
+
+        // Adds an entry from `time`, an hour and a minute of `day`, unless it is left out.
+        @discardableResult
+        func add(
+            _ workspace: Workspace, _ projectName: String?, _ day: Date, _ time: (Int, Int), _ minutes: Int,
+            kind: TimeEntryKind = .work, source: TimeEntrySource = .timer, note: String = "",
+        ) throws -> Bool {
+            guard let start = calendar.date(bySettingHour: time.0, minute: time.1, second: 0, of: day),
+                  let end = calendar.date(byAdding: .minute, value: minutes, to: start),
+                  end <= clearFrom,
+                  !existing.contains(where: { $0.start < end && ($0.end ?? .distantFuture) > start })
+            else { return false }
+            let entry = TimeEntry(workspace: workspace, start: start, end: end, kind: kind, source: source, note: note)
+            try entry.assign(projects.first { $0.name == projectName && $0.workspace === workspace })
+            context.insert(entry)
+            return true
+        }
+
+        // The most recent weekday's first entry gets the note a CSV file must quote.
+        var note = "Checkout, \"the redirect\" again\nthen the notes"
+        for back in 1 ... 35 {
+            guard let day = calendar.date(byAdding: .day, value: -back, to: today) else { continue }
+            // 1 is Sunday and 7 Saturday, whatever the first weekday.
+            let weekday = calendar.component(.weekday, from: day)
+            if weekday == 1 {
+                try add(personal, "Side project", day, (10, 0), 90)
+            }
+            if (2 ... 6).contains(weekday) {
+                note = try add(acme, weekday % 2 == 0 ? "Web shop" : "Mobile app", day, (9, 0), 90, note: note)
+                    ? "" : note
+                try add(acme, nil, day, (10, 30), 15, kind: .break)
+                try add(acme, nil, day, (10, 45), 90 - back % 3 * 15)
+                if weekday == 2 || weekday == 4 {
+                    try add(globex, nil, day, (13, 0), 30, kind: .meeting, source: .calendar)
+                }
+                try add(globex, "Data platform", day, (13, 30), 120 + back % 4 * 15)
+                if weekday == 3 || weekday == 5 {
+                    try add(personal, "Side project", day, (20, 0), 60)
+                    try add(personal, nil, day, (21, 0), 15, kind: .break)
+                }
+            }
+            if back == 3 {
+                try add(personal, "Side project", day, (23, 15), 90, source: .manual)
+            }
+        }
+        try context.save()
+    }
+}
