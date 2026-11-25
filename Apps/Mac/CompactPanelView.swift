@@ -26,6 +26,10 @@ struct CompactPanelView: View {
             } else {
                 WorkspaceList(title: "Nothing running", countdown: countdown, navigation: navigation)
             }
+            if navigation.page == .main, let away = countdown.away?.timeAway {
+                // Below the actions, so they keep their places.
+                AwayQuestionView(away: away, countdown: countdown)
+            }
             if countdown.panel != nil, countdown.alerts?.isAskingPermission == true {
                 // Below the actions, so they keep their places.
                 Text("Allow notifications to hear when a block or break ends")
@@ -205,7 +209,7 @@ private struct BreakGaps: View {
 }
 
 /// One of the four quick action buttons: an icon over a word.
-private struct QuickButton: View {
+struct QuickButton: View {
     let title: LocalizedStringKey
     let symbol: String
     let action: () -> Void
@@ -313,7 +317,12 @@ private extension Countdown {
             // A preview without the scenario still shows the panel, so failing is fine here.
             try? scenario.apply(to: context, now: now)
         }
-        return Countdown(container: container, fixedTime: now, idleBreak: scenario.idleBreak(at: now))
+        return Countdown(
+            container: container,
+            fixedTime: now,
+            idleBreak: scenario.idleBreak(at: now),
+            timeAway: scenario.timeAway(at: now),
+        )
     }
 }
 
@@ -339,6 +348,10 @@ private extension Countdown {
 
 #Preview("Planned break") {
     CompactPanelView(countdown: .preview(.rhythmBreak), navigation: PanelNavigation())
+}
+
+#Preview("Time away") {
+    CompactPanelView(countdown: .preview(.away), navigation: PanelNavigation())
 }
 
 #Preview("Break with nothing running") {

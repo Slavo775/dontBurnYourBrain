@@ -61,6 +61,8 @@ final class Countdown {
 
     /// The sounds and the notifications, or `nil` when the countdown is frozen.
     let alerts: AlertCenter?
+    /// The question about time away, or `nil` without a store.
+    let away: AwayQuestion?
 
     private let context: ModelContext?
     private let appStart: Date
@@ -90,17 +92,31 @@ final class Countdown {
     /// `defaults` keeps the latest break with nothing running and the last
     /// break length across launches. Without it, as for the sample data, both
     /// stay in memory and start from `idleBreak` and the default length.
+    ///
+    /// The question about time away follows `awaySettings`, and notices time
+    /// away through `idleTime` unless the countdown is frozen. `timeAway`
+    /// waits from the start, as in a scenario.
     init(
         container: ModelContainer?,
         fixedTime: Date?,
         alerts: AlertCenter? = nil,
         defaults: UserDefaults? = nil,
         idleBreak: IdleBreak? = nil,
+        awaySettings: AwaySettings = AwaySettings(defaults: nil),
+        idleTime: (any IdleTimeReading)? = nil,
+        timeAway: TimeAway? = nil,
     ) {
         context = container?.mainContext
         self.fixedTime = fixedTime
-        self.alerts = fixedTime == nil ? alerts : nil
+        let alerts = fixedTime == nil ? alerts : nil
+        self.alerts = alerts
         self.defaults = defaults
+        away = container.map {
+            AwayQuestion(
+                context: $0.mainContext, settings: awaySettings, alerts: alerts,
+                idleTime: fixedTime == nil ? idleTime : nil, timeAway: timeAway,
+            )
+        }
         breakMinutes = TimerEngine.breakLength(remembered: defaults?.integer(forKey: Self.breakMinutesKey) ?? 0)
         if let defaults {
             self.idleBreak = Self.storedIdleBreak(in: defaults)
@@ -150,8 +166,9 @@ final class Countdown {
     }
 
     /// Takes `action` now, on the running block or the break with nothing running.
+    /// Only +15 leaves the question about time away waiting.
     func perform(_ action: QuickAction) {
-        act("take a quick action") { engine, now in
+        act("take a quick action", keepsTimeAway: action == .extend) { engine, now in
             try changeBreak(with: engine, at: now) { try action.perform(with: engine, idleBreak: &$0, at: now) }
         }
     }
@@ -205,6 +222,12 @@ final class Countdown {
         act("end the block") { try $0.end(at: $1) }
     }
 
+    /// Changes the entries as `answer` says about the time away that waits.
+    func answer(_ answer: AwayAnswer) {
+        guard let timeAway = away?.timeAway else { return }
+        act("answer the question about time away") { try $0.settle(timeAway, as: answer, at: $1) }
+    }
+
     /// Settles now, updates what the item and the panel show, and sets the next tick.
     func reschedule() {
         guard !isRefreshing else { return }
@@ -226,10 +249,15 @@ final class Countdown {
         idleBreak = running ?? idleBreak?.ended(at: now)
     }
 
-    private func act(_ what: String, _ body: (TimerEngine, Date) throws -> Void) {
+    /// Takes a step on the timer. Unless `keepsTimeAway`, one that succeeds
+    /// drops the question about time away, which then counts as worked.
+    private func act(_ what: String, keepsTimeAway: Bool = false, _ body: (TimerEngine, Date) throws -> Void) {
         guard let context else { return }
         do {
             try body(TimerEngine(context: context), fixedTime ?? .now)
+            if !keepsTimeAway {
+                away?.drop()
+            }
         } catch {
             log.error("Could not \(what): \(error.localizedDescription)")
         }
@@ -261,6 +289,7 @@ final class Countdown {
             let block = try engine.runningBlock()
             let rhythm = try engine.rhythm(at: now)
             announce(status, rhythm: rhythm, workspace: block?.workspace?.name ?? "", at: now)
+            away?.follow(status.state)
             label = MenuBarLabel(status: status, workspace: block?.workspace, untrackedSince: since, at: now)
             let tracked = try CompactPanel.trackedToday(in: context, now: now, calendar: .current)
             panel = running.map { CompactPanel(idleBreak: $0, at: now, tracked: tracked) }

@@ -13,6 +13,8 @@ struct DontBurnApp: App {
     @State private var sessions: SessionMonitor?
     /// The Claude Code profiles and their hook, for Settings. Reads nothing until Settings shows it.
     @State private var hookSetup: HookSetup
+    /// The question about time away, shared by the countdown and Settings.
+    @State private var awaySettings: AwaySettings
 
     /// The open store, or `nil` when it could not be opened.
     private let container: ModelContainer?
@@ -27,14 +29,24 @@ struct DontBurnApp: App {
         let container = Self.openStore(sampleData: sampleData, scenario: scenario, now: now)
         self.container = container
         localContainer = Self.openLocalStore(sampleData: sampleData, sampleProjects: container)
-        // The sample data keeps its breaks in memory, so a run with it leaves nothing in the defaults.
+        // The sample data keeps its breaks and the question's settings in
+        // memory, so a run with it leaves nothing in the defaults.
+        let awaySettings = AwaySettings(
+            defaults: sampleData ? nil : .standard,
+            thresholdMinutes: Self.launchArgument("DontBurnAwayMinutes").flatMap(AwayStandIn.thresholdMinutes(from:)),
+        )
+        let idleCycle = Self.launchArgument("DontBurnSimulatedIdle").flatMap(AwayStandIn.idleCycle(from:))
         let countdown = Countdown(
             container: container,
             fixedTime: Self.fixedTime,
             alerts: AlertCenter(),
             defaults: sampleData ? nil : .standard,
             idleBreak: scenario?.idleBreak(at: now),
+            awaySettings: awaySettings,
+            idleTime: idleCycle.map { SimulatedIdleTime(launch: .now, cycle: $0) } ?? SystemIdleTime(),
+            timeAway: scenario?.timeAway(at: now),
         )
+        _awaySettings = State(initialValue: awaySettings)
         let mainWindow = MainWindowController(container: container, fixedTime: Self.fixedTime) {
             countdown.reschedule()
         }
@@ -57,8 +69,8 @@ struct DontBurnApp: App {
     /// applies to every launch.
     ///
     /// Always `nil` outside the Debug configuration, so a Release build never
-    /// runs a frozen clock, a forced appearance, the sample data or a stand-in
-    /// home folder for the Claude Code profiles.
+    /// runs a frozen clock, a forced appearance, the sample data, a stand-in
+    /// home folder for the Claude Code profiles, or a short or simulated time away.
     private static func launchArgument(_ name: String) -> String? {
         #if DEBUG
             UserDefaults.standard.volatileDomain(forName: UserDefaults.argumentDomain)[name] as? String
@@ -181,7 +193,9 @@ struct DontBurnApp: App {
 
     var body: some Scene {
         Settings {
-            SettingsView(container: container, localContainer: localContainer, hookSetup: hookSetup)
+            SettingsView(
+                container: container, localContainer: localContainer, hookSetup: hookSetup, awaySettings: awaySettings,
+            )
         }
     }
 }
