@@ -120,28 +120,41 @@ struct LastWeekTotals: View {
         // Every second, so a correction to last week shows at once.
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
             let now = fixedTime ?? timeline.date
-            VStack(alignment: .leading, spacing: 6) {
+            // The prototype's "Last week" group: 12 pt muted title, then 26 pt rows.
+            VStack(alignment: .leading, spacing: 0) {
                 Text("Last week")
-                    .font(.caption.weight(.semibold))
+                    .font(.callout.weight(.semibold))
                     .foregroundStyle(Color.muted)
+                    .padding(.bottom, 4)
+                    .accessibilityAddTraits(.isHeader)
                 // A failed read reads as nothing tracked; History says why.
                 let week = HistoryRange.lastWeek(now: now, calendar: .current)
                 let totals = try? RangeTotals(week, in: context, now: now, calendar: .current)
                 if let totals, !totals.totals.isEmpty {
                     ForEach(totals.totals) { total in
-                        HStack {
+                        HStack(spacing: 8) {
+                            // A long name is cut, so the time always shows.
                             WorkspaceName(workspace: total.workspace)
-                            Spacer()
+                            Spacer(minLength: 0)
                             Text(verbatim: MenuBarLabel.hoursAndMinutes(total.time.tracked))
+                                .fontWeight(.semibold)
                                 .monospacedDigit()
+                                .fixedSize()
                         }
+                        .frame(height: 26)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityAddTraits(.isStaticText)
+                        .accessibilityLabel(Text("\(total.workspace.name), \(spokenTime(total.time.tracked))"))
                     }
                 } else {
                     Text("Nothing tracked")
                         .foregroundStyle(Color.muted)
+                        .frame(height: 26)
                 }
             }
-            .padding()
+            .padding(.horizontal, 20)
+            .padding(.bottom, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }

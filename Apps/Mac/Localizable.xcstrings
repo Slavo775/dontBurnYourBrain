@@ -30,11 +30,44 @@
         }
       }
     },
+    "%@, %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@."
+          }
+        }
+      }
+    },
     "%@, Dev build" : {
 
     },
     "%@, paused" : {
 
+    },
+    "%@. %@ In all, %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@. %2$@ In all, %3$@."
+          }
+        }
+      }
+    },
+    "%@. Nothing tracked." : {
+
+    },
+    "%@. Work, %@. Breaks, %@. Total, %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@. Work, %2$@. Breaks, %3$@. Total, %4$@."
+          }
+        }
+      }
     },
     "%@–now" : {
 
@@ -359,6 +392,9 @@
     "File" : {
 
     },
+    "First part" : {
+
+    },
     "Focus" : {
 
     },
@@ -509,6 +545,12 @@
     "Open the window" : {
 
     },
+    "Open this day" : {
+
+    },
+    "Open this week" : {
+
+    },
     "Orange" : {
 
     },
@@ -594,6 +636,18 @@
 
     },
     "Save" : {
+
+    },
+    "Save this day's entries as a CSV file" : {
+
+    },
+    "Save this month's entries as a CSV file" : {
+
+    },
+    "Save this week's entries as a CSV file" : {
+
+    },
+    "Second part" : {
 
     },
     "Sessions" : {

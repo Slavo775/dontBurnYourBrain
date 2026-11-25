@@ -51,7 +51,8 @@ struct HistoryView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .navigation) {
+            // At the right of the header, after the title, as in the prototype.
+            ToolbarItem {
                 Picker("Show", selection: modeChoice) {
                     Text("Day").tag(HistoryMode.day)
                     Text("Week").tag(HistoryMode.week)
@@ -59,14 +60,27 @@ struct HistoryView: View {
                 }
                 .pickerStyle(.segmented)
             }
+            ToolbarSpacer(.fixed)
+            // Apart from the switch and from previous and next, which the shown view adds after it.
             ToolbarItem {
                 Button("Export…", systemImage: "square.and.arrow.up") {
                     export()
                 }
+                .help(exportHelp)
             }
+            ToolbarSpacer(.fixed)
         }
         .alert("The file could not be saved", isPresented: $exportFailed) {
             Button("OK") {}
+        }
+    }
+
+    /// What Export… saves, as its tooltip.
+    private var exportHelp: Text {
+        switch mode {
+        case .day: Text("Save this day's entries as a CSV file")
+        case .week: Text("Save this week's entries as a CSV file")
+        case .month: Text("Save this month's entries as a CSV file")
         }
     }
 
@@ -120,7 +134,7 @@ struct HistoryView: View {
         panel.allowedContentTypes = [.commaSeparatedText]
         panel.nameFieldStringValue = Self.fileName(for: interval, calendar: calendar)
         panel.directoryURL = Self.exportFolder
-        panel.begin { response in
+        let save = { (response: NSApplication.ModalResponse) in
             guard response == .OK, let url = panel.url else { return }
             do {
                 try text.write(to: url, atomically: true, encoding: .utf8)
@@ -128,6 +142,14 @@ struct HistoryView: View {
                 log.error("Could not write the export: \(error.localizedDescription)")
                 exportFailed = true
             }
+        }
+        // A sheet on the window, so the panel stays with it and never opens behind
+        // another app. Without a key window, as when the press came from an
+        // accessibility client, the panel stands on its own.
+        if let window = NSApp.keyWindow {
+            panel.beginSheetModal(for: window, completionHandler: save)
+        } else {
+            panel.begin(completionHandler: save)
         }
     }
 

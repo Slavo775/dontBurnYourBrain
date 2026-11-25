@@ -40,13 +40,16 @@ struct RangeView: View {
                 if totals.isEmpty {
                     ContentUnavailableView("Nothing tracked", systemImage: "chart.bar")
                 } else {
+                    // The prototype's main area: 24 pt above, 28 pt at the sides, 26 pt between.
                     ScrollView {
-                        VStack(alignment: .leading, spacing: 20) {
-                            RangeChart(totals: totals, open: open)
-                                .frame(height: 240)
+                        VStack(alignment: .leading, spacing: 26) {
+                            RangeChart(totals: totals, now: now, open: open)
+                                .frame(height: 250)
                             RangeTable(totals: totals)
                         }
-                        .padding()
+                        .padding(.horizontal, 28)
+                        .padding(.top, 24)
+                        .padding(.bottom, 28)
                     }
                 }
             }
@@ -69,61 +72,97 @@ struct RangeView: View {
     }
 }
 
-/// One bar per day or week, stacked by workspace in the workspace colors. A
-/// click on a bar opens it.
+/// One bar per day or week, stacked by workspace in the workspace colors,
+/// with its total above it, as the prototype draws History. A click on a bar,
+/// or VoiceOver's press, opens it.
 private struct RangeChart: View {
     let totals: RangeTotals
+    let now: Date
     let open: (RangeTotals.Bar) -> Void
 
+    /// The bar's share of its column, about the prototype's 52 pt in a week.
+    private static let width = MarkDimension.ratio(0.55)
+
     var body: some View {
-        let labels = totals.bars.map(label)
         Chart {
             ForEach(totals.bars) { bar in
-                ForEach(bar.totals) { total in
-                    BarMark(
-                        x: .value("Day", label(bar)),
-                        y: .value("Hours", total.time.tracked / 3600),
-                    )
-                    .foregroundStyle(total.workspace.color.color)
-                    .accessibilityLabel(spokenName(bar))
-                    .accessibilityValue("\(total.workspace.name), \(spoken(total.time.tracked))")
+                let name = label(bar)
+                let shown = bar.totals.filter { $0.time.tracked > 0 }
+                ForEach(shown) { total in
+                    let corner: CGFloat = total.id == shown.last?.id ? 6 : 0
+                    BarMark(x: .value("Day", name), y: .value("Hours", total.time.tracked / 3600), width: Self.width)
+                        .foregroundStyle(total.workspace.color.color)
+                        // A 2 pt gap above each part but the top one, whose corners are rounded.
+                        .offset(yEnd: corner > 0 ? 0 : 2)
+                        .clipShape(UnevenRoundedRectangle(topLeadingRadius: corner, topTrailingRadius: corner))
+                        .accessibilityHidden(true)
                 }
             }
         }
         // Every day or week, empty ones included, so a quiet day never hides.
-        .chartXScale(domain: labels)
+        .chartXScale(domain: totals.bars.map(label))
+        .chartYScale(domain: 0 ... top)
         .chartXAxis {
             AxisMarks { value in
                 AxisValueLabel {
-                    if let bar = bar(named: value.as(String.self)) {
-                        VStack(spacing: 2) {
-                            Text(verbatim: label(bar))
+                    if let name = value.as(String.self) {
+                        Text(verbatim: name)
+                    }
+                }
+                .font(.callout)
+                .foregroundStyle(Color.muted)
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading, values: [0, top / 2, top]) { value in
+                let hours = value.as(Double.self) ?? 0
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 1, dash: hours == 0 ? [] : [3, 3]))
+                    .foregroundStyle(Color.line)
+                AxisValueLabel {
+                    if hours == 0 {
+                        Text(verbatim: "0")
+                    } else {
+                        Text("\(Int(hours)) h")
+                    }
+                }
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(Color.muted)
+            }
+        }
+        .chartOverlay { proxy in
+            GeometryReader { geometry in
+                if let frame = proxy.plotFrame {
+                    let plot = geometry[frame]
+                    let column = plot.width / CGFloat(max(totals.bars.count, 1))
+                    ForEach(totals.bars) { bar in
+                        let height = bar.total.tracked / 3600
+                        if let center = proxy.position(forX: label(bar)), let barTop = proxy.position(forY: height) {
+                            // The total 6 pt above the bar. The bar's button reads it to VoiceOver.
                             Text(verbatim: MenuBarLabel.hoursAndMinutes(bar.total.tracked))
-                                .monospacedDigit()
+                                .font(.callout.weight(.semibold).monospacedDigit())
+                                .foregroundStyle(bar.total.tracked > 0 ? Color.ink : Color.muted)
+                                .fixedSize()
+                                .position(x: plot.minX + center, y: plot.minY + barTop - 14)
+                                .accessibilityHidden(true)
+                            BarButton(bar: bar, span: totals.range.span, name: spokenName(bar)) {
+                                open(bar)
+                            }
+                            // A day or week still to come has nothing to open.
+                            .disabled(bar.start > now)
+                            .frame(width: column, height: plot.height)
+                            .position(x: plot.minX + center, y: plot.midY)
                         }
                     }
                 }
             }
         }
-        .chartYAxisLabel("Hours")
-        .chartOverlay { proxy in
-            GeometryReader { geometry in
-                Rectangle()
-                    .fill(.clear)
-                    .contentShape(Rectangle())
-                    .onTapGesture { location in
-                        guard let plot = proxy.plotFrame else { return }
-                        if let bar = bar(named: proxy.value(atX: location.x - geometry[plot].origin.x)) {
-                            open(bar)
-                        }
-                    }
-            }
-        }
     }
 
-    /// The bar whose label is `name`.
-    private func bar(named name: String?) -> RangeTotals.Bar? {
-        totals.bars.first { label($0) == name }
+    /// The top of the hours axis: the first round number at or above the
+    /// tallest bar, so the axis reads 0, half of it and all of it.
+    private var top: Double {
+        let tallest = (totals.bars.map(\.total.tracked).max() ?? 0) / 3600
+        return [2, 4, 6, 8, 10, 12, 16, 20, 24, 30, 40, 50, 60, 80, 100, 120, 160, 200].first { $0 >= tallest } ?? 200
     }
 
     /// `Mon 12` for a day, `12–18` for the days of a week.
@@ -146,55 +185,137 @@ private struct RangeChart: View {
     }
 }
 
+/// The clear button over one bar's column. A click opens the bar, and
+/// VoiceOver reads the bar as one element with its time per workspace.
+private struct BarButton: View {
+    let bar: RangeTotals.Bar
+    let span: HistoryRange.Span
+    /// The bar's days in full.
+    let name: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Color.clear.contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .pointerStyle(.link)
+        .help(span == .week ? Text("Open this day") : Text("Open this week"))
+        .accessibilityLabel(label)
+    }
+
+    /// `Monday 12 January. Acme, 3 hours. Globex, 2 hours, 30 minutes. In all, 5 hours, 30 minutes.`
+    /// One sentence per workspace, because a spoken time holds commas itself.
+    private var label: Text {
+        let parts = bar.totals.filter { $0.time.tracked > 0 }
+            .map { String(localized: "\($0.workspace.name), \(spokenTime($0.time.tracked)).") }
+        guard !parts.isEmpty else { return Text("\(name). Nothing tracked.") }
+        return Text("\(name). \(parts.joined(separator: " ")) In all, \(spokenTime(bar.total.tracked)).")
+    }
+}
+
 /// The totals per workspace and, below each, per project: work, breaks and
-/// their sum. Entries without a project count under the workspace alone.
+/// their sum. Entries without a project count under the workspace alone. The
+/// table names every number the chart shows in color.
 private struct RangeTable: View {
     let totals: RangeTotals
 
     var body: some View {
-        Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 6) {
-            GridRow {
+        VStack(alignment: .leading, spacing: 0) {
+            TallyRow {
                 Text("Workspace")
-                Text("Work").gridColumnAlignment(.trailing)
-                Text("Breaks").gridColumnAlignment(.trailing)
-                Text("Total").gridColumnAlignment(.trailing)
+            } numbers: {
+                Text("Work")
+                Text("Breaks")
+                Text("Total")
             }
             .font(.caption.weight(.semibold))
             .foregroundStyle(Color.muted)
-            Divider()
+            .frame(minHeight: 22, alignment: .top)
+            // Each row names its columns for VoiceOver.
+            .accessibilityHidden(true)
             ForEach(totals.totals) { total in
-                GridRow {
+                Color.line.frame(height: 1)
+                TallyLine(time: total.time, name: total.workspace.name) {
                     WorkspaceName(workspace: total.workspace)
-                    times(total.time)
                 }
                 .fontWeight(.semibold)
+                .frame(minHeight: 34)
                 ForEach(total.projects) { project in
-                    GridRow {
+                    TallyLine(time: project.time, name: project.project.name) {
+                        // Under the workspace's name, past its dot.
                         Text(project.project.name)
+                            .lineLimit(1)
                             .padding(.leading, 14)
-                        times(project.time)
                     }
-                    .foregroundStyle(Color.muted)
+                    .frame(minHeight: 26)
                 }
+                Spacer().frame(height: 4)
             }
-            Divider()
-            GridRow {
+            Color.line.frame(height: 1)
+            TallyLine(time: totals.total, name: String(localized: "Total")) {
                 Text("Total")
-                times(totals.total)
             }
             .fontWeight(.semibold)
+            .frame(minHeight: 34)
         }
     }
+}
 
-    @ViewBuilder
-    private func times(_ tally: Tally) -> some View {
-        Text(verbatim: MenuBarLabel.hoursAndMinutes(tally.work)).monospacedDigit()
-        Text(verbatim: MenuBarLabel.hoursAndMinutes(tally.breaks)).monospacedDigit()
-        Text(verbatim: MenuBarLabel.hoursAndMinutes(tally.tracked)).monospacedDigit()
+/// One row of the table: a name, then work, breaks and total in tabular figures.
+private struct TallyLine<Name: View>: View {
+    let time: Tally
+    /// The name VoiceOver reads first.
+    let name: String
+    @ViewBuilder let label: Name
+
+    var body: some View {
+        TallyRow {
+            label
+        } numbers: {
+            number(time.work)
+            number(time.breaks)
+            number(time.tracked)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityAddTraits(.isStaticText)
+        .accessibilityLabel(spokenLabel)
+    }
+
+    /// `Acme. Work, 3 hours. Breaks, 15 minutes. Total, 3 hours, 15 minutes.`
+    private var spokenLabel: Text {
+        let (work, breaks, total) = (spokenTime(time.work), spokenTime(time.breaks), spokenTime(time.tracked))
+        return Text("\(name). Work, \(work). Breaks, \(breaks). Total, \(total).")
+    }
+
+    /// `1:30`, muted when it is nothing.
+    private func number(_ seconds: TimeInterval) -> some View {
+        Text(verbatim: MenuBarLabel.hoursAndMinutes(seconds))
+            .monospacedDigit()
+            .foregroundStyle(seconds > 0 ? Color.ink : Color.muted)
+    }
+}
+
+/// The table's columns: the name fills the width, and the three numbers stand
+/// right-aligned at the end, as the prototype's Time column does.
+private struct TallyRow<Name: View, Numbers: View>: View {
+    @ViewBuilder let name: Name
+    @ViewBuilder let numbers: Numbers
+
+    var body: some View {
+        HStack(spacing: 16) {
+            name
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Group(subviews: numbers) { columns in
+                ForEach(columns) { column in
+                    column.frame(width: 64, alignment: .trailing)
+                }
+            }
+        }
     }
 }
 
 /// `2 hours, 30 minutes`, for VoiceOver.
-private func spoken(_ seconds: TimeInterval) -> String {
+func spokenTime(_ seconds: TimeInterval) -> String {
     Duration.seconds(seconds).formatted(.units(allowed: [.hours, .minutes], width: .wide))
 }

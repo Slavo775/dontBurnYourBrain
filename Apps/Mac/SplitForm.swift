@@ -30,22 +30,41 @@ struct SplitForm: View {
     }
 
     var body: some View {
+        let end = entry.end ?? entry.start
         VStack(spacing: 0) {
             Form {
-                LabeledContent("Entry") {
-                    Text(verbatim: timeRange(entry.start, entry.end ?? entry.start))
-                        .monospacedDigit()
+                Section {
+                    LabeledContent("Entry") {
+                        HStack(spacing: 10) {
+                            if let workspace = entry.workspace {
+                                WorkspaceName(workspace: workspace)
+                            }
+                            Text(verbatim: timeRange(entry.start, end))
+                                .monospacedDigit()
+                        }
+                    }
+                    DatePicker(
+                        "Split at",
+                        selection: $time,
+                        in: times,
+                        // With the date when the entry crosses midnight, so the day is clear.
+                        displayedComponents: Calendar.current.isDate(entry.start, inSameDayAs: end)
+                            ? [.hourAndMinute] : [.date, .hourAndMinute],
+                    )
                 }
-                DatePicker(
-                    "Split at",
-                    selection: $time,
-                    in: times,
-                    // With the date when the entry crosses midnight, so the day is clear.
-                    displayedComponents: Calendar.current.isDate(entry.start, inSameDayAs: entry.end ?? entry.start)
-                        ? [.hourAndMinute] : [.date, .hourAndMinute],
-                )
-                Text("Both parts keep the workspace, project, kind and note, and each can then be changed.")
-                    .foregroundStyle(Color.muted)
+                // What Split makes, so the result is clear before it is pressed.
+                Section {
+                    LabeledContent("First part") {
+                        Text(verbatim: timeRange(entry.start, time)).monospacedDigit()
+                    }
+                    LabeledContent("Second part") {
+                        Text(verbatim: timeRange(time, end)).monospacedDigit()
+                    }
+                } footer: {
+                    Text("Both parts keep the workspace, project, kind and note, and each can then be changed.")
+                        .foregroundStyle(Color.muted)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 if let refusal {
                     Text(refusal)
                         .foregroundStyle(Color.bad)
@@ -65,7 +84,8 @@ struct SplitForm: View {
             }
             .padding()
         }
-        .frame(width: 400)
+        // As wide as the entry form, so the two sheets match.
+        .frame(width: 440)
         .navigationTitle("Split entry")
     }
 
