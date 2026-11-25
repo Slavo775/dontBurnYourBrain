@@ -11,11 +11,13 @@ struct SettingsView: View {
     let localContainer: ModelContainer?
     /// The Claude Code profiles and their hook.
     let hookSetup: HookSetup
+    /// The question about time away from the Mac.
+    let awaySettings: AwaySettings
 
     var body: some View {
         TabView {
             Tab("General", systemImage: "gearshape") {
-                GeneralPane()
+                GeneralPane(awaySettings: awaySettings)
             }
             Tab("Workspaces", systemImage: "square.grid.2x2") {
                 if let container {
@@ -51,8 +53,10 @@ struct SettingsView: View {
     }
 }
 
-/// The General tab: the alerts' switches, and the app's version at the bottom.
+/// The General tab: the alerts' switches, the question about time away, and
+/// the app's version at the bottom.
 private struct GeneralPane: View {
+    let awaySettings: AwaySettings
     @State private var isNotificationRefused = false
 
     var body: some View {
@@ -61,6 +65,7 @@ private struct GeneralPane: View {
             AlertSection("When a break ends", kind: .breakEnd)
             AlertSection("When a focus interval ends", kind: .focusEnd)
             AlertSection("5 minutes before a block ends", kind: .warning)
+            AwaySection(settings: awaySettings)
             if isNotificationRefused {
                 Section {
                     HStack {
@@ -148,6 +153,27 @@ private struct AlertSection: View {
     }
 }
 
+/// The question about time away: its switch, and the minutes without input before it comes.
+private struct AwaySection: View {
+    @Bindable var settings: AwaySettings
+
+    var body: some View {
+        Section("When you're away from the Mac") {
+            Toggle("Ask what the time away was", isOn: $settings.asks)
+                // Named by hand, as the alerts' switches are, so VoiceOver reads it.
+                .accessibilityLabel("Ask what the time away was")
+            Stepper(value: $settings.thresholdMinutes, in: TimeAway.thresholdRange) {
+                Text("After \(settings.thresholdMinutes) min without input")
+                    // The form dims only the arrows of a disabled stepper, so the words dim by hand.
+                    .foregroundStyle(settings.asks ? .primary : .secondary)
+            }
+            .accessibilityLabel("Minutes without input before it asks")
+            .accessibilityValue(Text(settings.thresholdMinutes, format: .number))
+            .disabled(!settings.asks)
+        }
+    }
+}
+
 /// A button that opens the Settings window and brings it in front of other apps.
 ///
 /// The app has no Dock icon, so its windows open behind the active app unless
@@ -206,9 +232,12 @@ extension ModelContainer {
 
 #Preview("Sample data") {
     let container = ModelContainer.sample
-    SettingsView(container: container, localContainer: .sampleFolders(for: container), hookSetup: .sample)
+    SettingsView(
+        container: container, localContainer: .sampleFolders(for: container), hookSetup: .sample,
+        awaySettings: AwaySettings(defaults: nil),
+    )
 }
 
 #Preview("No store") {
-    SettingsView(container: nil, localContainer: nil, hookSetup: .sample)
+    SettingsView(container: nil, localContainer: nil, hookSetup: .sample, awaySettings: AwaySettings(defaults: nil))
 }

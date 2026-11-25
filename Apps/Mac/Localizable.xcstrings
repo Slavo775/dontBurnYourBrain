@@ -152,6 +152,9 @@
     "Added outside this app, so it is removed by hand." : {
 
     },
+    "After %lld min without input" : {
+
+    },
     "After a break" : {
 
     },
@@ -177,6 +180,15 @@
 
     },
     "Archived" : {
+
+    },
+    "Ask what the time away was" : {
+
+    },
+    "Away for %@" : {
+
+    },
+    "Away for %@. Was it work?" : {
 
     },
     "Back" : {
@@ -288,6 +300,9 @@
     "Dev build" : {
 
     },
+    "Discard" : {
+
+    },
     "Edit entry" : {
 
     },
@@ -364,6 +379,9 @@
 
     },
     "Meeting" : {
+
+    },
+    "Minutes without input before it asks" : {
 
     },
     "Name" : {
@@ -687,6 +705,12 @@
     "Wait for me" : {
 
     },
+    "Was it work?" : {
+
+    },
+    "Was it work? The answer waits in the panel." : {
+
+    },
     "When a block ends" : {
 
     },
@@ -714,6 +738,9 @@
     "When a focus interval ends, sound" : {
 
     },
+    "When you're away from the Mac" : {
+
+    },
     "Work" : {
 
     },
@@ -730,6 +757,15 @@
 
     },
     "after" : {
+
+    },
+    "becomes a break" : {
+
+    },
+    "becomes a meeting" : {
+
+    },
+    "cut out like a pause" : {
 
     },
     "hook installed" : {
@@ -762,6 +798,9 @@
 
     },
     "min" : {
+
+    },
+    "nothing changes" : {
 
     },
     "paused" : {

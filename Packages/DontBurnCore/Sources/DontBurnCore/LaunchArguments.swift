@@ -76,6 +76,43 @@ public enum ProfileStandIn {
     }
 }
 
+/// The Dev build's stand-ins for time away from the Mac, so a check needs no
+/// real absence: a short threshold, and an idle time that runs in cycles.
+///
+/// The values come from launch arguments, which are input from outside the
+/// app, so their size and shape are checked before they are read.
+public enum AwayStandIn {
+    /// The longest idle cycle, in seconds: a day.
+    static let maximumCycle = 24 * 60 * 60
+
+    /// The threshold `raw` names, in minutes, or `nil` unless it is ASCII
+    /// digits alone, within ``TimeAway/thresholdRange``.
+    public static func thresholdMinutes(from raw: String) -> Int? {
+        wholeNumber(from: raw, in: TimeAway.thresholdRange)
+    }
+
+    /// The length of one idle cycle `raw` names, in seconds, or `nil` unless
+    /// it is ASCII digits alone, from 1 to a day.
+    public static func idleCycle(from raw: String) -> Int? {
+        wholeNumber(from: raw, in: 1 ... maximumCycle)
+    }
+
+    /// The seconds since the last input at `now`, when input comes once every
+    /// `cycle` seconds from `launch` on: each cycle is a time away, and its
+    /// end a return. Zero before `launch`.
+    public static func secondsSinceLastInput(at now: Date, launch: Date, cycle: Int) -> TimeInterval {
+        max(0, now.timeIntervalSince(launch)).truncatingRemainder(dividingBy: TimeInterval(max(1, cycle)))
+    }
+
+    private static func wholeNumber(from raw: String, in range: ClosedRange<Int>) -> Int? {
+        // At most six digits, so nothing longer is read at all.
+        guard (1 ... 6).contains(raw.utf8.count), raw.utf8.allSatisfy({ (0x30 ... 0x39).contains($0) }),
+              let value = Int(raw), range.contains(value)
+        else { return nil }
+        return value
+    }
+}
+
 /// Where one build looks for Claude Code profiles, and the folder it may read
 /// and write settings files in.
 public struct ProfileReach: Equatable, Sendable {

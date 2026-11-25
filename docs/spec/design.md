@@ -143,6 +143,7 @@ How the panel behaves today, in phase 1:
 - Today's tracked total counts work and meetings always, and a break only when its workspace counts breaks. Entries are clipped to today and to now. It is the window's Today total: the sum of each entry's whole minutes, rounded down per entry.
 - With nothing running, it shows the list described below. Without a store, it shows only "Nothing running", with no rows, no footer and no keys.
 - While the app asks for the notification permission, one line under the actions says "Allow notifications to hear when a block or break ends". It goes away when the system prompt is answered, and never shows after a refusal.
+- Since card 59, a question about time away can wait above the header. See [The question about time away](#the-question-about-time-away).
 
 ### The rhythm in the panel
 
@@ -215,6 +216,25 @@ A break of the length the owner needs, such as lunch, also when no block runs. T
 - **Checked when read.** A stored break counts only when both values are dates, in order, at most a day long, started by now and ending at most a day after now. Anything else is dropped and removed from the defaults. Every time shown is capped, so no stored value can crash the app.
 - **A known limit.** If the clock moves back to between a finished break's start and its end, that break runs again until its end. A `ponytail:` comment in `IdleBreak.swift` names it.
 - The rules live in `IdleBreak` and `QuickAction` in `DontBurnCore`.
+
+### The question about time away
+
+Built on card 59. When a block counted time away from the Mac as work, the app asks on the return what it was. Which time counts and what each answer does is in [features.md](features.md#rules-worth-fixing-early). The owner approved the look from the Designer's screenshots. The prototype does not draw it.
+
+- **Nothing opens by itself.** The panel takes keys as soon as it opens, so it stays closed and the app stays behind. A notification asks, "Away for 25 min" and "Was it work? The answer waits in the panel.", with no sound. The question waits until he opens the panel.
+- **Where.** At the top of the main page, above the workspace header, where he looks first. It waits while the block runs and after it ran out, above "Nothing running". It is not shown in Switch, "Break for" or the custom block form.
+- **The look** follows the panel's pages, "Break for" and Switch. The title "Away for 25 min" at 15 pt semibold, with "Was it work?" under it, muted at 12 pt. Then four outlined rows, 44 pt high with 12 pt corners like "Custom block": Work · "nothing changes", Meeting · "becomes a meeting", Break · "becomes a break", Discard · "cut out like a pause". What an answer does stands muted at the row's end, where a page shows a key. A 1 pt line parts the question from the block, as the footer's line does. The rows stay quieter than the four actions, so the countdown is still the largest thing.
+- **No keys.** The rows take no keys, so P, B, +, S and E keep acting on the block. A click answers.
+- **VoiceOver** reads the title as a heading, "Away for 25 minutes. Was it work?", and each row as one button, such as "Discard, cut out like a pause", so the answer Break is not read like the action Break.
+- **After an answer** the question goes and the panel shrinks back. The menu bar label, Today's total and the alerts follow at once, and after Discard the block-end and 5-minute alerts follow the new end. Today's total can lose a minute after Meeting or Break, because each entry is rounded down on its own.
+- **Without an answer.** Every action on the timer that succeeds, except +15, drops the question, and the time counts as worked: Pause, Break, a planned break, Switch, End block, a start and ending a break with nothing running. So do a quit and switching the question off. Edits in the window leave it waiting, and an answer after an edit finds the entry again or changes nothing. When the block runs out at its planned end first, the question stays.
+- **One question.** A second time away before the answer widens it, from the first start to the latest return, and replaces the notification.
+- **Noticing.** `AwayWatcher` reads the seconds since the last input of any kind, with `CGEventSource.secondsSinceLastEventType`, behind the `IdleTimeReading` protocol. It reads no event, so it needs no permission, and no prompt came. While working it reads about once per threshold, and every second once he is away, so the return is found within a second. A changed threshold reads again at once. Watching stops at the block's end, but a time away already under way is followed to the return. Sleep and wake come from `NSWorkspace`.
+- **The notification** is posted only when notifications are allowed, and it never asks for the permission. Without it the question still waits in the panel. Its id is `<bundle id>.away`. It is withdrawn when the question is answered or dropped, on quit, and at launch, which covers a crash.
+- **Settings → General** has a section "When you're away from the Mac", after the four alert sections: a switch "Ask what the time away was", on by default, and a stepper "After 10 min without input", from 1 to 60. While the switch is off the stepper is disabled and its words dim, nothing is watched, and time away counts as worked. VoiceOver reads them as "Ask what the time away was" and "Minutes without input before it asks", with the number as its value. Both are kept in the app's own defaults as `away.ask` and `away.thresholdMinutes`. A stored threshold outside 1 to 60 becomes 10. Under `-DontBurnSampleData` both stay in memory.
+- **In memory only.** The question is never stored, so the data model did not change.
+- **Known limits.** Answering Break after a planned break ran out while he was away leaves two break entries side by side, which the rhythm counts as two rounds. By the owner's decision, a sleep that begins with 3 minutes of the block left asks about the whole time, such as "Away for 1 h 03", while the same time without a sleep asks nothing, because watching stops at the block's end.
+- The rules live in `TimeAway` and `TimerEngine` in `DontBurnCore`. The watcher and the settings are in `Apps/Mac/AwayWatcher.swift`, the question and its view in `Apps/Mac/AwayQuestion.swift`.
 
 ## Expanded panel on the Mac
 
@@ -374,7 +394,7 @@ The order of the list is the order of the quick start presets and their number k
 
 #### What phase 1 builds
 
-The window has a fixed size of 760 × 470 pt and two tabs: General, with the alert switches described under [Sounds and notifications](#sounds-and-notifications) and the version at the bottom, and Workspaces. Phase 2 added the [Rhythm](#rhythm) tab, and card 49 the [Sessions](#sessions) tab after it. The other tabs and rows arrive with their phases.
+The window has a fixed size of 760 × 470 pt and two tabs: General, with the alert switches described under [Sounds and notifications](#sounds-and-notifications) and the version at the bottom, and Workspaces. Card 59 added the question about time away to General ([its section](#the-question-about-time-away)). Phase 2 added the [Rhythm](#rhythm) tab, and card 49 the [Sessions](#sessions) tab after it. The other tabs and rows arrive with their phases.
 
 - **The list** is 220 pt wide, with + and − below it. Rows are reordered by dragging.
 - **The form** holds the name, the six swatches, a "Default block" pop-up and "Shown on key N". From the tenth workspace on, it says "No number key".
@@ -499,11 +519,12 @@ How it works:
 - A break with nothing running gets the break-end alert alone, with the same Settings switches and the same notification id. Its notification names no workspace.
 - Ending, switching, pausing or ending a break by hand never plays a sound, and neither does a block start that ends a break with nothing running.
 - A sound is skipped when it comes more than 60 seconds late, for example after the Mac slept.
+- The question about time away has a notification of its own, with no sound and no switch here. It shows at once, and only when notifications are allowed. See [The question about time away](#the-question-about-time-away).
 - The rules live in `Alerts.swift` in `DontBurnCore` (`AlertKind`, `AlertSettings` and the plan).
 
 **Permission.** It is asked at the first start of a block or a break, while macOS has not asked yet, and never at launch. While the system prompt is open, the compact panel shows one line under the actions. After a refusal only the note in Settings → General remains. When it is allowed later in System Settings, the app picks it up at the next change of plan.
 
-**Settings → General** is a grouped form with four sections: When a block ends, When a break ends, When a focus interval ends, and 5 minutes before a block ends. Each has a Notification switch and a "Sound (Name)" switch. The switches are stored in the defaults as `alert.<kind>.notification` and `alert.<kind>.sound`, such as `alert.focusEnd.notification`. When notifications are refused, a note says "Notifications are off for <app name>. Allow them in System Settings → Notifications." with an Open button, which only opens that pane. The version is the last row. The form is taller than the window and scrolls. The three sections that are on by default show without scrolling.
+**Settings → General** is a grouped form with four alert sections: When a block ends, When a break ends, When a focus interval ends, and 5 minutes before a block ends. Each has a Notification switch and a "Sound (Name)" switch. A fifth section, "When you're away from the Mac", follows them since card 59 ([its switches](#the-question-about-time-away)). The switches are stored in the defaults as `alert.<kind>.notification` and `alert.<kind>.sound`, such as `alert.focusEnd.notification`. When notifications are refused, a note says "Notifications are off for <app name>. Allow them in System Settings → Notifications." with an Open button, which only opens that pane. The version is the last row. The form is taller than the window and scrolls. The three sections that are on by default show without scrolling.
 
 **Without notifications** the timer and the sounds work, nothing is scheduled, and Settings shows the way back.
 
