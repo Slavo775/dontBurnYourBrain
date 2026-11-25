@@ -67,6 +67,10 @@ extension Color {
     static let keyBackground = Color(nsColor: NSColor(light: 0xF3F5F4, dark: 0x242E2B))
     /// Dividers and outlines.
     static let line = Color(nsColor: NSColor(light: 0xD3DAD7, dark: 0x2B3632))
+    /// The gaps that mark the breaks in the progress strip: the surface in
+    /// light, as the prototype draws them. In dark that hides them on the empty
+    /// part of the strip, so there they take the line's lighter value.
+    static let breakGap = Color(nsColor: NSColor(light: 0xFFFFFF, dark: 0x2B3632))
     /// Text.
     static let ink = Color(nsColor: NSColor(light: 0x16201D, dark: 0xE6ECE9))
     /// Secondary text.

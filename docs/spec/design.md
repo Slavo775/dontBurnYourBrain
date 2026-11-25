@@ -4,7 +4,7 @@ How the app looks and behaves, surface by surface.
 
 The drawn screens are in [../design/prototype/index.html](../design/prototype/index.html). Open it in a browser. Several of them are live: the compact panel, Jira review and the Workspaces settings. When this text and the prototype disagree, the prototype wins on looks and this text wins on behaviour. Tell the owner about the difference either way.
 
-Where this text is ahead of the prototype: the prototype draws folders and a Jira link on each workspace, a Jira tab in Settings and a Jira review, and no projects. Here the projects of a workspace hold the folders and the issue tracker, the tab is Trackers, and the review is Time review. The prototype also does not draw the End block row, "Break for" or a break with nothing running.
+Where this text is ahead of the prototype: the prototype draws folders and a Jira link on each workspace, a Jira tab in Settings and a Jira review, and no projects. Here the projects of a workspace hold the folders and the issue tracker, the tab is Trackers, and the review is Time review. The prototype also does not draw the End block row, "Break for", a break with nothing running, a planned break that is due or the content of the Rhythm tab. It draws the minutes in the Rhythm pop-up, where the app shows the preset's name, and in dark its gaps in the strip have another color (see [The rhythm in the panel](#the-rhythm-in-the-panel)).
 
 Acme, Globex, Personal and the issue keys are sample data. Users create their own workspaces.
 
@@ -73,7 +73,8 @@ How the first four states behave today:
 
 - Times left are rounded down. A block shows `h:mm` until less than five minutes are left, so the seconds start at `4:59`. A break always shows `m:ss`.
 - Untracked time counts from the end of the latest entry that ended today, else from the app's start, but never from before the start of today. A break with nothing running is left out: when it ended later than that, untracked time counts from its real end. That is its planned end when it ran out, or the moment it was ended by hand or by a block start. It never counts from a moment in the future or before today, and this holds after a restart.
-- The item redraws just after the shown digits change, and at least once a minute. At `0:00` the block or break is closed on the next tick.
+- A planned break shows as a break taken by hand, and a block that waits for Resume after a break shows as paused.
+- The item redraws just after the shown digits change, and at least once a minute. While a block with a rhythm runs, it also redraws just after a planned break becomes due or is skipped. At `0:00` the block or break is closed on the next tick.
 - A long workspace name is cut to 16 characters, "…" included, and never drawn wider than 116 pt.
 - Without a store the item shows the outline dot and never ticks.
 - The Dev build draws a small "DEV" 4 pt after the label, 9 pt bold, in the secondary label color, and VoiceOver reads ", Dev build" after the label, such as "Acme 1:23, Dev build". The marker makes the item about 25 pt wider, so on a notched display it is hidden sooner. The 116 pt limit for the name is the same. Release shows no marker.
@@ -119,7 +120,7 @@ What the actions do:
 | Action | Effect |
 |---|---|
 | **Pause** | The countdown stops and the running entry ends. The button becomes Resume, the digits dim, the menu bar says "paused". Resume starts a new entry, and the block ends later by the length of the pause. Pausing during a break ends the break, and Resume starts work |
-| **Break** | Opens "Break for", where the length is chosen. A break entry then starts inside the block, with its own countdown. The button becomes End break. When the break is over, work continues, unless the block's rhythm waits for Resume (see [Rhythm](#rhythm)). The block still ends at its planned time, and a break that would run past it stops there, so for lunch the block is ended first. While the block is paused, Break is disabled in the button, the B key and the menu: resume first (the owner's decision) |
+| **Break** | Opens "Break for", where the length is chosen. While a planned break is due, it starts that break at once instead (see [The rhythm in the panel](#the-rhythm-in-the-panel)). A break entry then starts inside the block, with its own countdown. The button becomes End break. When the break is over, work continues, unless the block's rhythm waits for Resume (see [Rhythm](#rhythm)). The block still ends at its planned time, and a break that would run past it stops there, so for lunch the block is ended first. While the block is paused, Break is disabled in the button, the B key and the menu: resume first (the owner's decision) |
 | **+15 min** | Adds 15 minutes to the block. On a break it adds them to the break too, so the work left after the break stays the same. This is the owner's decision on card 44 |
 | **Switch** | Shows the quick start list under the title "Switch to", with a Back button. Choosing a workspace ends the current block and starts a new one for that workspace, at its default length |
 
@@ -130,11 +131,11 @@ End block is not among the four. It is a quieter row under them, and it also liv
 How the panel behaves today, in phase 1:
 
 - It is a borderless panel under the menu bar item. It takes the keys as soon as it opens, without bringing the app to the front.
-- It shows the workspace dot and name, the countdown, one line ("left of 2:00", "Paused", or "On a break, then back to Acme"), the strip, the four actions, the End block row, and the footer "Today: 1:42 tracked". The issue, the expand button, the needs-you strip, the next meeting and the sessions link come in later phases.
+- It shows the workspace dot and name, the countdown, one line ("left of 2:00", "Paused", or "On a break, then back to Acme"), the strip, the four actions, the End block row, and the footer "Today: 1:42 tracked". The line stays one line, so a long workspace name is cut off with "…". A block with a rhythm says more, see [The rhythm in the panel](#the-rhythm-in-the-panel). The issue, the expand button, the needs-you strip, the next meeting and the sessions link come in later phases.
 - The countdown shows `h:mm` large and `:ss` small from one hour left on, and `m` with `:ss` below that. During a break the strip is filled in the muted color.
 - The End block row is drawn like the outlined "Custom block" row, 8 pt under the four actions: a small muted stop icon, "End block", and the key hint E on the right. It shows only while a block runs, is paused or is on a break, so not on a break with nothing running. VoiceOver reads it as one element, "End block".
-- "Break for" opens from Break or B while working, and from "Take a break" with nothing running. Like Switch, it has a title, a Back button and rows: 5, 15, 30 and 60 min on the keys 1 to 4. There is no typed length. The last length used is preselected: its row has a 2 pt ink outline and the Return key ↵ beside its number, and Return or keypad Enter starts it. VoiceOver reads the rows as "5 minutes" to "60 minutes", the preselected one as selected. The length is remembered across launches. It is 5 min at first, and a stored value outside the list becomes 5.
-- Keys: P pauses and resumes, B opens "Break for" while working and ends a break, + adds 15 minutes, S opens Switch, E ends the block, Escape closes the panel. On a break with nothing running, B ends it, + lengthens it and S opens Switch, and P and E do nothing. P, B, +, S and E act on the running block or break, and not in Switch or "Break for". With nothing running only B is taken, and it opens "Break for" when there is a store. 1 to 9 start a workspace in the "Nothing running" list and in Switch. In "Break for", 1 to 4 start a break of that length, Return or keypad Enter starts the preselected one, and Escape closes the panel, as in Switch. ⌘N opens the custom block form, but not from "Break for". In the form, Return or keypad Enter starts, and Escape goes back to the list instead of closing the panel. Each key acts once per press, and a held key does not repeat. ⌘O closes the panel and opens [the window](#the-window). ⌘N and ⌘O are the only keys with ⌘, ⌃ or ⌥ that are taken, each with ⌘ alone; the others are ignored.
+- "Break for" opens from Break or B while working with no planned break due, and from "Take a break" with nothing running. Like Switch, it has a title, a Back button and rows: 5, 15, 30 and 60 min on the keys 1 to 4. There is no typed length. The last length used is preselected: its row has a 2 pt ink outline and the Return key ↵ beside its number, and Return or keypad Enter starts it. VoiceOver reads the rows as "5 minutes" to "60 minutes", the preselected one as selected. The length is remembered across launches. It is 5 min at first, and a stored value outside the list becomes 5.
+- Keys: P pauses and resumes, B opens "Break for" while working, starts a planned break that is due and ends a break, + adds 15 minutes, S opens Switch, E ends the block, Escape closes the panel. On a break with nothing running, B ends it, + lengthens it and S opens Switch, and P and E do nothing. P, B, +, S and E act on the running block or break, and not in Switch or "Break for". With nothing running only B is taken, and it opens "Break for" when there is a store. 1 to 9 start a workspace in the "Nothing running" list and in Switch. In "Break for", 1 to 4 start a break of that length, Return or keypad Enter starts the preselected one, and Escape closes the panel, as in Switch. ⌘N opens the custom block form, but not from "Break for". In the form, Return or keypad Enter starts, and Escape goes back to the list instead of closing the panel. Each key acts once per press, and a held key does not repeat. ⌘O closes the panel and opens [the window](#the-window). ⌘N and ⌘O are the only keys with ⌘, ⌃ or ⌥ that are taken, each with ⌘ alone; the others are ignored.
 - Switch uses the same rows as "Nothing running": every active workspace in the order from Settings, the running one included, with the dot, the name, the default length and the number key. Back returns to the running block.
 - The panel closes on Escape, on a second click on the item, on a right-click, on the item's "Show menu" action, and when it loses focus, such as on a click elsewhere.
 - The countdown ticks every second only while the panel is open.
@@ -143,11 +144,44 @@ How the panel behaves today, in phase 1:
 - With nothing running, it shows the list described below. Without a store, it shows only "Nothing running", with no rows, no footer and no keys.
 - While the app asks for the notification permission, one line under the actions says "Allow notifications to hear when a block or break ends". It goes away when the system prompt is answered, and never shows after a refusal.
 
+### The rhythm in the panel
+
+Built on card 58, for a block that follows a [preset](#rhythm). A block without one looks exactly as in phase 1.
+
+**The line** under the countdown:
+
+| Moment | Line |
+|---|---|
+| Working | "left of 2:00, break in 19 min", in whole minutes, rounded down. Below one: "left of 2:00, break in less than 1 min" |
+| Working, and no planned break fits before the block's end | "left of 2:00" |
+| Working, and a planned break is due | "left of 2:00, 5 min break due" |
+| On a break, planned or taken by hand | "5 min break, then back to Acme". When the preset waits for Resume: "5 min break, then paused" |
+| On a break that the block's end cuts off | Its shorter length, such as "3 min break, then back to Acme", also when the preset waits. Under a minute: "On a break, then back to Acme" |
+| Paused, by hand or because the preset waits | "Paused" |
+
+A workspace without a name reads "5 min break, then back to work".
+
+**The gaps in the strip:**
+
+- Up to now, a gap is a break that was really taken, planned or by hand. The running one reaches to its planned end. After now, the gaps are the planned breaks, the one that is due included. A skipped break leaves no gap.
+- They are fractions of the block's planned length, and a pause does not count. So they follow a pause, a break by hand and +15.
+- They lie over the filled and the empty part, at 62 % of the surface color in light and of the line color in dark (`breakGap` in the code). The prototype draws the surface color in both, which nearly hides the gaps on the empty part in dark.
+
+**A break that is due** only tells, and nothing starts by itself:
+
+- The Break button reads "Break now", with a filled cup, in the same place. Its label for VoiceOver is "Break now, 5 minutes".
+- The button or B starts the break at once, at its planned length, without "Break for". It does not change the remembered last length.
+- The right-click menu stays as it is. A break chosen there is the planned one too, whatever its length.
+- Left alone for its planned length, it is skipped, with no entry and no gap, and the next focus interval starts.
+- Paused while a break is due, the block says "Paused" and Break is disabled. After Resume the break is due again.
+
+Which break comes when is in [features.md](features.md#rules-worth-fixing-early). The lines and the gaps live in `CompactPanel` and `FocusRhythm` in `DontBurnCore`.
+
 ### Nothing is running
 
 - Title "Nothing running", and below it "Free until 11:30" when the calendar knows.
 - One row per workspace, in the order from Settings: the dot, the name, the default block length, the last issue, and a number key. A click or the number starts the block.
-- "Custom block", ⌘N, opens a short form: workspace, length, issue.
+- "Custom block", ⌘N, opens a short form: workspace, length, rhythm, issue.
 - The needs-you strip when an agent is waiting, as while a block runs. Sessions need no block.
 - Footer: "Today: 0:10 tracked".
 
@@ -157,8 +191,9 @@ What phase 1 builds:
 
 - Title "Nothing running", without "Free until".
 - One row per active workspace in the order from Settings: the dot, the name and the default length, without the last issue. The first nine get the keys 1 to 9. The list scrolls only with more than nine.
-- A click or a number key starts a block at the workspace's default length.
+- A click or a number key starts a block at the workspace's default length and, since phase 2, with its default rhythm. Switch and the right-click menu start it the same way.
 - "Custom block", ⌘N, opens a form with a Workspace picker, a Length picker and Start. The lengths are the fixed list Settings offers, preselected to the workspace's default, and again when the workspace changes. There is no typed length and no issue field yet. ⌘N works only with nothing running and at least one workspace.
+- The form's Rhythm row came in phase 2: "None" and every preset by its name, without its minutes. It is preselected to the workspace's default, and again when the workspace changes. With no preset there is no Rhythm row. A long name in the Workspace or the Rhythm pop-up is cut off.
 - "Take a break", on the key B, under "Custom block" and drawn like it, outlined. It opens "Break for" and starts [a break with nothing running](#a-break-with-nothing-running). It shows only with a store.
 - Footer "Today: h:mm tracked".
 - No workspaces: the note "No workspaces yet", the "Take a break" row, because a break needs no workspace, and a "Settings…" button that opens Settings.
@@ -329,7 +364,7 @@ Seven tabs: General, Workspaces, Rhythm, Sessions, Trackers, Calendars, Shortcut
 A list on the left with + and −, the chosen workspace on the right:
 
 - name and color, from the six swatches
-- default block length, and rhythm ("25 min focus, 5 min break")
+- default block length, and rhythm: the preset's name, and its minutes below ("25 min focus, 5 min break")
 - its projects, described below
 - the rounding step, and a switch: "Breaks count as working time"
 - the calendar
@@ -339,11 +374,12 @@ The order of the list is the order of the quick start presets and their number k
 
 #### What phase 1 builds
 
-The window has a fixed size of 760 × 470 pt and two tabs: General, with the alert switches described under [Sounds and notifications](#sounds-and-notifications) and the version at the bottom, and Workspaces. The other tabs and rows arrive with their phases.
+The window has a fixed size of 760 × 470 pt and two tabs: General, with the alert switches described under [Sounds and notifications](#sounds-and-notifications) and the version at the bottom, and Workspaces. Phase 2 added the [Rhythm](#rhythm) tab. The other tabs and rows arrive with their phases.
 
 - **The list** is 220 pt wide, with + and − below it. Rows are reordered by dragging.
 - **The form** holds the name, the six swatches, a "Default block" pop-up and "Shown on key N". From the tenth workspace on, it says "No number key".
 - **The default block** is chosen from a fixed list: 25 min, 30 min, 45 min, 1 h, 1 h 30, 2 h, 3 h and 4 h. A stored value outside the list is kept and shown as an extra choice.
+- **The rhythm** row, added in phase 2, is a pop-up between "Default block" and "Shown on key N": "None" and every preset by its name, with the chosen preset's minutes muted below it, such as "25 min focus, 5 min break". With no preset it offers only "None". A long name is cut off. A block that already runs keeps its rhythm.
 - **+** creates "New workspace", then "New workspace 2" and so on, counting archived names too. It gets the first color no active workspace uses (key `a` when all six are used), 1 hour, and the last place. Its name is focused and selected.
 - **−** archives after one confirmation. Nothing deletes a workspace.
 - **Archived workspaces** sit in a collapsible "Archived" section under the list, with dimmed rows. Choosing one shows it read-only with a Restore button. Restore puts it last.
@@ -366,7 +402,7 @@ The chosen workspace lists its projects.
 
 What phase 3 builds:
 
-- **The switch.** A "Workspace | Projects" switch sits at the top of the chosen workspace's side. The Workspace page is the form from phase 1, unchanged. The switch keeps its page when another workspace is chosen, and + for a new workspace goes back to the Workspace page, with its name focused.
+- **The switch.** A "Workspace | Projects" switch sits at the top of the chosen workspace's side. The Workspace page is the form above, unchanged. The switch keeps its page when another workspace is chosen, and + for a new workspace goes back to the Workspace page, with its name focused.
 - **The Projects page** is one bordered box under the switch: the project list, about 160 pt wide, with + and − below it, and the chosen project's form beside it. Rows are reordered by dragging. Archived projects sit in a collapsible "Archived" section under the list, with dimmed rows, by name.
 - **+** creates "New project", then "New project 2" and so on, counting the workspace's archived names too. Its time is tracked, it goes last, and its name is focused.
 - **The form** holds the name, the "Track time" switch with the note "Its entries stay when this is off." below it, and Folders. The labels sit in a column as wide as the widest one. The form scrolls when the folders make it taller than the window.
@@ -383,9 +419,25 @@ The prototype does not draw this page. The owner chose the layout above. The rul
 
 ### Rhythm
 
-The focus presets: a name, the minutes of focus and of break, a long break after a number of rounds, and what happens when a break ends: work resumes by itself, or the block waits paused for Resume. The app comes with 25 and 5, with a 15-minute long break after 4 rounds, and 50 and 10, with none. Both resume by themselves. "None" is not a preset: it is a workspace without one. A workspace names its default preset in Workspaces, and "Custom block" may choose another for one block. A preset that a workspace uses cannot be removed. The tab arrives with card 58.
+The focus presets: a name, the minutes of focus and of break, a long break after a number of rounds, and what happens when a break ends: work resumes by itself, or the block waits paused for Resume. The app comes with 25 and 5, with a 15-minute long break after 4 rounds, and 50 and 10, with none. Both resume by themselves. "None" is not a preset: it is a workspace without one. A workspace names its default preset in Workspaces, and "Custom block" may choose another, or none, for one block. A preset that a workspace uses cannot be removed.
 
-Card 57 built the rhythm in the timer engine and the two presets, with no screen yet. No workspace has a preset until the user chooses one, so every block runs as in phase 1. The rules are in [features.md](features.md#rules-worth-fixing-early), and they live in `FocusRhythm` and `TimerEngine` in `DontBurnCore`.
+Card 57 built the rhythm in the timer engine and the two presets, and card 58 the screens. No workspace has a preset until the user chooses one, so until then every block looks and runs as in phase 1. The rules are in [features.md](features.md#rules-worth-fixing-early), and they live in `FocusRhythm` and `TimerEngine` in `DontBurnCore`. How a block with a rhythm looks is under [The rhythm in the panel](#the-rhythm-in-the-panel).
+
+What phase 2 builds:
+
+- **The tab** works like Workspaces: the presets in a list 220 pt wide with + and − below it, and the chosen one's form on the right. Every change is saved at once. It changes the preset for the blocks that start later, and a running block keeps its own copy.
+- **The order** of the presets, here and in the pop-ups, is by focus minutes, then break minutes, then name. It cannot be changed by hand.
+- **The form** holds Name, Focus and Break in minutes, Long break, and After a break with the choices "Resume by itself" and "Wait for me".
+- **The long break** is a checkbox. While it is on, its minutes stand beside it and "after 4 rounds" below. While it is off, both are hidden. Switching it on starts at 15 min after 4 rounds, and switching it off stores 0 for both.
+- **Numbers** are typed or stepped: 1 to 240 minutes, 2 to 12 rounds. A typed number outside the range becomes the nearest one inside, and anything but a number is refused. A stored number outside the range stays until it is edited.
+- **+** creates "New preset", then "New preset 2" and so on, with 25 min focus, 5 min break, no long break, and "Resume by itself". Its name is focused and selected. A preset without a name shows as "Unnamed".
+- **−** removes after one confirmation: "Remove “25/5”?", "Blocks that already follow it keep their rhythm."
+- **A preset in use:** − is disabled, and a note at the bottom of the form says "Used by Acme, so it can't be removed." Archived workspaces count and read "Acme (archived)". Several names are joined, as "Acme and Globex", and a long note is cut to three lines and keeps its end.
+- **No presets:** "No presets yet", "A preset splits a block into focus intervals and breaks." and "Create a preset".
+- **The app's own presets** are added once. This Mac's defaults remember it as `presets.seeded`, so presets that were removed stay removed after a restart. A store that already has presets counts as seeded. Under `-DontBurnSampleData` the key is never read or written. A known limit: a store deleted by hand, while the defaults still remember, starts without presets. A `ponytail:` comment in `FocusRhythm.swift` names it.
+- **The store could not be opened:** the tab says "The data could not be opened" and "Presets can't be shown or changed right now."
+
+The prototype does not draw this tab. The owner chose the layout above. The rules live in `PresetRoster` in `DontBurnCore`.
 
 ### Sessions
 
@@ -399,19 +451,20 @@ The issue trackers the user connected, Jira and Trello first, each with its acco
 
 ## Sounds and notifications
 
-- A soft chime when a focus interval ends (phase 2)
+- A soft chime when a focus interval ends
 - A different chime when a break ends
 - A longer tone when the block ends
 - A short tick when an agent needs you, also with no block running, which can be muted during focus (phase 3)
 
-### What phase 1 builds
+### What phases 1 and 2 build
 
-Three alerts, each with a notification and a sound that can be switched off on their own:
+Four alerts, each with a notification and a sound that can be switched off on their own. Phase 2 added the end of a focus interval:
 
 | Alert | Sound | Notification | On by default |
 |---|---|---|---|
 | A block ends | Submarine | "Acme block finished", "Time to stop or start the next one." | Yes |
-| A break ends | Glass | "Break is over", "Back to Acme." After a break with nothing running: "Break is over", "Start a block when you're ready." | Yes |
+| A break ends | Glass | "Break is over", "Back to Acme." After a break with nothing running: "Break is over", "Start a block when you're ready." When the block waits for Resume: "Break is over", "Press Resume to go back to Acme." | Yes |
+| A focus interval ends, so a planned break is due | Ping | "Time for a break", "5 min break from Acme." | Yes |
 | 5 minutes before a block ends | Purr | "5 minutes left", "The Acme block ends soon." | No |
 
 **Where the sounds come from.** They are the macOS system sounds in `/System/Library/Sounds`, played by name with `NSSound`. No sound file is in the repository, so no license is needed. The owner chose them. `AlertKind.soundName` in `Apps/Mac/AlertCenter.swift` records this.
@@ -419,8 +472,14 @@ Three alerts, each with a notification and a sound that can be switched off on t
 How it works:
 
 - The notifications are silent, because the app plays the sound itself. So the sound still plays when notifications are refused.
-- Notifications are scheduled ahead and replaced on every change of plan: start, pause, resume, extend, break, switch and end. Their ids are `<bundle id>.<kind>`. Pending ones survive quitting the app.
+- Notifications are scheduled ahead and replaced on every change of plan: start, pause, resume, extend, break, switch and end. Their ids are `<bundle id>.<kind>`, such as `<bundle id>.focusEnd`. Pending ones survive quitting the app.
 - A paused block has no notification. A break cut off by the block's end gets only the block-end alert.
+- **A break after which the block waits** gets only its end planned, with the break-end switches. The block's end, its warning and the next focus end are planned again on Resume, because they move later until then.
+- **The focus end** is planned for the moment the next planned break becomes due. While a break is due none is planned, because adding the next one takes the notification just shown off the screen. It is planned again once the break is taken or skipped, and that also clears the old "Time for a break". With no later focus end to plan, such as after the last planned break, the old one stays in Notification Center.
+- **An alert whose moment has just come** may still be on its way to the screen. When nothing else in the plan changed, its request is removed on a later tick, a second or more after its moment. A press that changes the rest of the plan in that second still replaces everything at once.
+- **A notification keeps only whole seconds** and shows as its second begins. One whose second has begun is never added, because that would only take away the one just shown.
+- A known limit: with the panel closed, the removal left for a later tick can meet another alert's moment, when that lies in about the first tenth of its second, and take its notification away too. In a simulation only, this lost the 5-minute warning, and the focus end after an interval of one minute, the shortest a preset allows. Their sounds do not depend on it.
+- When more than one moment passes between two ticks, one sound plays: the block's end before the break's end, then the focus end, then the warning.
 - A break with nothing running gets the break-end alert alone, with the same Settings switches and the same notification id. Its notification names no workspace.
 - Ending, switching, pausing or ending a break by hand never plays a sound, and neither does a block start that ends a break with nothing running.
 - A sound is skipped when it comes more than 60 seconds late, for example after the Mac slept.
@@ -428,7 +487,7 @@ How it works:
 
 **Permission.** It is asked at the first start of a block or a break, while macOS has not asked yet, and never at launch. While the system prompt is open, the compact panel shows one line under the actions. After a refusal only the note in Settings → General remains. When it is allowed later in System Settings, the app picks it up at the next change of plan.
 
-**Settings → General** is a grouped form with three sections: When a block ends, When a break ends, and 5 minutes before a block ends. Each has a Notification switch and a "Sound (Name)" switch. The switches are stored in the defaults as `alert.<kind>.notification` and `alert.<kind>.sound`. When notifications are refused, a note says "Notifications are off for <app name>. Allow them in System Settings → Notifications." with an Open button, which only opens that pane. The version stays at the bottom, and the form scrolls when the note makes it taller than the window.
+**Settings → General** is a grouped form with four sections: When a block ends, When a break ends, When a focus interval ends, and 5 minutes before a block ends. Each has a Notification switch and a "Sound (Name)" switch. The switches are stored in the defaults as `alert.<kind>.notification` and `alert.<kind>.sound`, such as `alert.focusEnd.notification`. When notifications are refused, a note says "Notifications are off for <app name>. Allow them in System Settings → Notifications." with an Open button, which only opens that pane. The version is the last row. The form is taller than the window and scrolls. The three sections that are on by default show without scrolling.
 
 **Without notifications** the timer and the sounds work, nothing is scheduled, and Settings shows the way back.
 
@@ -441,7 +500,7 @@ How it works:
 | Settings: Workspaces (name, color, default block, order, archive) | 1 |
 | Window: Today as a list, simple history | 1 |
 | Right-click menu: the block actions and the quick start items | 1 |
-| Break gaps in the strip, "break in", Settings: Rhythm | 2 |
+| Break gaps in the strip, "break in", the break that is due, the alert at the end of a focus interval, Settings: Rhythm, and the Rhythm rows in Workspaces and Custom block | 2 |
 | Command bar, also from the right-click menu, week and month charts, the idle question, start at login | 2 |
 | Settings: the projects of a workspace, with their folders and the "Track time" switch | 3 |
 | Needs-you strip, expanded panel, session switcher, Settings: Sessions, the amber badge, "Focus the waiting session" in the right-click menu | 3 |

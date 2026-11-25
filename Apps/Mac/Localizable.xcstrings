@@ -28,6 +28,45 @@
     "%lld min" : {
 
     },
+    "%lld min break from %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld min break from %2$@."
+          }
+        }
+      }
+    },
+    "%lld min break, then back to %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld min break, then back to %2$@"
+          }
+        }
+      }
+    },
+    "%lld min break, then back to work" : {
+
+    },
+    "%lld min break, then paused" : {
+
+    },
+    "%lld min break." : {
+
+    },
+    "%lld min focus, %lld min break" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld min focus, %2$lld min break"
+          }
+        }
+      }
+    },
     "%lld minutes" : {
       "localizations" : {
         "en" : {
@@ -62,6 +101,9 @@
     "5 minutes left" : {
 
     },
+    "A preset splits a block into focus intervals and breaks." : {
+
+    },
     "A workspace is one area of work, such as one client." : {
 
     },
@@ -72,6 +114,9 @@
 
     },
     "Add a note" : {
+
+    },
+    "Add a preset" : {
 
     },
     "Add a project" : {
@@ -90,6 +135,9 @@
 
     },
     "Add folder…" : {
+
+    },
+    "After a break" : {
 
     },
     "Allow notifications to hear when a block or break ends" : {
@@ -125,6 +173,9 @@
     "Block finished" : {
 
     },
+    "Blocks that already follow it keep their rhythm." : {
+
+    },
     "Break" : {
 
     },
@@ -134,7 +185,38 @@
     "Break is over" : {
 
     },
+    "Break minutes" : {
+
+    },
+    "Break now" : {
+
+    },
+    "Break now, %lld minutes" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Break now, %lld minute"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Break now, %lld minutes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Cancel" : {
+
+    },
+    "Choose a preset" : {
 
     },
     "Choose a project" : {
@@ -147,6 +229,9 @@
 
     },
     "Color" : {
+
+    },
+    "Create a preset" : {
 
     },
     "Create a project" : {
@@ -197,6 +282,12 @@
     "Entries can't be shown or changed right now." : {
 
     },
+    "Focus" : {
+
+    },
+    "Focus minutes" : {
+
+    },
     "Folders" : {
 
     },
@@ -227,10 +318,19 @@
     "Length" : {
 
     },
+    "Long break" : {
+
+    },
+    "Long break minutes" : {
+
+    },
     "Meeting" : {
 
     },
     "Name" : {
+
+    },
+    "New preset" : {
 
     },
     "New project" : {
@@ -248,7 +348,13 @@
     "No number key" : {
 
     },
+    "No presets yet" : {
+
+    },
     "No workspaces yet" : {
+
+    },
+    "None" : {
 
     },
     "Note" : {
@@ -302,6 +408,15 @@
     "Paused" : {
 
     },
+    "Presets can't be shown or changed right now." : {
+
+    },
+    "Press Resume to go back to %@." : {
+
+    },
+    "Press Resume to go back to work." : {
+
+    },
     "Previous day" : {
 
     },
@@ -323,13 +438,31 @@
     "Release" : {
 
     },
+    "Remove" : {
+
+    },
     "Remove %@" : {
+
+    },
+    "Remove this preset" : {
+
+    },
+    "Remove “%@”?" : {
 
     },
     "Restore" : {
 
     },
     "Resume" : {
+
+    },
+    "Resume by itself" : {
+
+    },
+    "Rhythm" : {
+
+    },
+    "Rounds before the long break" : {
 
     },
     "Running" : {
@@ -407,6 +540,9 @@
     "Time" : {
 
     },
+    "Time for a break" : {
+
+    },
     "Time to stop or start the next one." : {
 
     },
@@ -425,10 +561,16 @@
     "Unnamed" : {
 
     },
+    "Used by %@, so it can't be removed." : {
+
+    },
     "Version %@ (%@) · %@" : {
 
     },
     "Version %@ (%@) · %@ · %@" : {
+
+    },
+    "Wait for me" : {
 
     },
     "When a block ends" : {
@@ -449,6 +591,15 @@
     "When a break ends, sound" : {
 
     },
+    "When a focus interval ends" : {
+
+    },
+    "When a focus interval ends, notification" : {
+
+    },
+    "When a focus interval ends, sound" : {
+
+    },
     "Work" : {
 
     },
@@ -461,13 +612,42 @@
     "Workspaces can't be shown or changed right now." : {
 
     },
+    "after" : {
+
+    },
     "left of %@" : {
+
+    },
+    "left of %@, %lld min break due" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "left of %1$@, %2$lld min break due"
+          }
+        }
+      }
+    },
+    "left of %@, break in %lld min" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "left of %1$@, break in %2$lld min"
+          }
+        }
+      }
+    },
+    "left of %@, break in less than 1 min" : {
 
     },
     "min" : {
 
     },
     "paused" : {
+
+    },
+    "rounds" : {
 
     },
     "“%@” already belongs to %@." : {

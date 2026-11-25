@@ -3,7 +3,7 @@ import SwiftData
 import SwiftUI
 import UserNotifications
 
-/// The Settings window: General and Workspaces for now.
+/// The Settings window: General, Workspaces and Rhythm for now.
 struct SettingsView: View {
     /// The open store, or `nil` when it could not be opened.
     let container: ModelContainer?
@@ -27,6 +27,18 @@ struct SettingsView: View {
                     )
                 }
             }
+            Tab("Rhythm", systemImage: "clock") {
+                if let container {
+                    RhythmPane()
+                        .modelContainer(container)
+                } else {
+                    ContentUnavailableView(
+                        "The data could not be opened",
+                        systemImage: "exclamationmark.triangle",
+                        description: Text("Presets can't be shown or changed right now."),
+                    )
+                }
+            }
         }
         // One fixed size for every tab, the prototype's 760 pt, so the window
         // neither jumps between launches nor between tabs.
@@ -42,6 +54,7 @@ private struct GeneralPane: View {
         Form {
             AlertSection("When a block ends", kind: .blockEnd)
             AlertSection("When a break ends", kind: .breakEnd)
+            AlertSection("When a focus interval ends", kind: .focusEnd)
             AlertSection("5 minutes before a block ends", kind: .warning)
             if isNotificationRefused {
                 Section {
@@ -119,11 +132,12 @@ private struct AlertSection: View {
         }
     }
 
-    /// What VoiceOver reads for each switch, so the three pairs can be told apart.
+    /// What VoiceOver reads for each switch, so the pairs can be told apart.
     private var spoken: (notification: LocalizedStringKey, sound: LocalizedStringKey) {
         switch kind {
         case .blockEnd: ("When a block ends, notification", "When a block ends, sound")
         case .breakEnd: ("When a break ends, notification", "When a break ends, sound")
+        case .focusEnd: ("When a focus interval ends, notification", "When a focus interval ends, sound")
         case .warning: ("5 minutes before a block ends, notification", "5 minutes before a block ends, sound")
         }
     }

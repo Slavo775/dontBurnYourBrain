@@ -85,13 +85,16 @@ private struct RunningBlock: View {
             .opacity(panel.state == .paused ? 0.45 : 1)
             .accessibilityElement(children: .combine)
 
+            // One line, so a long workspace name never pushes the actions.
             Text(line)
                 .foregroundStyle(Color.muted)
+                .lineLimit(1)
 
             ZStack {
                 Color.sunken
                 (panel.state.isBreak ? Color.muted : panel.color.color)
                     .scaleEffect(x: panel.progress, anchor: .leading)
+                BreakGaps(gaps: panel.gaps)
             }
             .frame(height: 8)
             .clipShape(.rect(cornerRadius: 4))
@@ -108,13 +111,13 @@ private struct RunningBlock: View {
                     countdown.perform(.pauseOrResume)
                 }
                 .disabled(!QuickAction.pauseOrResume.isAvailable(in: panel.state))
-                QuickButton(panel.state.isBreak ? "End break" : "Break", symbol: "cup.and.heat.waves") {
-                    if QuickAction.canStartBreak(in: panel.state) {
-                        navigation.page = .breakLength
-                    } else {
-                        countdown.perform(.breakOrEndBreak)
-                    }
+                QuickButton(
+                    breakTitle,
+                    symbol: panel.dueBreakMinutes == nil ? "cup.and.heat.waves" : "cup.and.heat.waves.fill",
+                ) {
+                    navigation.takeBreak(with: countdown)
                 }
+                .accessibilityLabel(panel.dueBreakMinutes.map { "Break now, \($0) minutes" } ?? breakTitle)
                 .disabled(!QuickAction.breakOrEndBreak.isAvailable(in: panel.state))
                 Button {
                     countdown.perform(.extend)
@@ -157,12 +160,46 @@ private struct RunningBlock: View {
         }
     }
 
+    /// Break's word. While a planned break is due it starts at once, and the
+    /// word says so, with the cup filled in.
+    private var breakTitle: LocalizedStringKey {
+        if panel.dueBreakMinutes != nil {
+            return "Break now"
+        }
+        return panel.state.isBreak ? "End break" : "Break"
+    }
+
     private var line: LocalizedStringKey {
         switch panel.line {
         case let .leftOf(length): "left of \(length)"
+        case .breakIn(let length, minutes: 0): "left of \(length), break in less than 1 min"
+        case let .breakIn(length, minutes): "left of \(length), break in \(minutes) min"
+        case let .breakDue(length, minutes): "left of \(length), \(minutes) min break due"
         case .paused: "Paused"
         case let .onBreak(name): "On a break, then back to \(name)"
+        case let .rhythmBreak(minutes, name): Self.breakLine(minutes, returnTo: name)
+        case let .rhythmBreakThenPaused(minutes): "\(minutes) min break, then paused"
         case .idleBreak: "No block running"
+        }
+    }
+
+    /// A workspace may have an empty name, and the line then names none.
+    private static func breakLine(_ minutes: Int, returnTo name: String) -> LocalizedStringKey {
+        name.isEmpty ? "\(minutes) min break, then back to work" : "\(minutes) min break, then back to \(name)"
+    }
+}
+
+/// The pale gaps that mark the breaks in the strip, as the prototype's `nt`.
+private struct BreakGaps: View {
+    let gaps: [ClosedRange<Double>]
+
+    var body: some View {
+        GeometryReader { strip in
+            ForEach(Array(gaps.enumerated()), id: \.offset) { _, gap in
+                Color.breakGap.opacity(0.62)
+                    .frame(width: (gap.upperBound - gap.lowerBound) * strip.size.width)
+                    .offset(x: gap.lowerBound * strip.size.width)
+            }
         }
     }
 }
@@ -290,6 +327,18 @@ private extension Countdown {
 
 #Preview("On a break") {
     CompactPanelView(countdown: .preview(.onBreak), navigation: PanelNavigation())
+}
+
+#Preview("Rhythm") {
+    CompactPanelView(countdown: .preview(.rhythm), navigation: PanelNavigation())
+}
+
+#Preview("Break due") {
+    CompactPanelView(countdown: .preview(.rhythmDue), navigation: PanelNavigation())
+}
+
+#Preview("Planned break") {
+    CompactPanelView(countdown: .preview(.rhythmBreak), navigation: PanelNavigation())
 }
 
 #Preview("Break with nothing running") {
