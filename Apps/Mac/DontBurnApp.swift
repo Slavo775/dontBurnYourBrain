@@ -48,6 +48,9 @@ struct DontBurnApp: App {
         }
     }
 
+    /// The defaults key that remembers that the presets the app comes with were added.
+    private static let presetsSeededKey = "presets.seeded"
+
     /// The value after `-<name>` on the command line, such as `-DontBurnAppearance dark`.
     ///
     /// Only the argument domain, so a value saved with `defaults write` never
@@ -66,7 +69,7 @@ struct DontBurnApp: App {
 
     /// The sample set in memory with `-DontBurnSampleData YES`, seeded at
     /// `now`, otherwise the store on disk in the folder named after the bundle
-    /// identifier, with the presets the app comes with when it has none.
+    /// identifier, with the presets the app comes with, added once.
     ///
     /// With the sample set, `scenario`, from `-DontBurnTimerState <scenario>`,
     /// also puts the timer into one of the ``TimerScenario`` states.
@@ -98,7 +101,9 @@ struct DontBurnApp: App {
             let container = try ModelStore.onDisk(in: directory)
             log.info("Opened the store in its own folder")
             do {
-                try FocusPreset.seedDefaults(into: container.mainContext)
+                var isSeeded = UserDefaults.standard.bool(forKey: presetsSeededKey)
+                try FocusPreset.seedDefaults(into: container.mainContext, isSeeded: &isSeeded)
+                UserDefaults.standard.set(isSeeded, forKey: presetsSeededKey)
             } catch {
                 // The timer works without presets, so the store stays open. The
                 // rollback drops the unsaved presets, so no later save carries them.

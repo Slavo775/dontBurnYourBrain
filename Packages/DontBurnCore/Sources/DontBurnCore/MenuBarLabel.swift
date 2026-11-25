@@ -69,8 +69,12 @@ public enum MenuBarLabel: Equatable, Sendable {
     /// has five minutes or more left, every second below five minutes and
     /// during a break, and every minute of untracked time. When the block or
     /// the break reaches its end, the redraw is due at once, so the next
-    /// settle closes it.
-    public static func nextRedraw(status: TimerStatus, untrackedSince: Date, after now: Date) -> Date {
+    /// settle closes it. While working with a `rhythm`, it also lands just
+    /// after the moment the planned break becomes due or is skipped, which
+    /// need not be one where the digits change.
+    public static func nextRedraw(
+        status: TimerStatus, rhythm: FocusRhythm? = nil, untrackedSince: Date, after now: Date,
+    ) -> Date {
         let latest = now.addingTimeInterval(maximumRedrawInterval)
         let next: Date? = switch status.state {
         case .idle:
@@ -84,7 +88,9 @@ public enum MenuBarLabel: Equatable, Sendable {
                 nextCountDown(left: left, step: left < secondsThreshold ? 1 : 60, after: now)
             }
         }
-        return min(next ?? latest, latest)
+        let digits = min(next ?? latest, latest)
+        guard status.state == .working, let moment = rhythm?.current.end, moment > now else { return digits }
+        return min(digits, moment.addingTimeInterval(redrawDelay))
     }
 
     /// Where the untracked time starts: the end of the latest entry that

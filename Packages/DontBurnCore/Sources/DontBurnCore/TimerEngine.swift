@@ -51,6 +51,16 @@ public enum TimerEngineError: Error, Equatable, Sendable {
     case invalidMinutes
 }
 
+/// The rhythm a new block follows.
+public enum BlockRhythm: Equatable {
+    /// The preset of the block's workspace, or none when it has none.
+    case workspaceDefault
+    /// None, whatever preset the workspace has.
+    case none
+    /// This preset, whatever preset the workspace has.
+    case preset(FocusPreset)
+}
+
 /// Decides what happens to blocks and entries when the user starts, pauses,
 /// resumes, takes a break, extends, switches and ends.
 ///
@@ -130,10 +140,16 @@ public struct TimerEngine {
     /// Whatever runs ends first, at the same instant. The new block starts at
     /// `now`, or after the latest timer entry when the clock moved back. The length is
     /// `minutes`, or the workspace's default length when `nil`. The block copies
-    /// the rhythm of the workspace's preset, when it has one, and keeps it. Throws
+    /// the `rhythm` it is given, when there is one, and keeps it. Throws
     /// ``TimerEngineError/invalidMinutes`` or a ``ProjectAssignmentError``
     /// before changing anything.
-    public func start(_ workspace: Workspace, minutes: Int? = nil, project: Project? = nil, at now: Date) throws {
+    public func start(
+        _ workspace: Workspace,
+        minutes: Int? = nil,
+        project: Project? = nil,
+        rhythm: BlockRhythm = .workspaceDefault,
+        at now: Date,
+    ) throws {
         let minutes = minutes ?? workspace.defaultBlockMinutes
         guard minutes > 0 else { throw TimerEngineError.invalidMinutes }
         try project?.checkAssignable(to: workspace)
@@ -151,7 +167,12 @@ public struct TimerEngine {
         let block = TimeBlock(workspace: workspace, plannedStart: start, plannedMinutes: minutes, state: .running)
         context.insert(block)
         block.project = project
-        if let preset = workspace.focusPreset {
+        let preset: FocusPreset? = switch rhythm {
+        case .workspaceDefault: workspace.focusPreset
+        case .none: nil
+        case let .preset(preset): preset
+        }
+        if let preset {
             block.follow(preset)
         }
         begin(.work, in: block, at: start)
@@ -340,7 +361,7 @@ public struct TimerEngine {
             if let breakEnd = breakEnd(of: open), breakEnd < blockEnd, breakEnd <= now {
                 let end = close(open, at: breakEnd)
                 // A rhythm that waits leaves the block paused, so its end moves later.
-                guard block.resumesAfterBreak || !block.hasRhythm else { return }
+                guard !block.waitsAfterBreak else { return }
                 begin(.work, in: block, at: end)
                 continue
             }

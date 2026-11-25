@@ -162,9 +162,9 @@ struct AlertPlanTests {
         #expect(plan == [PlannedAlert(kind: .blockEnd, date: at(60), workspace: "Acme")])
     }
 
-    @Test func `the standard settings switch the warning off and both ends on`() {
-        #expect(AlertSettings.standard.notifications == [.blockEnd, .breakEnd])
-        #expect(AlertSettings.standard.sounds == [.blockEnd, .breakEnd])
+    @Test func `the standard settings switch the warning off and every end on`() {
+        #expect(AlertSettings.standard.notifications == [.blockEnd, .breakEnd, .focusEnd])
+        #expect(AlertSettings.standard.sounds == [.blockEnd, .breakEnd, .focusEnd])
     }
 
     @Test func `with the warning on it is planned five minutes before the end`() throws {
