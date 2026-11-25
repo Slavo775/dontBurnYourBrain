@@ -62,8 +62,9 @@ public struct SessionList: Equatable, Sendable {
         public let title: String
         /// The color of the project's workspace, or `nil` for a session in no project.
         public let color: WorkspaceColor?
-        /// The profile's name.
-        public let profile: String
+        /// The profile's short name: its folder's name without `.claude-` in
+        /// front, or the whole name of another folder. `nil` for the default profile.
+        public let profile: String?
         /// The terminal app, or `nil` when it is unknown.
         public let terminal: TerminalApp?
         /// The whole minutes since the last activity, rounded down, for an
@@ -183,10 +184,17 @@ public struct SessionList: Equatable, Sendable {
                 id: session.id,
                 title: name.isEmpty ? session.folderName : name,
                 color: project?.workspace?.color,
-                profile: session.profileName,
+                profile: Self.shortName(ofProfile: session.profileName),
                 terminal: session.terminalBundleIdentifier.flatMap(TerminalApp.init(rawValue:)),
                 idleMinutes: group == .idle ? idle : nil,
             )
+        }
+
+        /// See ``Row/profile``. A folder without a name counts as the default profile.
+        private static func shortName(ofProfile folder: String) -> String? {
+            guard !folder.isEmpty, folder != AgentSession.defaultProfileName else { return nil }
+            let prefix = AgentSession.defaultProfileName + "-"
+            return folder.hasPrefix(prefix) && folder != prefix ? String(folder.dropFirst(prefix.count)) : folder
         }
     }
 }

@@ -150,15 +150,9 @@ private struct SessionRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: row.title.isEmpty ? String(localized: "Unknown folder") : row.title)
                     .fontWeight(.semibold)
-                Group {
-                    if let terminal = row.terminal {
-                        Text("Claude (\(row.profile)) in \(terminal.name)")
-                    } else {
-                        Text("Claude (\(row.profile))")
-                    }
-                }
-                .font(.system(size: 12))
-                .foregroundStyle(Color.muted)
+                Text(source)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.muted)
             }
             .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -173,6 +167,16 @@ private struct SessionRow: View {
         .padding(.vertical, 6)
         .frame(minHeight: 52)
         .accessibilityElement(children: .combine)
+    }
+
+    /// The agent with its profile and terminal, without what is not known.
+    private var source: LocalizedStringKey {
+        switch (row.profile, row.terminal?.name) {
+        case let (profile?, terminal?): "Claude (\(profile)) in \(terminal)"
+        case let (profile?, nil): "Claude (\(profile))"
+        case let (nil, terminal?): "Claude in \(terminal)"
+        case (nil, nil): "Claude"
+        }
     }
 
     /// In the largest unit that fits, such as `12 min`, `3 h` or `2 d`.

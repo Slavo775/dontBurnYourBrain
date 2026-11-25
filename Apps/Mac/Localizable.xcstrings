@@ -252,6 +252,9 @@
     "Choose a workspace." : {
 
     },
+    "Claude" : {
+
+    },
     "Claude (%@)" : {
 
     },
@@ -266,6 +269,9 @@
       }
     },
     "Claude Code profiles" : {
+
+    },
+    "Claude in %@" : {
 
     },
     "Collapse the panel" : {

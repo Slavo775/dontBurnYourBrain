@@ -102,7 +102,7 @@ public struct AgentSession: Codable, Equatable, Identifiable, Sendable {
         return state
     }
 
-    /// The name the profile is shown by: its folder's name.
+    /// The name of the profile's folder, which ``SessionList/Row/profile`` shortens.
     public var profileName: String {
         profile.map { ($0 as NSString).lastPathComponent } ?? Self.defaultProfileName
     }
