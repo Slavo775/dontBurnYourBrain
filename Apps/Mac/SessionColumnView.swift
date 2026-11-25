@@ -8,13 +8,16 @@ struct SessionColumnView: View {
     let sessions: SessionColumn
     let settings: SettingsNavigation
 
+    static let width: CGFloat = 460
+    private static let inset: CGFloat = 22
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            HStack(spacing: 10) {
+            HStack(spacing: 0) {
                 Text("Sessions")
                     .font(.system(size: 15, weight: .semibold))
                     .fixedSize()
-                Spacer(minLength: 0)
+                Spacer(minLength: 10)
                 if !sessions.list.isEmpty {
                     // More chips than fit scroll sideways.
                     ViewThatFits(in: .horizontal) {
@@ -23,6 +26,8 @@ struct SessionColumnView: View {
                             SessionChips(sessions: sessions)
                         }
                         .scrollIndicators(.never)
+                        // The track ends round, also where it is cut off.
+                        .clipShape(.rect(cornerRadius: 8))
                     }
                 }
             }
@@ -37,11 +42,17 @@ struct SessionColumnView: View {
                             SessionGroupView(section: section, isFirst: section == sessions.list.sections.first)
                         }
                     }
+                    .frame(width: Self.width - 2 * Self.inset, alignment: .leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.bottom, Self.inset)
                 }
+                // To the panel's edge, so a scroll bar lies in the padding and
+                // the rows keep their width.
+                .padding(.trailing, -Self.inset)
             }
         }
-        .padding([.horizontal, .top], 22)
+        .padding([.horizontal, .top], Self.inset)
+        .frame(width: Self.width, alignment: .leading)
         .frame(maxHeight: .infinity, alignment: .top)
     }
 }
@@ -171,7 +182,8 @@ private struct SessionRow: View {
     }
 }
 
-/// The terminal on the workspace's color, with the state's dot at its corner.
+/// The terminal on the workspace's color, or on the prototype's neutral tile
+/// for a session in no project, with the state's dot at its corner.
 /// VoiceOver skips it, because the group's heading says the state.
 private struct SessionTile: View {
     /// The workspace's color, or `nil` for a session in no project.
@@ -181,9 +193,9 @@ private struct SessionTile: View {
     var body: some View {
         Image(systemName: "terminal")
             .font(.system(size: 14))
-            .foregroundStyle(Color.surface)
+            .foregroundStyle(color == nil ? Color.ink : Color.surface)
             .frame(width: 30, height: 30)
-            .background(color?.color ?? Color.muted, in: .rect(cornerRadius: 8))
+            .background(color?.color ?? Color.sunken, in: .rect(cornerRadius: 8))
             .opacity(group == .idle ? 0.45 : 1)
             .overlay(alignment: .topTrailing) {
                 Circle()
@@ -220,6 +232,7 @@ private struct NoSessionsNote: View {
                     .foregroundStyle(Color.muted)
                     .fixedSize(horizontal: false, vertical: true)
                 OpenSettingsButton(sessionsTab: settings)
+                    .buttonStyle(PanelButtonStyle())
             }
         }
     }

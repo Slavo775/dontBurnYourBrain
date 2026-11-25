@@ -43,15 +43,24 @@ struct ExpandButton: View {
             navigation.isExpanded.toggle()
         } label: {
             Image(systemName: navigation.isExpanded
-                ? "arrow.down.right.and.arrow.up.left"
-                : "arrow.up.left.and.arrow.down.right")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.muted)
-                .frame(width: 30, height: 30)
-                .contentShape(.rect(cornerRadius: 8))
+                ? "arrow.up.right.and.arrow.down.left"
+                : "arrow.down.left.and.arrow.up.right")
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PanelIconButtonStyle())
         .accessibilityLabel(navigation.isExpanded ? "Collapse the panel" : "Expand the panel")
+    }
+}
+
+/// The prototype's `m-icon`, with its hover look while pressed, as the four
+/// quick actions have theirs.
+private struct PanelIconButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13))
+            .foregroundStyle(configuration.isPressed ? Color.ink : Color.muted)
+            .frame(width: 30, height: 30)
+            .background(configuration.isPressed ? Color.sunken : Color.clear, in: .rect(cornerRadius: 8))
+            .contentShape(.rect(cornerRadius: 8))
     }
 }
 
@@ -59,15 +68,20 @@ struct PanelBackButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Text("Back")
-                .font(.system(size: 13, weight: .medium))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.sunken, in: .rect(cornerRadius: 8))
-                .contentShape(.rect(cornerRadius: 8))
-        }
-        .buttonStyle(.plain)
+        Button("Back", action: action)
+            .buttonStyle(PanelButtonStyle())
+    }
+}
+
+/// The prototype's small button (`m-btn`).
+struct PanelButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13, weight: .medium))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(configuration.isPressed ? Color.line : Color.sunken, in: .rect(cornerRadius: 8))
+            .contentShape(.rect(cornerRadius: 8))
     }
 }
 

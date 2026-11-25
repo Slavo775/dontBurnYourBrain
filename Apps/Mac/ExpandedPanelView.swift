@@ -30,8 +30,8 @@ struct ExpandedPanelView: View {
     let settings: SettingsNavigation
     let openWindow: () -> Void
 
-    private static let width: CGFloat = 780
     private static let timerWidth: CGFloat = 320
+    private static let width = timerWidth + SessionColumnView.width
 
     var body: some View {
         VStack(spacing: 0) {
@@ -45,17 +45,19 @@ struct ExpandedPanelView: View {
             // The timer alone sets the height, so the panel never jumps as
             // sessions come and go. A longer list scrolls.
             .frame(minHeight: 500, alignment: .top)
-            .frame(width: Self.width, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .overlay(alignment: .trailing) {
                 SessionColumnView(sessions: sessions, settings: settings)
                     .accessibilityElement(children: .contain)
-                    .frame(width: Self.width - Self.timerWidth)
                     .overlay(alignment: .leading) {
                         Color.line.frame(width: 1)
                     }
             }
             ExpandedFooter(totals: countdown.totals, openWindow: openWindow)
         }
+        // Around the footer too: without a width of its own its text wraps at
+        // the window's smallest size, and the window grows taller than the panel.
+        .frame(width: Self.width)
         .panelSurface()
     }
 }
