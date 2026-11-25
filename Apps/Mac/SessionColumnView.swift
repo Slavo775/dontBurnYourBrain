@@ -19,9 +19,11 @@ struct SessionColumnView: View {
                     .fixedSize()
                 Spacer(minLength: 10)
                 if !sessions.list.isEmpty {
-                    // More chips than fit scroll sideways.
+                    // Closer together when there are many, and scrolled
+                    // sideways when they still do not fit.
                     ViewThatFits(in: .horizontal) {
                         SessionChips(sessions: sessions)
+                        SessionChips(sessions: sessions, inset: 6)
                         ScrollView(.horizontal) {
                             SessionChips(sessions: sessions)
                         }
@@ -60,6 +62,8 @@ struct SessionColumnView: View {
 /// The filter chips: All, one per workspace with a session, and Other.
 private struct SessionChips: View {
     let sessions: SessionColumn
+    /// The space on either side of a chip's text.
+    var inset: CGFloat = 9
 
     var body: some View {
         HStack(spacing: 0) {
@@ -73,7 +77,7 @@ private struct SessionChips: View {
                         .foregroundStyle(isChosen ? Color.ink : Color.muted)
                         .monospacedDigit()
                         .lineLimit(1)
-                        .padding(.horizontal, 9)
+                        .padding(.horizontal, inset)
                         .padding(.vertical, 5)
                         .background(isChosen ? Color.surface : Color.clear, in: .rect(cornerRadius: 6))
                         .overlay {
