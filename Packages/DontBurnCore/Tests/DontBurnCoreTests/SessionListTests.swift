@@ -182,11 +182,11 @@ func `with no session there is no chip and no group, and the filter is All`(filt
 // MARK: - The order inside a group
 
 @Test(arguments: [
-    ("PermissionRequest", SessionGroup.needsYou, ["b", "c", "a"]),
+    ("PermissionRequest", SessionGroup.needsYou, ["a", "b", "c"]),
     ("UserPromptSubmit", .working, ["a", "b", "c"]),
     ("SessionStart", .idle, ["a", "c", "b"]),
 ])
-func `the longest wait comes first in Needs you, the oldest session in Working, the last active one in Idle`(
+func `the oldest session comes first in Needs you and Working, and the last active one in Idle`(
     name: String, group: SessionGroup, expected: [String],
 ) throws {
     var desk = SessionDesk()
