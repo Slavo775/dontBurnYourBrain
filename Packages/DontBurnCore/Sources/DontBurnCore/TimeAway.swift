@@ -13,6 +13,10 @@ public struct TimeAway: Equatable, Sendable {
     public static let defaultThresholdMinutes = 10
     /// The thresholds the app accepts, in minutes.
     public static let thresholdRange = 1 ... 60
+    /// How long after the last input an action it caused, such as a click on
+    /// Pause or Break, may still end a work entry. A work entry that ended
+    /// that soon did not run while he was away.
+    static let inputSlack: TimeInterval = 1
 
     /// When the time away began: the last input, or the start of the work
     /// entry when that came later, such as after a break ran out.
@@ -72,7 +76,9 @@ public extension TimerEngine {
     /// later, such as when a break ran out while he was away and work went on.
     /// Time on a break, paused or with nothing running is never part of it,
     /// so when no work entry ran between `lastInput` and `returned` there is
-    /// nothing to ask. A block that ran out meanwhile still counts, up to its end.
+    /// nothing to ask. A work entry that `lastInput` itself ended, such as by
+    /// a click on Pause or Break a moment before, did not run then. A block
+    /// that ran out meanwhile still counts, up to its end.
     func timeAway(since lastInput: Date, returnedAt returned: Date, threshold: TimeInterval) throws -> TimeAway? {
         try settle(at: returned)
         guard let entry = try workEntry(from: lastInput, to: returned) else { return nil }
@@ -134,14 +140,17 @@ public extension TimerEngine {
     }
 
     /// The timer's latest work entry that ran between `start` and `end`, or
-    /// `nil` when none did or it belongs to no block.
+    /// `nil` when none did or it belongs to no block. One that ended within
+    /// ``TimeAway/inputSlack`` after `start` was ended by the input at `start`,
+    /// so it did not run then.
     private func workEntry(from start: Date, to end: Date) throws -> TimeEntry? {
         let timer = TimeEntrySource.timer.rawValue
         let work = TimeEntryKind.work.rawValue
+        let after = start.addingTimeInterval(TimeAway.inputSlack)
         var descriptor = FetchDescriptor<TimeEntry>(
             predicate: #Predicate { entry in
                 if let entryEnd = entry.end {
-                    entry.sourceRaw == timer && entry.kindRaw == work && entry.start < end && entryEnd > start
+                    entry.sourceRaw == timer && entry.kindRaw == work && entry.start < end && entryEnd > after
                 } else {
                     entry.sourceRaw == timer && entry.kindRaw == work && entry.start < end
                 }

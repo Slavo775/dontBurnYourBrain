@@ -38,11 +38,12 @@ struct SimulatedIdleTime: IdleTimeReading {
 /// threshold, so about once per threshold while he works. Once the threshold
 /// is reached, it reads every second until the return, also after watching
 /// stops, such as when the block runs out meanwhile, so the return is found
-/// within a second. A sleep that begins while watching, or during a time
-/// away, counts as time away from the last input before it, and waking is
-/// the return. One that begins otherwise, such as after the block ran out,
-/// counts as nothing. Whether the time away counted as work is for the
-/// caller to decide.
+/// within a second. A sleep that begins while ``isBlockRunning``, working, on
+/// a break or paused, or during a time away, counts as time away from the
+/// last input before it, and waking is the return. One that begins with no
+/// block running, such as after the block ran out or on a break with nothing
+/// running, counts as nothing. Whether a work entry ran during the time away,
+/// and from when, is for the caller to decide.
 @MainActor
 final class AwayWatcher {
     /// Whether he works now, so a time away is worth noticing.
@@ -54,6 +55,11 @@ final class AwayWatcher {
             }
         }
     }
+
+    /// Whether a block runs now, working, on a break or paused, so a sleep that
+    /// begins now counts as time away. A break may run out during the sleep,
+    /// and work go on.
+    var isBlockRunning = false
 
     /// How many seconds without input count as away. A change reads the idle
     /// time again at once while watching, so a shorter threshold never waits
@@ -91,7 +97,7 @@ final class AwayWatcher {
     }
 
     private func macWillSleep() {
-        if isWatching, awayStart == nil {
+        if isBlockRunning, awayStart == nil {
             awayStart = Date.now.addingTimeInterval(-idleTime.secondsSinceLastInput())
         }
     }

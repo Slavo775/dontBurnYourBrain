@@ -43,13 +43,14 @@ final class AwayQuestion {
     }
 
     /// Follows the timer's `state` and the settings: time away is noticed
-    /// while working, after the threshold as it stands now, and nothing is
-    /// asked while the switch is off.
+    /// while working, after the threshold as it stands now, a sleep counts
+    /// while a block runs, and nothing is asked while the switch is off.
     func follow(_ state: TimerState) {
         if !settings.asks {
             drop()
         }
         watcher?.threshold = settings.threshold
+        watcher?.isBlockRunning = settings.asks && state.hasBlock
         watcher?.isWatching = settings.asks && state == .working
     }
 
