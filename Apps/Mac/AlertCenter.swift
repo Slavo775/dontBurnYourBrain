@@ -27,8 +27,17 @@ final class AlertCenter {
         UserDefaults.standard.register(defaults: AlertKind.defaults)
         // Without a delegate, a notification due while the app is in front, such as with Settings open, is dropped.
         center.delegate = presenter
-        // A question about time away does not outlive the app, so neither does its notification.
+        // A question about time away does not outlive the app, so neither does its
+        // notification: removed on quit, and again at launch after a crash. On quit
+        // at once, not through `enqueue`, since the app exits before a task runs.
         center.removeDeliveredNotifications(withIdentifiers: [Self.awayIdentifier])
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification, object: nil, queue: .main,
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.center.removeDeliveredNotifications(withIdentifiers: [Self.awayIdentifier])
+            }
+        }
     }
 
     /// The switches from Settings, General.

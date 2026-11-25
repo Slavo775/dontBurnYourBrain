@@ -37,17 +37,19 @@ final class AwayQuestion {
         self.alerts = alerts
         self.timeAway = timeAway
         guard let idleTime else { return }
-        let watcher = AwayWatcher(idleTime: idleTime) { TimeInterval(settings.thresholdMinutes) * 60 }
+        let watcher = AwayWatcher(idleTime: idleTime, threshold: settings.threshold)
         watcher.onReturn = { [weak self] in self?.ask(since: $0, returnedAt: $1) }
         self.watcher = watcher
     }
 
-    /// Follows the timer's `state`: time away is noticed while working, and
-    /// nothing is asked while the switch is off.
+    /// Follows the timer's `state` and the settings: time away is noticed
+    /// while working, after the threshold as it stands now, and nothing is
+    /// asked while the switch is off.
     func follow(_ state: TimerState) {
         if !settings.asks {
             drop()
         }
+        watcher?.threshold = settings.threshold
         watcher?.isWatching = settings.asks && state == .working
     }
 
@@ -60,10 +62,9 @@ final class AwayQuestion {
 
     private func ask(since lastInput: Date, returnedAt returned: Date) {
         guard settings.asks else { return }
-        let threshold = TimeInterval(settings.thresholdMinutes) * 60
         do {
             guard let away = try TimerEngine(context: context)
-                .timeAway(since: lastInput, returnedAt: returned, threshold: threshold)
+                .timeAway(since: lastInput, returnedAt: returned, threshold: settings.threshold)
             else { return }
             let question = timeAway?.widened(by: away) ?? away
             timeAway = question

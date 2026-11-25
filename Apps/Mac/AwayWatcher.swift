@@ -38,9 +38,11 @@ struct SimulatedIdleTime: IdleTimeReading {
 /// threshold, so about once per threshold while he works. Once the threshold
 /// is reached, it reads every second until the return, also after watching
 /// stops, such as when the block runs out meanwhile, so the return is found
-/// within a second. Sleep always counts as time away from the last input
-/// before it, and waking is the return. Whether the time away counted as
-/// work is for the caller to decide.
+/// within a second. A sleep that begins while watching, or during a time
+/// away, counts as time away from the last input before it, and waking is
+/// the return. One that begins otherwise, such as after the block ran out,
+/// counts as nothing. Whether the time away counted as work is for the
+/// caller to decide.
 @MainActor
 final class AwayWatcher {
     /// Whether he works now, so a time away is worth noticing.
@@ -53,18 +55,28 @@ final class AwayWatcher {
         }
     }
 
+    /// How many seconds without input count as away. A change reads the idle
+    /// time again at once while watching, so a shorter threshold never waits
+    /// for the read the longer one planned.
+    var threshold: TimeInterval {
+        didSet {
+            if threshold != oldValue, isWatching, awayStart == nil {
+                schedule(in: 0)
+            }
+        }
+    }
+
     /// Called with the last input before the time away and the return.
     var onReturn: ((_ lastInput: Date, _ returned: Date) -> Void)?
 
     private let idleTime: any IdleTimeReading
-    private let threshold: () -> TimeInterval
     /// The last input before the time away under way, or `nil` while he is here.
     private var awayStart: Date?
     private var timer: Timer?
     private var observers: [any NSObjectProtocol] = []
 
     /// A watcher reading `idleTime`, which counts as away from `threshold` seconds on.
-    init(idleTime: any IdleTimeReading, threshold: @escaping () -> TimeInterval) {
+    init(idleTime: any IdleTimeReading, threshold: TimeInterval) {
         self.idleTime = idleTime
         self.threshold = threshold
         let center = NSWorkspace.shared.notificationCenter
@@ -79,7 +91,9 @@ final class AwayWatcher {
     }
 
     private func macWillSleep() {
-        awayStart = awayStart ?? Date.now.addingTimeInterval(-idleTime.secondsSinceLastInput())
+        if isWatching, awayStart == nil {
+            awayStart = Date.now.addingTimeInterval(-idleTime.secondsSinceLastInput())
+        }
     }
 
     private func macDidWake() {
@@ -99,13 +113,13 @@ final class AwayWatcher {
                 self.awayStart = nil
                 onReturn?(awayStart, lastInput)
             }
-        } else if isWatching, idle >= threshold() {
+        } else if isWatching, idle >= threshold {
             awayStart = lastInput
         }
         if awayStart != nil {
             schedule(in: 1)
         } else if isWatching {
-            schedule(in: max(1, threshold() - idle))
+            schedule(in: max(1, threshold - idle))
         } else {
             timer?.invalidate()
             timer = nil
@@ -142,6 +156,11 @@ final class AwaySettings {
     /// How long without input before it asks, in minutes, within ``TimeAway/thresholdRange``.
     var thresholdMinutes: Int {
         didSet { defaults?.set(thresholdMinutes, forKey: Self.thresholdKey) }
+    }
+
+    /// ``thresholdMinutes`` in seconds.
+    var threshold: TimeInterval {
+        TimeInterval(thresholdMinutes) * 60
     }
 
     @ObservationIgnored private let defaults: UserDefaults?
