@@ -163,6 +163,44 @@ private func sampleFolders(root: URL) throws -> (projects: [Project], folders: [
     }
 }
 
+@Test func `other folders can be seeded, and nothing is made for a project that is not there`() throws {
+    try withTemporaryFolder { temporary in
+        let synced = try seeded()
+        let local = try ModelContext(ModelStore.localInMemory())
+
+        try SampleData.seedFolders(
+            ["Reading": ["code/reading-notes"], "Not a project": ["code/nowhere"]],
+            into: local, projects: synced, root: temporary.url,
+        )
+
+        let reading = try #require(synced.fetch(FetchDescriptor<Project>()).first { $0.name == "Reading" })
+        let folders = try local.fetch(FetchDescriptor<ProjectFolder>())
+        #expect(folders.map(\.projectID) == [reading.id])
+        #expect(folders.map(\.path) == [FolderPath.resolved(temporary.path) + "/code/reading-notes"])
+        #expect(try FileManager.default.contentsOfDirectory(atPath: temporary.path("code")) == ["reading-notes"])
+    }
+}
+
+@Test(arguments: SessionScenario.allCases)
+func `a scenario's folders come on top of the sample folders, for Reading alone, and only with sessions`(
+    scenario: SessionScenario,
+) throws {
+    try withTemporaryFolder { temporary in
+        let synced = try seeded()
+        let local = try ModelContext(ModelStore.localInMemory())
+        for folders in [SampleData.folders, scenario.folders] {
+            try SampleData.seedFolders(folders, into: local, projects: synced, root: temporary.url)
+        }
+
+        let added: [String: [String]] = scenario == .list || scenario == .many
+            ? ["Reading": ["code/reading-notes"]]
+            : [:]
+        #expect(scenario.folders == added)
+        #expect(try local.fetchCount(FetchDescriptor<ProjectFolder>()) == 5 + added.count)
+        #expect(SampleData.folders["Reading"] == nil)
+    }
+}
+
 // MARK: - Stored values
 
 @Test func `stored values keep the names the schema promises`() {
