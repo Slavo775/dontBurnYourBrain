@@ -160,9 +160,15 @@ private struct AwaySection: View {
     var body: some View {
         Section("When you're away from the Mac") {
             Toggle("Ask what the time away was", isOn: $settings.asks)
+                // Named by hand, as the alerts' switches are, so VoiceOver reads it.
+                .accessibilityLabel("Ask what the time away was")
             Stepper(value: $settings.thresholdMinutes, in: TimeAway.thresholdRange) {
                 Text("After \(settings.thresholdMinutes) min without input")
+                    // The form dims only the arrows of a disabled stepper, so the words dim by hand.
+                    .foregroundStyle(settings.asks ? .primary : .secondary)
             }
+            .accessibilityLabel("Minutes without input before it asks")
+            .accessibilityValue(Text(settings.thresholdMinutes, format: .number))
             .disabled(!settings.asks)
         }
     }

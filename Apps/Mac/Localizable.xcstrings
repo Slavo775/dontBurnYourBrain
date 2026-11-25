@@ -188,6 +188,9 @@
     "Away for %@" : {
 
     },
+    "Away for %@. Was it work?" : {
+
+    },
     "Back" : {
 
     },
@@ -376,6 +379,9 @@
 
     },
     "Meeting" : {
+
+    },
+    "Minutes without input before it asks" : {
 
     },
     "Name" : {
@@ -753,6 +759,15 @@
     "after" : {
 
     },
+    "becomes a break" : {
+
+    },
+    "becomes a meeting" : {
+
+    },
+    "cut out like a pause" : {
+
+    },
     "hook installed" : {
 
     },
@@ -783,6 +798,9 @@
 
     },
     "min" : {
+
+    },
+    "nothing changes" : {
 
     },
     "paused" : {

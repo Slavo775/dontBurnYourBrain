@@ -4,13 +4,18 @@ import SwiftUI
 
 /// The compact panel: the running block or break, its four quick actions and
 /// End block, the list of workspaces to switch to, the break's lengths, or,
-/// when nothing runs, the quick start list and the custom block form.
+/// when nothing runs, the quick start list and the custom block form. A
+/// question about time away waits above the main page.
 struct CompactPanelView: View {
     let countdown: Countdown
     let navigation: PanelNavigation
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
+            if navigation.page == .main, let away = countdown.away?.timeAway {
+                // At the top, where he looks first when he opens the panel.
+                AwayQuestionView(away: away, countdown: countdown)
+            }
             if navigation.page == .breakLength {
                 BreakLengthList(countdown: countdown, navigation: navigation)
             } else if let panel = countdown.panel {
@@ -25,10 +30,6 @@ struct CompactPanelView: View {
                 NoWorkspaces(navigation: navigation)
             } else {
                 WorkspaceList(title: "Nothing running", countdown: countdown, navigation: navigation)
-            }
-            if navigation.page == .main, let away = countdown.away?.timeAway {
-                // Below the actions, so they keep their places.
-                AwayQuestionView(away: away, countdown: countdown)
             }
             if countdown.panel != nil, countdown.alerts?.isAskingPermission == true {
                 // Below the actions, so they keep their places.
@@ -209,7 +210,7 @@ private struct BreakGaps: View {
 }
 
 /// One of the four quick action buttons: an icon over a word.
-struct QuickButton: View {
+private struct QuickButton: View {
     let title: LocalizedStringKey
     let symbol: String
     let action: () -> Void
