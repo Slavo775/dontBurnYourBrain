@@ -4,7 +4,7 @@ import Observation
 import os
 
 /// The Claude Code profiles on this Mac and whether each has the hook, for
-/// the Sessions tab.
+/// the Sessions tab and for the expanded panel with no session to show.
 ///
 /// The Release build looks for profiles in the home folder and may install
 /// into any of them. The Dev build never looks at the real home folder: it
@@ -142,6 +142,12 @@ final class HookSetup {
         statuses = Dictionary(uniqueKeysWithValues: profiles.map { profile in
             (profile.id, profile.settingsFile.map(installer.status(ofSettingsFile:)) ?? .outOfReach)
         })
+    }
+
+    /// Each profile's hook, read again.
+    func currentStatuses() -> [HookStatus] {
+        refresh()
+        return Array(statuses.values)
     }
 
     /// Adds the profile folders at `urls`, kept in this Mac's defaults.

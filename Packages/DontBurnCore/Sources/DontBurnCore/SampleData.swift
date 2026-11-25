@@ -76,7 +76,8 @@ public enum SampleData {
     /// The sample projects' folders, below the sample root, by project name.
     ///
     /// `acme-web/mobile` lies inside `acme-web`, so the deepest folder's
-    /// project, Mobile app, wins there. Reading has no folder.
+    /// project, Mobile app, wins there. Reading has no folder, until sample
+    /// sessions need one, see ``SessionScenario/folders``.
     public static let folders = [
         "Web shop": ["code/acme-web"],
         "Mobile app": ["code/acme-mobile", "code/acme-web/mobile"],
@@ -84,13 +85,17 @@ public enum SampleData {
         "Side project": ["code/side-project"],
     ]
 
-    /// Makes the sample ``folders`` on disk below `root` and gives them to the
+    /// Makes the sample folders on disk below `root` and gives them to the
     /// sample projects in `projects`, recording them in `context`, a context
     /// of the local store.
     ///
-    /// Pass a temporary `root`, so no real folder ever shows, and a local store
-    /// in memory, so nothing reaches the store on disk.
-    public static func seedFolders(into context: ModelContext, projects: ModelContext, root: URL) throws {
+    /// They are ``folders``, unless others are given, such as
+    /// ``SessionScenario/folders``. Pass a temporary `root`, so no real folder
+    /// ever shows, and a local store in memory, so nothing reaches the store on
+    /// disk.
+    public static func seedFolders(
+        _ folders: [String: [String]] = folders, into context: ModelContext, projects: ModelContext, root: URL,
+    ) throws {
         let all = try projects.fetch(FetchDescriptor<Project>())
         let store = ProjectFolders(context: context)
         for project in all {

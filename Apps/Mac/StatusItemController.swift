@@ -2,8 +2,8 @@ import AppKit
 import DontBurnCore
 import SwiftUI
 
-/// The menu bar item: a click toggles the compact panel under it, a
-/// right-click or a Control-click opens the menu.
+/// The menu bar item: a click toggles the panel under it, compact or
+/// expanded, a right-click or a Control-click opens the menu.
 ///
 /// `MenuBarExtra` offers one or the other, so the item is an `NSStatusItem`.
 /// The panel is a borderless, non-activating `NSPanel`: it becomes key so its
@@ -12,7 +12,9 @@ import SwiftUI
 @MainActor
 final class StatusItemController: NSObject, NSWindowDelegate {
     private let countdown: Countdown
+    private let sessions: SessionColumn
     private let mainWindow: MainWindowController
+    private let settings: SettingsNavigation
     private let navigation = PanelNavigation()
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
@@ -29,7 +31,9 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         panel.isOpaque = false
         panel.hasShadow = true
         panel.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary, .transient]
-        panel.contentView = NSHostingView(rootView: CompactPanelView(countdown: countdown, navigation: navigation))
+        panel.contentView = NSHostingView(rootView: PanelView(
+            countdown: countdown, sessions: sessions, navigation: navigation, settings: settings,
+        ) { [weak self] in self?.openWindow() })
         panel.delegate = self
         panel.onKey = { [weak self] event in self?.handleKey(event) ?? false }
         return panel
@@ -39,10 +43,15 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         self?.mainWindow.show()
     })
 
-    init(countdown: Countdown, mainWindow: MainWindowController) {
+    init(
+        countdown: Countdown, sessions: SessionColumn, mainWindow: MainWindowController, settings: SettingsNavigation,
+    ) {
         self.countdown = countdown
+        self.sessions = sessions
         self.mainWindow = mainWindow
+        self.settings = settings
         super.init()
+        navigation.onExpandedChange = { [weak self] in self?.updateSessions() }
         if let button = statusItem.button {
             button.target = self
             button.action = #selector(clicked)
@@ -103,6 +112,7 @@ final class StatusItemController: NSObject, NSWindowDelegate {
     private func openPanel() {
         navigation.page = .main
         countdown.isPanelOpen = true
+        updateSessions()
         if let content = panel.contentView {
             panel.setContentSize(content.fittingSize)
         }
@@ -116,6 +126,17 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         panel.orderOut(nil)
         statusItem.button?.highlight(false)
         countdown.isPanelOpen = false
+        updateSessions()
+    }
+
+    /// The sessions are looked at only while the panel shows them.
+    private func updateSessions() {
+        sessions.isShown = countdown.isPanelOpen && navigation.isExpanded
+    }
+
+    private func openWindow() {
+        closePanel()
+        mainWindow.show()
     }
 
     /// Puts the panel's top edge just under the item, inside the screen.
@@ -137,8 +158,8 @@ final class StatusItemController: NSObject, NSWindowDelegate {
     /// to 4 start a break of that length, and Return or the keypad's Enter the
     /// preselected one. With nothing running, B opens "Break for", and ⌘N the
     /// custom block form, where Return starts and Escape goes back. Elsewhere
-    /// Escape closes. ⌘O closes the panel and opens the window. Returns
-    /// whether the key was used.
+    /// Escape closes. ⌘O closes the panel and opens the window, and ⌘E widens
+    /// and collapses the panel, on every page. Returns whether the key was used.
     ///
     /// A held key acts once. Repeats would extend again and again, pause and
     /// resume into near-empty entries, or start block after block.
@@ -152,13 +173,20 @@ final class StatusItemController: NSObject, NSWindowDelegate {
             return true
         }
         let modifiers = event.modifierFlags.intersection([.command, .control, .option])
-        if modifiers == .command, event.charactersIgnoringModifiers?.lowercased() == "n" {
+        let key = event.charactersIgnoringModifiers?.lowercased()
+        if modifiers == .command, key == "n" {
             return openCustomBlock(event)
         }
-        if modifiers == .command, event.charactersIgnoringModifiers?.lowercased() == "o" {
+        if modifiers == .command, key == "o" {
             if !event.isARepeat {
-                closePanel()
-                mainWindow.show()
+                openWindow()
+            }
+            return true
+        }
+        // With ⌘ alone, so not with ⇧ either.
+        if modifiers == .command, key == "e", !event.modifierFlags.contains(.shift) {
+            if !event.isARepeat {
+                navigation.isExpanded.toggle()
             }
             return true
         }
@@ -279,7 +307,8 @@ final class StatusItemController: NSObject, NSWindowDelegate {
     }
 
     func windowDidResize(_: Notification) {
-        // The panel grows downwards when its view changes, such as to "Switch to".
+        // The panel grows downwards when its view changes, such as to "Switch
+        // to", and keeps its place under the item when it widens.
         guard panel.isVisible else { return }
         placePanel()
         panel.invalidateShadow()
@@ -299,77 +328,5 @@ private final class KeyPanel: NSPanel {
             return
         }
         super.sendEvent(event)
-    }
-}
-
-/// The right-click menu: the timer's actions while a block or a break runs,
-/// or "Take a break" while nothing runs, then the first three workspaces to
-/// start, then the window, Settings and Quit.
-struct StatusItemMenu: View {
-    let countdown: Countdown
-    let openWindow: () -> Void
-
-    var body: some View {
-        let state = countdown.state
-        if state != .idle {
-            if QuickAction.pauseOrResume.isAvailable(in: state) {
-                Button(state == .paused ? "Resume" : "Pause") {
-                    countdown.perform(.pauseOrResume)
-                }
-            }
-            if state.isBreak {
-                Button("End break") {
-                    countdown.perform(.breakOrEndBreak)
-                }
-            } else {
-                BreakLengthMenu(countdown: countdown)
-                    .disabled(!QuickAction.canStartBreak(in: state))
-            }
-            Button("Add 15 minutes") {
-                countdown.perform(.extend)
-            }
-            if state.hasBlock {
-                Button("End block") {
-                    countdown.endBlock()
-                }
-            }
-            Divider()
-        } else if countdown.hasStore {
-            BreakLengthMenu(countdown: countdown)
-            Divider()
-        }
-        let starts = countdown.workspaces.prefix(WorkspaceRoster.menuStartCount)
-        if !starts.isEmpty {
-            // While a block runs, a start acts as a switch.
-            ForEach(starts) { workspace in
-                Button("Start \(workspace.name) for \(blockLength(workspace.defaultBlockMinutes))") {
-                    countdown.start(workspace)
-                }
-            }
-            Divider()
-        }
-        Button("Open the window", action: openWindow)
-            .keyboardShortcut("o")
-        OpenSettingsButton()
-        Divider()
-        Button("Quit \(Bundle.main.displayName)") {
-            NSApplication.shared.terminate(nil)
-        }
-        .keyboardShortcut("q")
-    }
-}
-
-/// "Take a break", a submenu with the break's lengths.
-private struct BreakLengthMenu: View {
-    let countdown: Countdown
-
-    var body: some View {
-        Menu("Take a break") {
-            ForEach(TimerEngine.breakLengthChoices, id: \.self) { minutes in
-                Button("\(minutes) min") {
-                    countdown.startBreak(minutes: minutes)
-                }
-            }
-        }
     }
 }

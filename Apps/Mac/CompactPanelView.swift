@@ -2,48 +2,54 @@ import DontBurnCore
 import SwiftData
 import SwiftUI
 
-/// The compact panel: the running block or break, its four quick actions and
-/// End block, the list of workspaces to switch to, the break's lengths, or,
-/// when nothing runs, the quick start list and the custom block form.
+/// The compact panel: the timer, and today's tracked time below it.
 struct CompactPanelView: View {
     let countdown: Countdown
     let navigation: PanelNavigation
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            if navigation.page == .breakLength {
-                BreakLengthList(countdown: countdown, navigation: navigation)
-            } else if let panel = countdown.panel {
-                if navigation.page == .switching {
-                    WorkspaceList(title: "Switch to", countdown: countdown, navigation: navigation)
-                } else {
-                    RunningBlock(panel: panel, countdown: countdown, navigation: navigation)
-                }
-            } else if navigation.page == .customBlock {
-                CustomBlockForm(countdown: countdown, navigation: navigation)
-            } else if countdown.hasStore, countdown.workspaces.isEmpty {
-                NoWorkspaces(navigation: navigation)
-            } else {
-                WorkspaceList(title: "Nothing running", countdown: countdown, navigation: navigation)
-            }
-            if countdown.panel != nil, countdown.alerts?.isAskingPermission == true {
-                // Below the actions, so they keep their places.
-                Text("Allow notifications to hear when a block or break ends")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            TimerPart(countdown: countdown, navigation: navigation)
             if let tracked = countdown.panel?.trackedToday ?? countdown.trackedToday {
                 Footer(tracked: tracked)
             }
         }
-        .font(.system(size: 13))
-        .foregroundStyle(Color.ink)
         .padding(20)
         .frame(width: 328, alignment: .leading)
-        .background(Color.surface, in: .rect(cornerRadius: 16))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16).strokeBorder(Color.ring)
+        .panelSurface()
+    }
+}
+
+/// The running block or break, its four quick actions and End block, the list
+/// of workspaces to switch to, the break's lengths, or, when nothing runs, the
+/// quick start list and the custom block form. The compact panel's content,
+/// and the expanded panel's left column.
+struct TimerPart: View {
+    let countdown: Countdown
+    let navigation: PanelNavigation
+
+    var body: some View {
+        if navigation.page == .breakLength {
+            BreakLengthList(countdown: countdown, navigation: navigation)
+        } else if let panel = countdown.panel {
+            if navigation.page == .switching {
+                WorkspaceList(title: "Switch to", countdown: countdown, navigation: navigation)
+            } else {
+                RunningBlock(panel: panel, countdown: countdown, navigation: navigation)
+            }
+        } else if navigation.page == .customBlock {
+            CustomBlockForm(countdown: countdown, navigation: navigation)
+        } else if countdown.hasStore, countdown.workspaces.isEmpty {
+            NoWorkspaces(navigation: navigation)
+        } else {
+            WorkspaceList(title: "Nothing running", countdown: countdown, navigation: navigation)
+        }
+        if countdown.panel != nil, countdown.alerts?.isAskingPermission == true {
+            // Below the actions, so they keep their places.
+            Text("Allow notifications to hear when a block or break ends")
+                .font(.system(size: 12))
+                .foregroundStyle(Color.muted)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
@@ -70,6 +76,8 @@ private struct RunningBlock: View {
                     .font(.system(size: 15, weight: .semibold))
                     .lineLimit(1)
             }
+            Spacer(minLength: 0)
+            ExpandButton(navigation: navigation)
         }
         .frame(minHeight: 36)
 
@@ -243,53 +251,6 @@ private struct QuickButtonStyle: ButtonStyle {
     }
 }
 
-/// A panel title on the left, and an optional control on the right.
-struct PanelTitle<Trailing: View>: View {
-    let title: LocalizedStringKey
-    @ViewBuilder let trailing: Trailing
-
-    init(_ title: LocalizedStringKey, @ViewBuilder trailing: () -> Trailing) {
-        self.title = title
-        self.trailing = trailing()
-    }
-
-    var body: some View {
-        HStack {
-            Text(title)
-                .font(.system(size: 15, weight: .semibold))
-            Spacer()
-            trailing
-        }
-        .frame(minHeight: 36)
-    }
-}
-
-struct PanelBackButton: View {
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text("Back")
-                .font(.system(size: 13, weight: .medium))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.sunken, in: .rect(cornerRadius: 8))
-                .contentShape(.rect(cornerRadius: 8))
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-struct WorkspaceDot: View {
-    let color: WorkspaceColor
-
-    var body: some View {
-        Circle()
-            .fill(color.color)
-            .frame(width: 10, height: 10)
-    }
-}
-
 private struct Footer: View {
     let tracked: String
 
@@ -304,8 +265,8 @@ private struct Footer: View {
     }
 }
 
-private extension Countdown {
-    /// A countdown over the sample data in `scenario`, frozen at the sample's time.
+extension Countdown {
+    /// A countdown over the sample data in `scenario`, frozen at the sample's time, for previews.
     static func preview(_ scenario: TimerScenario) -> Countdown {
         let now = Date(timeIntervalSince1970: 1_768_466_490)
         let container = ModelContainer.sample

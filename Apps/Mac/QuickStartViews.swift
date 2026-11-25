@@ -19,6 +19,15 @@ final class PanelNavigation {
 
     var page = Page.main
 
+    /// Whether the panel is wide, with the sessions beside the block. It stays
+    /// so until it is collapsed, also while the panel is closed.
+    var isExpanded = false {
+        didSet { onExpandedChange?() }
+    }
+
+    /// Called when ``isExpanded`` was set.
+    @ObservationIgnored var onExpandedChange: (() -> Void)?
+
     /// The custom block's workspace. Choosing one preselects its default length and rhythm.
     var customWorkspace: Workspace? {
         didSet {
@@ -85,6 +94,8 @@ struct WorkspaceList: View {
         PanelTitle(title) {
             if isSwitching {
                 PanelBackButton { navigation.page = .main }
+            } else {
+                ExpandButton(navigation: navigation)
             }
         }
 
@@ -323,7 +334,9 @@ struct NoWorkspaces: View {
     let navigation: PanelNavigation
 
     var body: some View {
-        PanelTitle("Nothing running") {}
+        PanelTitle("Nothing running") {
+            ExpandButton(navigation: navigation)
+        }
         // The prototype's note, as in its "Day off" panel.
         VStack(alignment: .leading, spacing: 2) {
             Text("No workspaces yet")

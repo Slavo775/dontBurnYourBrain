@@ -47,6 +47,9 @@ final class Countdown {
     /// Today's tracked time, such as `0:10`, or `nil` without a store.
     private(set) var trackedToday: String?
 
+    /// Today's tracked time per workspace, while the panel is open.
+    private(set) var totals: [DayLog.Total] = []
+
     /// Whether the panel is open. While it is, the countdown ticks every second.
     var isPanelOpen = false {
         didSet {
@@ -246,6 +249,7 @@ final class Countdown {
             workspaces = []
             presets = []
             trackedToday = nil
+            totals = []
             return now.addingTimeInterval(MenuBarLabel.untrackedThreshold)
         }
         do {
@@ -267,6 +271,9 @@ final class Countdown {
                 ?? CompactPanel(status: status, block: block, rhythm: rhythm, tracked: tracked)
             trackedToday = MenuBarLabel.hoursAndMinutes(tracked)
             workspaces = try WorkspaceRoster(context: context).activeWorkspaces()
+            totals = try isPanelOpen
+                ? DayLog(day: now, in: context, now: now, calendar: .current).totals(including: workspaces)
+                : []
             presets = try PresetRoster(context: context).presets().map(PresetName.init)
             saveBreaks()
             let next = MenuBarLabel.nextRedraw(status: status, rhythm: rhythm, untrackedSince: since, after: now)
@@ -280,6 +287,7 @@ final class Countdown {
             workspaces = []
             presets = []
             trackedToday = nil
+            totals = []
             return now.addingTimeInterval(60)
         }
     }
