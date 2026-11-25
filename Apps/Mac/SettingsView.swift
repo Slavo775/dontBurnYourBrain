@@ -3,8 +3,8 @@ import SwiftData
 import SwiftUI
 import UserNotifications
 
-/// A tab of the Settings window, by its place.
-enum SettingsTab: Int {
+/// A tab of the Settings window. Its name is what the defaults keep.
+enum SettingsTab: String {
     case general
     case workspaces
     case rhythm
@@ -15,12 +15,12 @@ enum SettingsTab: Int {
 @MainActor
 @Observable
 final class SettingsNavigation {
-    /// Where SwiftUI remembers the tab of a Settings window that chooses its
-    /// own. It no longer does for one that is told its tab, so the app keeps
-    /// the value there, and the window still opens as it was left.
-    private static let key = "com_apple_SwiftUI_Settings_selectedTabIndex"
+    /// SwiftUI does not remember the tab of a Settings window that is told its
+    /// tab, so the app does, and the window opens as it was left.
+    private static let key = "settings.tab"
 
-    var tab = SettingsTab(rawValue: UserDefaults.standard.integer(forKey: key)) ?? .general {
+    /// The tab, General when none or an unknown one was kept.
+    var tab = UserDefaults.standard.string(forKey: key).flatMap(SettingsTab.init(rawValue:)) ?? .general {
         didSet { UserDefaults.standard.set(tab.rawValue, forKey: Self.key) }
     }
 }
