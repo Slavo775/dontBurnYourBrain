@@ -8,7 +8,8 @@ import SwiftData
 ///
 /// It follows the events as they come, and once a second it looks again: a
 /// turn that stopped becomes idle, an idle row's minutes count up, and a
-/// session whose process is gone leaves. Nothing runs while it is not shown.
+/// session whose process is gone leaves. The sessions' projects are looked up
+/// when it is shown and with each event only. Nothing runs while it is not shown.
 @MainActor
 @Observable
 final class SessionColumn {
@@ -34,6 +35,8 @@ final class SessionColumn {
     private let fixedTime: Date?
     /// Reads the hook of each profile.
     private let readHooks: () -> [HookStatus]
+    /// The projects as of the last lookup, by session id.
+    @ObservationIgnored private var sessionProjects: [AgentSession.ID: Project] = [:]
     @ObservationIgnored private var timer: Timer?
     private let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "sessions")
 
@@ -57,6 +60,7 @@ final class SessionColumn {
         self.readHooks = readHooks
         monitor?.onEvent = { [weak self] in
             if self?.isShown == true {
+                self?.lookUpProjects()
                 self?.look()
             }
         }
@@ -71,6 +75,7 @@ final class SessionColumn {
         timer?.invalidate()
         timer = nil
         guard isShown else { return }
+        lookUpProjects()
         look()
         if list.isEmpty {
             noSessions = NoSessions(hooks: readHooks())
@@ -85,7 +90,9 @@ final class SessionColumn {
     }
 
     private func look(filter: SessionFilter? = nil) {
-        let new = makeList(filter: filter ?? list.filter, at: fixedTime ?? .now)
+        let new = SessionList(
+            sessions: monitor?.currentSessions() ?? [], filter: filter ?? list.filter, at: fixedTime ?? .now,
+        ) { sessionProjects[$0.id] }
         if new != list {
             list = new
         }
@@ -94,20 +101,22 @@ final class SessionColumn {
         }
     }
 
-    private func makeList(filter: SessionFilter, at now: Date) -> SessionList {
-        let sessions = monitor?.currentSessions() ?? []
-        if let projects, let folders {
-            do {
-                let all = try projects.fetch(FetchDescriptor<Project>())
-                let holders = ProjectFolders(context: folders)
-                return try SessionList(sessions: sessions, filter: filter, at: now) {
-                    try $0.project(in: holders, among: all)
-                }
-            } catch {
-                // The error may name a path, so only its code is logged.
-                log.error("The sessions' projects could not be read, error \((error as NSError).code)")
+    /// Finds each session's project in the stores. When they cannot be read,
+    /// every session is listed under Other until the next lookup.
+    private func lookUpProjects() {
+        guard let projects, let folders else { return }
+        var found: [AgentSession.ID: Project] = [:]
+        do {
+            let all = try projects.fetch(FetchDescriptor<Project>())
+            let holders = ProjectFolders(context: folders)
+            for session in monitor?.currentSessions() ?? [] {
+                found[session.id] = try session.project(in: holders, among: all)
             }
+        } catch {
+            found = [:]
+            // The error may name a path, so only its code is logged.
+            log.error("The sessions' projects could not be read, error \((error as NSError).code)")
         }
-        return SessionList(sessions: sessions, filter: filter, at: now) { _ in nil }
+        sessionProjects = found
     }
 }

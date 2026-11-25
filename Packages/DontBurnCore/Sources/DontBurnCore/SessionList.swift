@@ -70,6 +70,33 @@ public struct SessionList: Equatable, Sendable {
         /// The whole minutes since the last activity, rounded down, for an
         /// idle session, and `nil` for any other.
         public let idleMinutes: Int?
+
+        /// ``idleMinutes`` in the largest unit that fits.
+        public var idleTime: IdleTime? {
+            idleMinutes.map(IdleTime.init(minutes:))
+        }
+    }
+
+    /// How long a session has been idle, in one unit, rounded down.
+    public enum IdleTime: Equatable, Sendable {
+        /// Less than one minute.
+        case lessThanAMinute
+        /// 1 to 59 minutes.
+        case minutes(Int)
+        /// 1 to 23 hours.
+        case hours(Int)
+        /// One day or more.
+        case days(Int)
+
+        /// The whole `minutes` in the largest unit that fits.
+        public init(minutes: Int) {
+            switch minutes {
+            case ..<1: self = .lessThanAMinute
+            case ..<60: self = .minutes(minutes)
+            case ..<(24 * 60): self = .hours(minutes / 60)
+            default: self = .days(minutes / (24 * 60))
+            }
+        }
     }
 
     /// The rows of one group.
@@ -93,9 +120,9 @@ public struct SessionList: Equatable, Sendable {
     public let chips: [Chip]
     /// The groups with a row under ``filter``, in the order of ``SessionGroup``.
     ///
-    /// Needs you starts with the session that has waited longest. Working keeps
-    /// the order of the sessions, so no row jumps as its events come in. Idle
-    /// starts with the one that was active last.
+    /// Needs you and Working keep the order of the sessions, oldest first, so
+    /// no row moves as its events come in. Idle starts with the one that was
+    /// active last.
     public let sections: [Section]
 
     /// Whether there is no session, under any filter.
@@ -152,8 +179,7 @@ public struct SessionList: Equatable, Sendable {
 
     private static func ordered(_ listed: [Listed], in group: SessionGroup) -> [Listed] {
         switch group {
-        case .needsYou: listed.sorted { $0.session.lastActivity < $1.session.lastActivity }
-        case .working: listed
+        case .needsYou, .working: listed
         case .idle: listed.sorted { $0.session.lastActivity > $1.session.lastActivity }
         }
     }

@@ -156,8 +156,8 @@ private struct SessionRow: View {
             }
             .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
-            if let minutes = row.idleMinutes {
-                Text(idleTime(minutes))
+            if let idleTime = row.idleTime {
+                Text(text(idleTime))
                     .font(.system(size: 12))
                     .monospacedDigit()
                     .foregroundStyle(Color.muted)
@@ -179,13 +179,12 @@ private struct SessionRow: View {
         }
     }
 
-    /// In the largest unit that fits, such as `12 min`, `3 h` or `2 d`.
-    private func idleTime(_ minutes: Int) -> LocalizedStringKey {
-        switch minutes {
-        case 0: "less than 1 min"
-        case ..<60: "\(minutes) min"
-        case ..<(24 * 60): "\(minutes / 60) h"
-        default: "\(minutes / (24 * 60)) d"
+    private func text(_ idleTime: SessionList.IdleTime) -> LocalizedStringKey {
+        switch idleTime {
+        case .lessThanAMinute: "less than 1 min"
+        case let .minutes(count): "\(count) min"
+        case let .hours(count): "\(count) h"
+        case let .days(count): "\(count) d"
         }
     }
 }
