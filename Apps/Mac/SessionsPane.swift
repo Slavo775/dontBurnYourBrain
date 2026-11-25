@@ -74,6 +74,7 @@ struct SessionsPane: View {
         }
         // Profile folders such as .claude are hidden.
         .fileDialogBrowserOptions(.includeHiddenFiles)
+        .fileDialogDefaultDirectory(setup.pickerFolder)
         .sheet(item: $sheet) { sheet in
             SessionsSheetView(
                 sheet: sheet,

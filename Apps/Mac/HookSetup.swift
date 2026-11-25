@@ -120,6 +120,16 @@ final class HookSetup {
         return manualLines
     }
 
+    /// The folder the profile folder picker opens in: `nil`, the system's
+    /// default, in the Release build. The Dev build opens it in its stand-in
+    /// folder, or in the temporary folder without one, so it never shows the
+    /// real home folder, which the system may have remembered.
+    var pickerFolder: URL? {
+        guard isDev else { return nil }
+        return allowedFolder.map { URL(filePath: $0, directoryHint: .isDirectory) }
+            ?? FileManager.default.temporaryDirectory
+    }
+
     /// Looks for the profiles again, and reads each one's hook.
     func refresh() {
         guard !isSample else { return }
