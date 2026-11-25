@@ -56,6 +56,7 @@ func `without the argument, or with any other value, the session scenario is the
         #expect(list.rows.map(\.profile) == ["acme", "acme", "globex", "personal", "personal", nil])
         #expect(list.rows.map(\.terminal) == [.iTerm2, .cursor, .visualStudioCode, .terminal, .iTerm2, nil])
         #expect(list.rows.map(\.idleMinutes) == [nil, nil, nil, 12, 40, 185])
+        #expect(list.rows.compactMap(\.idleTime) == [.minutes(12), .minutes(40), .hours(3)])
     }
 }
 

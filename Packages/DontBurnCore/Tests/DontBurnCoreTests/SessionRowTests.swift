@@ -152,6 +152,32 @@ func `an idle row counts whole minutes since the last activity, rounded down`(
     #expect(desk.list(at: seconds).rows.map(\.idleMinutes) == [minutes])
 }
 
+@Test(arguments: [
+    (0, SessionList.IdleTime.lessThanAMinute), (1, .minutes(1)), (59, .minutes(59)),
+    (60, .hours(1)), (119, .hours(1)), (1439, .hours(23)),
+    (1440, .days(1)), (2879, .days(1)), (2880, .days(2)),
+    // Damaged values: the longest time a row can have, and one below zero.
+    (Int(MenuBarLabel.maximumShownTime) / 60, .days(24855)), (-1, .lessThanAMinute),
+])
+func `an idle time is in the largest unit that fits, rounded down`(minutes: Int, time: SessionList.IdleTime) {
+    #expect(SessionList.IdleTime(minutes: minutes) == time)
+}
+
+@Test(arguments: [
+    (0, SessionList.IdleTime.lessThanAMinute), (1, .minutes(1)), (59, .minutes(59)),
+    (60, .hours(1)), (1439, .hours(23)), (1440, .days(1)),
+])
+func `an idle row's time is that of its minutes, up to the last second of them`(
+    minutes: Int, time: SessionList.IdleTime,
+) throws {
+    var desk = SessionDesk()
+    try desk.send(0, "SessionStart", "web")
+
+    for seconds in [0, 59.9] {
+        #expect(desk.list(at: TimeInterval(minutes) * 60 + seconds).rows.map(\.idleTime) == [time])
+    }
+}
+
 @Test func `an idle_prompt does not restart the idle minutes`() throws {
     var desk = SessionDesk()
     try desk.send(0, "UserPromptSubmit", "web")
@@ -161,12 +187,13 @@ func `an idle row counts whole minutes since the last activity, rounded down`(
     #expect(desk.list(at: 180).rows.map(\.idleMinutes) == [3])
 }
 
-@Test func `a row that waits or works has no idle minutes, however long it has`() throws {
+@Test func `a row that waits or works has no idle minutes and no idle time, however long it has`() throws {
     var desk = SessionDesk()
     try desk.send(0, "UserPromptSubmit", "working")
     try desk.send(0, "PermissionRequest", "waiting")
 
     #expect(desk.list(at: 7200).rows.map(\.idleMinutes) == [nil, nil])
+    #expect(desk.list(at: 7200).rows.map(\.idleTime) == [nil, nil])
 }
 
 @Test func `with the clock moved back an idle row stays, at no minutes`() throws {

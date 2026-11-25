@@ -231,3 +231,18 @@ func `sessions whose events came at the same moment keep the order they started 
     try desk.send(30, "Stop", "c", HookLine.tasks())
     #expect(desk.list(at: 30).ids(.working) == ["a", "b", "c"])
 }
+
+@Test func `a row in Needs you keeps its place through the reminder of its request and a subagent's events`() throws {
+    var desk = SessionDesk()
+    try desk.send(0, "PermissionRequest", "a")
+    try desk.send(3, "PermissionRequest", "b")
+    #expect(desk.list(at: 4).ids(.needsYou) == ["a", "b"])
+    // Claude Code's reminder of each request, about six seconds later.
+    try desk.send(6, "Notification", "a", ["notification_type": "permission_prompt"])
+    #expect(desk.list(at: 7).ids(.needsYou) == ["a", "b"])
+    try desk.send(9, "Notification", "b", ["notification_type": "permission_prompt"])
+    #expect(desk.list(at: 10).ids(.needsYou) == ["a", "b"])
+    try desk.send(100, "SubagentStop", "a", HookLine.subagent("Explore"))
+    #expect(desk.list(at: 101).ids(.needsYou) == ["a", "b"])
+    #expect(desk.list(at: 5000).ids(.needsYou) == ["a", "b"])
+}
