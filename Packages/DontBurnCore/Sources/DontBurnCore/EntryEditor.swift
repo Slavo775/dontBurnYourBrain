@@ -131,50 +131,67 @@ public struct EntryEditor {
         try context.save()
     }
 
-    /// Splits `entry` at `time`, rounded down to its minute, into two entries
-    /// that together cover exactly the old one, and returns the second.
+    /// Splits `entry` at the clock minute of `time` into two entries that
+    /// together cover exactly the old one, and returns the second.
+    ///
+    /// The cut counts from the entry's start: it lies as many whole minutes
+    /// after the start as the chosen minute lies after the start's own
+    /// minute, so the first half is exactly that many whole minutes, and the
+    /// whole minutes of the halves add up to the old entry's. An entry that
+    /// starts at 9:00:30, split at 9:45, is cut at 9:45:30. One that starts
+    /// on a whole minute is cut at that minute.
     ///
     /// Both keep the workspace, project, kind, note, source and block, so each
     /// can then be changed on its own. Refused for an entry that runs or whose
-    /// block runs, for a time outside ``splitTimes(for:calendar:)``, and for
+    /// block runs, for a minute outside ``splitTimes(for:calendar:)``, and for
     /// anything ``check(_:replacing:at:)`` refuses in either half.
     @discardableResult
     public func split(_ entry: TimeEntry, at time: Date, now: Date, calendar: Calendar) throws -> TimeEntry {
         try TimerEngine(context: context).settle(at: now)
         guard !Self.isNoteOnly(entry), let end = entry.end else { throw EntryChangeError.runningBlock }
-        let time = calendar.dateInterval(of: .minute, for: time)?.start ?? time
-        guard Self.splitTimes(for: entry, calendar: calendar)?.contains(time) == true else {
+        let minute = calendar.dateInterval(of: .minute, for: time)?.start ?? time
+        guard Self.splitTimes(for: entry, calendar: calendar)?.contains(minute) == true else {
             throw EntryChangeError.splitNotInside
         }
+        let minutes = (minute.timeIntervalSince(Self.startMinute(of: entry, calendar: calendar)) / 60).rounded()
+        let cut = entry.start.addingTimeInterval(minutes * 60)
         let draft = EntryDraft(entry, now: now)
         var first = draft
-        first.end = time
+        first.end = cut
         var second = draft
-        second.start = time
+        second.start = cut
         try check(first, replacing: entry, at: now)
         try check(second, replacing: entry, at: now)
         let rest = TimeEntry(
-            workspace: entry.workspace, start: time, end: end, kind: entry.kind, source: entry.source,
+            workspace: entry.workspace, start: cut, end: end, kind: entry.kind, source: entry.source,
             block: entry.block, note: entry.note,
         )
         // Not through `assign(_:)`: a half keeps the project even when it is no longer tracked.
         rest.project = entry.project
-        entry.end = time
+        entry.end = cut
         context.insert(rest)
         try context.save()
         return rest
     }
 
-    /// The whole minutes `entry` can be split at, each leaving at least a
-    /// minute on both sides, or `nil` when it runs or is too short.
+    /// The clock minutes `entry` can be split at, or `nil` when it runs or is
+    /// shorter than two whole minutes.
+    ///
+    /// They run from the minute after the start's own minute to the one that
+    /// leaves the second half a whole minute, as
+    /// ``split(_:at:now:calendar:)`` counts them from the start. An entry
+    /// from 9:00:30 to 10:29:50, 89 whole minutes, offers 9:01 to 10:28.
     public static func splitTimes(for entry: TimeEntry, calendar: Calendar) -> ClosedRange<Date>? {
         guard let end = entry.end else { return nil }
-        let earliest = entry.start.addingTimeInterval(60)
-        let latest = end.addingTimeInterval(-60)
-        let minute = calendar.dateInterval(of: .minute, for: earliest)
-        let first = minute?.start == earliest ? earliest : minute?.end ?? earliest
-        let last = calendar.dateInterval(of: .minute, for: latest)?.start ?? latest
-        return first <= last ? first ... last : nil
+        let wholeMinutes = (end.timeIntervalSince(entry.start) / 60).rounded(.down)
+        guard wholeMinutes >= 2 else { return nil }
+        let startMinute = startMinute(of: entry, calendar: calendar)
+        return startMinute.addingTimeInterval(60) ... startMinute.addingTimeInterval((wholeMinutes - 1) * 60)
+    }
+
+    /// The entry's start, rounded down to its minute.
+    private static func startMinute(of entry: TimeEntry, calendar: Calendar) -> Date {
+        calendar.dateInterval(of: .minute, for: entry.start)?.start ?? entry.start
     }
 
     /// Throws the first rule `draft` breaks, with `entry` itself left out of the overlap check.
