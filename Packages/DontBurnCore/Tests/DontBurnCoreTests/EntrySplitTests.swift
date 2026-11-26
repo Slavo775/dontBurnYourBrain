@@ -43,18 +43,17 @@ private func spans(_ context: ModelContext) throws -> [DateInterval] {
     try expectHistoryKeepsRules(desk.context)
 }
 
-@Test func `the split time is rounded down to its minute, and the halves still meet`() throws {
+@Test func `on the start's day the cut takes the start's seconds in the chosen minute, and the halves meet`() throws {
     let desk = try Desk()
     let start = at(-90).addingTimeInterval(30)
     let end = at(-30).addingTimeInterval(20)
     let entry = try insert(desk.context, desk.acme, start, end)
+    let cut = at(-50).addingTimeInterval(30)
 
     let second = try split(entry, at: at(-50).addingTimeInterval(45), in: desk)
 
-    #expect(try spans(desk.context) == [
-        DateInterval(start: start, end: at(-50)), DateInterval(start: at(-50), end: end),
-    ])
-    #expect(second.start == at(-50))
+    #expect(try spans(desk.context) == [DateInterval(start: start, end: cut), DateInterval(start: cut, end: end)])
+    #expect(second.start == cut)
 }
 
 @Test func `the halves of a finished block keep the block and the timer's rules`() throws {
@@ -180,7 +179,7 @@ func `a split time a minute or more from both ends is taken at its minute`(minut
     #expect(try entries(desk.context).map(\.end) == [at(taken), at(-30)])
 }
 
-@Test func `the times offered are the whole minutes that leave a minute on each side`() throws {
+@Test func `the times offered are the clock minutes whose cut leaves a minute on each side`() throws {
     let desk = try Desk()
     let short = try insert(desk.context, desk.acme, at(-200), at(-198).addingTimeInterval(-1))
     let twoMinutes = try insert(desk.context, desk.acme, at(-190), at(-188))
@@ -188,12 +187,13 @@ func `a split time a minute or more from both ends is taken at its minute`(minut
 
     #expect(EntryEditor.splitTimes(for: short, calendar: prague) == nil)
     #expect(EntryEditor.splitTimes(for: twoMinutes, calendar: prague) == at(-189) ... at(-189))
-    #expect(EntryEditor.splitTimes(for: odd, calendar: prague) == at(-178) ... at(-177))
+    #expect(EntryEditor.splitTimes(for: odd, calendar: prague) == at(-179) ... at(-178))
     #expect(throws: EntryChangeError.splitNotInside) { try split(short, at: at(-199), in: desk) }
-    // The minute after its start leaves only 30 seconds before it.
-    #expect(throws: EntryChangeError.splitNotInside) { try split(odd, at: at(-179), in: desk) }
+    // Cut at 30 seconds into it, the minute before the end's own leaves the second half 50 seconds.
+    #expect(throws: EntryChangeError.splitNotInside) { try split(odd, at: at(-177), in: desk) }
     try split(twoMinutes, at: at(-189), in: desk)
-    #expect(try entries(desk.context).count == 4)
+    try split(odd, at: at(-179), in: desk)
+    #expect(try entries(desk.context).count == 5)
 }
 
 @Test func `a split whose half would overlap another entry or reach past now is refused, changing nothing`() throws {
