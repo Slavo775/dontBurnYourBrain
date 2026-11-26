@@ -349,19 +349,39 @@ Below: "Tracked 5:00, to send 5:00", and one button, "Send 2 worklogs (5:00)".
 A list of the day's entries instead of the timeline, and corrections by hand. The rules live in `DayLog` and `EntryEditor` in `DontBurnCore`.
 
 - **Opening.** ⌘O in the compact panel closes the panel and opens the window, once per press. The right-click menu has "Open the window" on ⌘O. The app stays an accessory app with no Dock icon. The window follows `-DontBurnAppearance`.
-- **The sidebar** is 210 pt and holds Today and History only. Last week's totals come with the charts in phase 2, the timeline in phase 5, and Sessions and Time review with their phases.
+- **The sidebar** is 210 pt and holds Today and History. Card 60 added last week's totals at its bottom ([below](#what-phase-2-builds)). The timeline comes in phase 5, and Sessions and Time review with their phases.
 - **A day** shows its total and one total per workspace: active ones in the order from Settings, then archived ones, each only when it has time that day. Below them a list with a column header: Time, Workspace with its dot, Kind, Length and Note.
 - **Lengths** are whole minutes, rounded down per entry, and every total is the sum of the rows.
 - **The running entry** reads "21:31–now" and counts up.
 - **An entry across midnight** shows on both days with its part, "23:30–0:00" and "0:00–0:30", and is stored once.
 - **Nothing on the day:** "Nothing tracked".
-- **Editing.** A click on a row edits it, and its context menu has Edit… and Delete…. The sheet has Start, End, Workspace, Kind and Note. Kind offers work and break, plus meeting for a meeting. The workspace picker lists the active workspaces, plus the entry's own one if it is archived. Changing the workspace clears the entry's project.
+- **Editing.** A click on a row edits it, and its context menu has Edit…, Split… and Delete…. Split… came with card 60 ([below](#what-phase-2-builds)). The sheet has Start, End, Workspace, Kind and Note. Kind offers work and break, plus meeting for a meeting. The workspace picker lists the active workspaces, plus the entry's own one if it is archived. Changing the workspace clears the entry's project.
 - **Add (+)** stores a manual entry with no block. It starts as the latest free half hour before now on Today, and the latest free hour ending by 10:00 on an earlier day.
 - **Delete** asks once.
 - **Refusals.** Every change is checked, and a refused one shows its sentence in the `bad` color: no workspace, an end not after the start, an end in the future, or an overlap with another entry, the running one counted up to now.
 - **A running block's entries**, paused ones included, take only a note and cannot be deleted until the block ends, because the timer derives the block's end from the gaps between them. This is the owner's decision.
 - **History** opens on yesterday, with previous and next and a date picker that stops at yesterday. An earlier day takes the same corrections.
 - **Without a store** the window says "The data could not be opened".
+
+### What phase 2 builds
+
+Card 60 built History's week and month, last week's totals, splitting an entry and the CSV export. The rules live in `HistoryRange`, `RangeTotals`, `EntryEditor` and `EntryExport` in `DontBurnCore`. No schema changed.
+
+- **Weeks and days follow the Mac's setting.** A week starts on the system calendar's first weekday and always shows seven days. A day ends at midnight in the Mac's time zone. This is the owner's decision ([decisions.md](decisions.md)).
+- **The header.** A Day | Week | Month switch sits at its right, then Export…, then previous and next. History still opens on Day, on yesterday. Week and Month open on the current week and month, today included and counted up to now, and Next stops there.
+- **The subtitle** names the range and its total, such as "16 – 22 Nov 2026, 27:45 tracked" or "November 2026, 92:15 tracked".
+- **The chart** stacks each bar in the workspace colors, with the bar's total above it. A week has a bar per day, labelled with its date, such as "Mon 16", and an empty day is an empty bar labelled 0:00. A month has a bar per week, such as "16–22", that counts only the week's days inside the month.
+- **A click on a bar** opens it: today's bar opens Today, another day's bar opens that day, and in Month a week's bar opens that week. A bar that starts after now is disabled.
+- **The table** under the chart has a row per workspace with its dot, its projects indented under it, and the columns Work, Breaks and Total, then a Total row. Entries without a project count under the workspace alone, and a break that does not count is in no number. Every number is the sum of the day views.
+- **Nothing in the range:** "Nothing tracked". A range that cannot be read says "The entries could not be read".
+- **Last week** sits at the bottom of the sidebar: its time per workspace, which doubles as the legend for the charts, or "Nothing tracked".
+- **VoiceOver** reads each bar as one button with its days and the time per workspace, such as "Monday, 16 November. Acme, 3 hours. Globex, 2 hours, 30 minutes. In all, 5 hours, 30 minutes.", and pressing it opens that day or week. Each table row reads as one sentence.
+- **Split…** in an entry's context menu, on Today and on a day in History, opens the "Split entry" sheet: the entry, "Split at" in clock minutes, and the first and second part it makes. Only an ended entry splits, so Split… is disabled for the running entry, for the entries of a running block, paused ones included, and for an entry too short to leave a minute on each side. Both parts keep the workspace, project, kind, note, source and block, and each can then be changed. A split loses no minute, by the rule in [features.md](features.md#rules-worth-fixing-early).
+- **Export…** saves the shown day, week or month as a CSV file. The save panel is a sheet on the window, and nothing is written until Save. The file is named after the range, such as `2026-11-16–2026-11-22.csv`, or `2026-11-19.csv` for a day. When the file cannot be written, an alert says "The file could not be saved".
+- **The file** starts with a UTF-8 byte-order mark, ends each row with CRLF and quotes as RFC 4180 says. Its columns are date, start, end, minutes, kind, workspace, project, note and source. An entry belongs to the range it starts in, and its row has the real start and end, in ISO 8601 with the offset, and the whole entry's whole minutes. The date is the start's local day. The running entry has an empty end and empty minutes. A text field (kind, workspace, project, note or source) that begins with `=`, `+`, `-`, `@`, a tab or a carriage return gets a leading `'`, so a spreadsheet reads it as text.
+- **Not yet:** the Day view still shows totals per workspace only, with breaks inside them. Card 83 gives it totals per project, with breaks apart.
+
+The owner approved the look, with three deliberate differences from the prototype: the subtitle gives the total in h:mm ("27:45 tracked"), the day labels carry the date ("Mon 16"), and a week still to come cannot be clicked.
 
 ## Out of office
 
@@ -538,7 +558,7 @@ How it works:
 | Window: Today as a list, simple history | 1 |
 | Right-click menu: the block actions and the quick start items | 1 |
 | Break gaps in the strip, "break in", the break that is due, the alert at the end of a focus interval, Settings: Rhythm, and the Rhythm rows in Workspaces and Custom block | 2 |
-| Command bar, also from the right-click menu, week and month charts, the idle question, start at login | 2 |
+| Command bar, also from the right-click menu, week and month charts, last week's totals, splitting an entry, CSV export, the idle question, start at login | 2 |
 | Settings: the projects of a workspace, with their folders and the "Track time" switch | 3 |
 | Needs-you strip, expanded panel, session switcher, Settings: Sessions, the amber badge, "Focus the waiting session" in the right-click menu | 3 |
 | Issue on a block, a project's tracker, time review, Settings: Trackers | 4 |
