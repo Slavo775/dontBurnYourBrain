@@ -134,12 +134,19 @@ public struct EntryEditor {
     /// Splits `entry` at the clock minute of `time` into two entries that
     /// together cover exactly the old one, and returns the second.
     ///
-    /// The cut counts from the entry's start: it lies as many whole minutes
-    /// after the start as the chosen minute lies after the start's own
-    /// minute, so the first half is exactly that many whole minutes, and the
-    /// whole minutes of the halves add up to the old entry's. An entry that
-    /// starts at 9:00:30, split at 9:45, is cut at 9:45:30. One that starts
-    /// on a whole minute is cut at that minute.
+    /// The cut lies in the chosen clock minute, a whole number of minutes
+    /// from one end, so no minute is lost from the totals: the whole minutes
+    /// of the halves add up to the old entry's, and each day keeps its total.
+    ///
+    /// - On the start's day it counts from the start: an entry from 9:00:30
+    ///   to 10:29:50, split at 9:45, is cut at 9:45:30, which gives 45 + 44.
+    /// - On a later day it counts back from the end: an entry from 23:00:30
+    ///   to 1:00:20, split at 0:30, is cut at 0:30:20, which gives 89 + 30
+    ///   and leaves the days at 59 and 60. Counted from the start, the cut
+    ///   would leave the first half's part after midnight a few seconds
+    ///   short of a minute, and the later day would lose one.
+    ///
+    /// An entry on whole minutes is cut at the chosen minute itself.
     ///
     /// Both keep the workspace, project, kind, note, source and block, so each
     /// can then be changed on its own. Refused for an entry that runs or whose
@@ -149,12 +156,8 @@ public struct EntryEditor {
     public func split(_ entry: TimeEntry, at time: Date, now: Date, calendar: Calendar) throws -> TimeEntry {
         try TimerEngine(context: context).settle(at: now)
         guard !Self.isNoteOnly(entry), let end = entry.end else { throw EntryChangeError.runningBlock }
-        let minute = calendar.dateInterval(of: .minute, for: time)?.start ?? time
-        guard Self.splitTimes(for: entry, calendar: calendar)?.contains(minute) == true else {
-            throw EntryChangeError.splitNotInside
-        }
-        let minutes = (minute.timeIntervalSince(Self.startMinute(of: entry, calendar: calendar)) / 60).rounded()
-        let cut = entry.start.addingTimeInterval(minutes * 60)
+        guard let cut = Self.cut(of: entry, end: end, at: Self.clockMinute(of: time, calendar), calendar: calendar)
+        else { throw EntryChangeError.splitNotInside }
         let draft = EntryDraft(entry, now: now)
         var first = draft
         first.end = cut
@@ -174,24 +177,47 @@ public struct EntryEditor {
         return rest
     }
 
-    /// The clock minutes `entry` can be split at, or `nil` when it runs or is
-    /// shorter than two whole minutes.
+    /// The clock minutes `entry` can be split at, each leaving a whole
+    /// minute on both sides as ``split(_:at:now:calendar:)`` cuts, or `nil`
+    /// when it runs or is shorter than two whole minutes.
     ///
-    /// They run from the minute after the start's own minute to the one that
-    /// leaves the second half a whole minute, as
-    /// ``split(_:at:now:calendar:)`` counts them from the start. An entry
-    /// from 9:00:30 to 10:29:50, 89 whole minutes, offers 9:01 to 10:28.
+    /// An entry from 9:00:30 to 10:29:50, 89 whole minutes, offers 9:01 to
+    /// 10:28. One from 23:59:30 to 0:03:10 offers 0:01 to 0:02, because 0:00
+    /// would cut at 0:00:10 and leave the first half 40 seconds.
     public static func splitTimes(for entry: TimeEntry, calendar: Calendar) -> ClosedRange<Date>? {
         guard let end = entry.end else { return nil }
-        let wholeMinutes = (end.timeIntervalSince(entry.start) / 60).rounded(.down)
-        guard wholeMinutes >= 2 else { return nil }
-        let startMinute = startMinute(of: entry, calendar: calendar)
-        return startMinute.addingTimeInterval(60) ... startMinute.addingTimeInterval((wholeMinutes - 1) * 60)
+        let isOffered = { (minute: Date) in cut(of: entry, end: end, at: minute, calendar: calendar) != nil }
+        // The minutes that give a cut form one run. It starts one or two
+        // minutes after the start's own minute and ends one or two before the
+        // end's own, because a cut lies up to 59 seconds into its minute.
+        let startMinute = clockMinute(of: entry.start, calendar)
+        let endMinute = clockMinute(of: end, calendar)
+        guard let first = [60.0, 120].map(startMinute.addingTimeInterval).first(where: isOffered),
+              let last = [-60.0, -120].map(endMinute.addingTimeInterval).first(where: isOffered),
+              first <= last
+        else { return nil }
+        return first ... last
     }
 
-    /// The entry's start, rounded down to its minute.
-    private static func startMinute(of entry: TimeEntry, calendar: Calendar) -> Date {
-        calendar.dateInterval(of: .minute, for: entry.start)?.start ?? entry.start
+    /// Where a split at the clock minute `minute` cuts `entry`, which ends at
+    /// `end`, or `nil` when a half would be shorter than a minute.
+    ///
+    /// On the start's day the cut lies as many whole minutes after the start
+    /// as `minute` lies after the start's own minute. On any other day it
+    /// lies as many whole minutes before the end as `minute` lies before the
+    /// end's own minute.
+    private static func cut(of entry: TimeEntry, end: Date, at minute: Date, calendar: Calendar) -> Date? {
+        let cut = if calendar.isDate(minute, inSameDayAs: entry.start) {
+            entry.start.addingTimeInterval(minute.timeIntervalSince(clockMinute(of: entry.start, calendar)))
+        } else {
+            end.addingTimeInterval(-clockMinute(of: end, calendar).timeIntervalSince(minute))
+        }
+        return cut.timeIntervalSince(entry.start) >= 60 && end.timeIntervalSince(cut) >= 60 ? cut : nil
+    }
+
+    /// `date` rounded down to its minute.
+    private static func clockMinute(of date: Date, _ calendar: Calendar) -> Date {
+        calendar.dateInterval(of: .minute, for: date)?.start ?? date
     }
 
     /// Throws the first rule `draft` breaks, with `entry` itself left out of the overlap check.
