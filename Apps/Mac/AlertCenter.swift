@@ -27,6 +27,17 @@ final class AlertCenter {
         UserDefaults.standard.register(defaults: AlertKind.defaults)
         // Without a delegate, a notification due while the app is in front, such as with Settings open, is dropped.
         center.delegate = presenter
+        // A question about time away does not outlive the app, so neither does its
+        // notification: removed on quit, and again at launch after a crash. On quit
+        // at once, not through `enqueue`, since the app exits before a task runs.
+        center.removeDeliveredNotifications(withIdentifiers: [Self.awayIdentifier])
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification, object: nil, queue: .main,
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.center.removeDeliveredNotifications(withIdentifiers: [Self.awayIdentifier])
+            }
+        }
     }
 
     /// The switches from Settings, General.
@@ -70,6 +81,40 @@ final class AlertCenter {
         guard plan.map(\.key) != old.map(\.key) else { return }
         wanted = plan
         enqueue { [self] in await replacePending(with: plan) }
+    }
+
+    /// Shows at once that he was away for `minutes` and that the panel asks
+    /// what it was, replacing the last such notification. Only when
+    /// notifications are allowed: this never asks for the permission.
+    func notifyAway(minutes: Int) {
+        enqueue { [self] in
+            let status = await center.notificationSettings().authorizationStatus
+            guard status == .authorized || status == .provisional else { return }
+            let content = UNMutableNotificationContent()
+            content.title = String(localized: "Away for \(blockLength(minutes))")
+            content.body = String(localized: "Was it work? The answer waits in the panel.")
+            do {
+                // No trigger: it shows now.
+                try await center.add(
+                    UNNotificationRequest(identifier: Self.awayIdentifier, content: content, trigger: nil),
+                )
+            } catch {
+                log.error("Could not show the question about time away: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Takes the notification about time away off the screen, once its question is answered or dropped.
+    func withdrawAway() {
+        enqueue { [self] in
+            center.removePendingNotificationRequests(withIdentifiers: [Self.awayIdentifier])
+            center.removeDeliveredNotifications(withIdentifiers: [Self.awayIdentifier])
+        }
+    }
+
+    /// The identifier of the notification about time away, the same each time, so a new one replaces the old.
+    private static var awayIdentifier: String {
+        "\(Bundle.main.bundleIdentifier ?? "").away"
     }
 
     private func enqueue(_ change: @escaping @MainActor () async -> Void) {

@@ -86,7 +86,7 @@ public struct TimerEngine {
     /// How much Extend adds when no amount is given, in minutes.
     public static let defaultExtendMinutes = 15
 
-    private let context: ModelContext
+    let context: ModelContext
 
     /// An engine working on the blocks and entries in `context`.
     public init(context: ModelContext) {
@@ -383,7 +383,7 @@ public struct TimerEngine {
 
     /// A running entry in `block`, with the block's workspace and project.
     @discardableResult
-    private func begin(_ kind: TimeEntryKind, in block: TimeBlock, at start: Date) -> TimeEntry {
+    func begin(_ kind: TimeEntryKind, in block: TimeBlock, at start: Date) -> TimeEntry {
         let entry = TimeEntry(workspace: block.workspace, start: start, end: nil, kind: kind, block: block)
         context.insert(entry)
         entry.project = block.project

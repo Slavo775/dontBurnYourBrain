@@ -40,6 +40,9 @@ public enum TimerScenario: String, CaseIterable, Sendable {
     case rhythmShort = "rhythm-short"
     /// As ``rhythmShort``, with a preset that waits for Resume after a break.
     case rhythmWait = "rhythm-wait"
+    /// As ``running``, and the question about 25 minutes away from the Mac
+    /// waits, from 32 to 7 minutes ago. See ``timeAway(at:)``.
+    case away
 
     /// The scenario a launch argument's value names, such as `break` in
     /// `-DontBurnTimerState break`.
@@ -71,7 +74,7 @@ public enum TimerScenario: String, CaseIterable, Sendable {
         }
 
         switch self {
-        case .running:
+        case .running, .away:
             try engine.start(acme, minutes: 120, at: ago(36 * 60))
         case .ending:
             try engine.start(acme, minutes: 60, at: ago(60 * 60 - 207))
@@ -130,5 +133,14 @@ public enum TimerScenario: String, CaseIterable, Sendable {
     public func idleBreak(at now: Date) -> IdleBreak? {
         guard self == .idleBreak else { return nil }
         return IdleBreak(start: now.addingTimeInterval(-150), end: now.addingTimeInterval(750))
+    }
+
+    /// The time away whose question waits in this scenario at `now`, or `nil`.
+    ///
+    /// The question lives in memory, like the break with no block, so
+    /// ``apply(to:now:)`` cannot store it. The app keeps it.
+    public func timeAway(at now: Date) -> TimeAway? {
+        guard self == .away else { return nil }
+        return TimeAway(start: now.addingTimeInterval(-32 * 60), end: now.addingTimeInterval(-7 * 60))
     }
 }

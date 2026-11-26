@@ -22,13 +22,18 @@ struct CompactPanelView: View {
 
 /// The running block or break, its four quick actions and End block, the list
 /// of workspaces to switch to, the break's lengths, or, when nothing runs, the
-/// quick start list and the custom block form. The compact panel's content,
-/// and the expanded panel's left column.
+/// quick start list and the custom block form. A question about time away
+/// waits above the main page. The compact panel's content, and the expanded
+/// panel's left column.
 struct TimerPart: View {
     let countdown: Countdown
     let navigation: PanelNavigation
 
     var body: some View {
+        if navigation.page == .main, let away = countdown.away?.timeAway {
+            // At the top, where he looks first when he opens the panel.
+            AwayQuestionView(away: away, countdown: countdown)
+        }
         if navigation.page == .breakLength {
             BreakLengthList(countdown: countdown, navigation: navigation)
         } else if let panel = countdown.panel {
@@ -274,7 +279,12 @@ extension Countdown {
             // A preview without the scenario still shows the panel, so failing is fine here.
             try? scenario.apply(to: context, now: now)
         }
-        return Countdown(container: container, fixedTime: now, idleBreak: scenario.idleBreak(at: now))
+        return Countdown(
+            container: container,
+            fixedTime: now,
+            idleBreak: scenario.idleBreak(at: now),
+            timeAway: scenario.timeAway(at: now),
+        )
     }
 }
 
@@ -300,6 +310,10 @@ extension Countdown {
 
 #Preview("Planned break") {
     CompactPanelView(countdown: .preview(.rhythmBreak), navigation: PanelNavigation())
+}
+
+#Preview("Time away") {
+    CompactPanelView(countdown: .preview(.away), navigation: PanelNavigation())
 }
 
 #Preview("Break with nothing running") {
