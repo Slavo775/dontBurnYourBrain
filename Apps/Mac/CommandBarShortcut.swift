@@ -36,7 +36,12 @@ final class CommandBarShortcut {
     /// Whether Settings is waiting for new keys. Meanwhile nothing is
     /// registered, so the keys reach Settings even when they are the current ones.
     var isRecording = false {
-        didSet { apply() }
+        // Only on a change, so closing Settings leaves no gap in which another app could take the shortcut.
+        didSet {
+            if isRecording != oldValue {
+                apply()
+            }
+        }
     }
 
     /// What the system refused at the last registration, or `nil`.

@@ -20,6 +20,8 @@ struct CommandBarView: View {
                 TextField("Command", text: $model.text, prompt: Text("Type a workspace or a command"))
                     .textFieldStyle(.plain)
                     .font(.system(size: 20))
+                    // A plain field with a prompt reads only the prompt, so VoiceOver gets a name by hand.
+                    .accessibilityLabel("Command")
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 16)
@@ -144,6 +146,7 @@ private struct ResultRow: View {
         case .onBreak: String(localized: "A break is already running.")
         case .noBlock: String(localized: "No block is running.")
         case .tooLong: String(localized: "A break can't be longer than a day.")
+        case .blockTooLong: String(localized: "A block can't be longer than a day.")
         }
     }
 }

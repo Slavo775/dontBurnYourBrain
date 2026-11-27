@@ -62,9 +62,10 @@ public enum BarCommand: Equatable {
     /// The length is the last word, or the last two as in `1h 30m`, and the
     /// words before it name the workspace. Without a length the whole text
     /// names it. Each workspace takes the first reading that matches it, the
-    /// one with the longest length first.
+    /// one with the longest name first, so `acme 2` starts "Acme 2" at its
+    /// default length, and Acme for 2 minutes.
     private static func starts(_ words: [String], in workspaces: [Workspace]) -> [Self] {
-        let readings: [(name: String, minutes: Int?)] = (0 ... min(2, words.count - 1)).reversed().compactMap { count in
+        let readings: [(name: String, minutes: Int?)] = (0 ... min(2, words.count - 1)).compactMap { count in
             guard count > 0 else { return (words.joined(separator: " "), nil) }
             return length(of: Array(words.suffix(count))).map { (words.dropLast(count).joined(separator: " "), $0) }
         }
@@ -75,11 +76,22 @@ public enum BarCommand: Equatable {
         }
     }
 
-    /// The minutes in one or two typed words, or `nil`. Two plain numbers,
-    /// such as `1 30`, are not one length.
+    /// The minutes in one or two typed words, or `nil`.
+    ///
+    /// Two words are one length only as hours then minutes (`1h 30m`, `1h 30`)
+    /// or as a number then its unit (`90 min`). So `2 1h` and `1 30` are not
+    /// one length, and a name that ends in a number, such as "Acme 2", keeps it.
     private static func length(of words: [String]) -> Int? {
-        guard !words.isEmpty, words.count == 1 || !words.allSatisfy({ Int($0) != nil }) else { return nil }
-        return minutes(in: words.joined())
+        let hours = /\d+h/.asciiOnlyDigits(), minutes = /\d+(?:m|min)?/.asciiOnlyDigits()
+        switch words.count {
+        case 1:
+            return Self.minutes(in: words[0])
+        case 2 where words[0].wholeMatch(of: hours) != nil && words[1].wholeMatch(of: minutes) != nil,
+             2 where Int(words[0]) != nil && ["m", "min"].contains(words[1]):
+            return Self.minutes(in: words.joined())
+        default:
+            return nil
+        }
     }
 
     /// The minutes a typed length names, or `nil` when it names none or zero.
@@ -116,11 +128,16 @@ public enum BarCommand: Equatable {
     /// break length used. The rules are the panel's: a break cannot start
     /// while paused or on a break, a break with nothing running is at most
     /// ``IdleBreak/maximumLength``, and on a break with no block there is
-    /// nothing to pause or end.
+    /// nothing to pause or end. A typed length for a block is at most
+    /// ``IdleBreak/maximumLength`` too.
     public func result(in state: TimerState, dueBreakMinutes: Int?, lastBreakMinutes: Int) -> BarResult {
         switch self {
         case let .start(workspace, minutes):
-            BarResult(.start(workspace, minutes: minutes ?? workspace.defaultBlockMinutes))
+            BarResult(
+                .start(workspace, minutes: minutes ?? workspace.defaultBlockMinutes),
+                // The same day a break with nothing running may last, for a typed length only.
+                refusal: minutes.map { TimeInterval($0) * 60 > IdleBreak.maximumLength } == true ? .blockTooLong : nil,
+            )
         case .pause: Self.pause(in: state)
         case .resume: Self.resume(in: state)
         case let .takeBreak(minutes?): Self.startBreak(minutes: minutes, in: state)
@@ -210,6 +227,8 @@ public enum BarRefusal: Equatable, Sendable {
     case noBlock
     /// A break with nothing running would be longer than ``IdleBreak/maximumLength``.
     case tooLong
+    /// A block of the typed length would be longer than ``IdleBreak/maximumLength``, a day.
+    case blockTooLong
 }
 
 /// One row of the command bar: an action and, when it cannot be taken, why.
