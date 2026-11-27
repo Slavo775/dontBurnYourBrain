@@ -232,6 +232,9 @@
     "Another file stands at this path since the install, so another app may have written it." : {
 
     },
+    "Apps use ⌘ with this key. Add ⌃ or ⌥" : {
+
+    },
     "Archive" : {
 
     },

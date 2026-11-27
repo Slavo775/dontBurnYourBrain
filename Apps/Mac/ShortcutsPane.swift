@@ -32,18 +32,30 @@ struct ShortcutsPane: View {
 }
 
 /// A button that shows the shortcut. After a click it takes the next keys
-/// pressed as the new shortcut, or Escape to keep the old one. Keys without
-/// ⌘, ⌃ or ⌥ are refused.
+/// pressed in its own window as the new shortcut, or Escape to keep the old
+/// one. Keys without ⌘, ⌃ or ⌥, and apps' ⌘ commands, are refused with their
+/// reason. Recording stops when the window is no longer the key window.
 private struct ShortcutRecorder: View {
     let shortcut: CommandBarShortcut
     @State private var monitor: Any?
-    @State private var isRefused = false
+    @State private var refusal: Refusal?
+    @Environment(\.controlActiveState) private var activeState
+
+    private enum Refusal {
+        case noModifier, appCommand
+    }
 
     var body: some View {
         HStack {
-            if isRefused {
+            switch refusal {
+            case .noModifier:
                 Text("Use ⌘, ⌃ or ⌥ with the key")
                     .foregroundStyle(.secondary)
+            case .appCommand:
+                Text("Apps use ⌘ with this key. Add ⌃ or ⌥")
+                    .foregroundStyle(.secondary)
+            case nil:
+                EmptyView()
             }
             let shown = shortcut.isRecording ? String(localized: "Type the shortcut") : shortcut.shortcut.displayName
             Button {
@@ -60,17 +72,30 @@ private struct ShortcutRecorder: View {
             .accessibilityValue(shown)
         }
         .onDisappear { stop() }
+        // Closing the window also takes its key state first.
+        .onChange(of: activeState) {
+            if activeState != .key {
+                stop()
+            }
+        }
     }
 
     private func start() {
-        isRefused = false
+        refusal = nil
+        // The button was just clicked, so its window is the key window.
+        let window = NSApp.keyWindow?.windowNumber
         shortcut.isRecording = true
         // Only this app's own keys, so no permission is needed.
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             let keyCode = Int(event.keyCode), flags = event.modifierFlags
-            MainActor.assumeIsolated { record(keyCode: keyCode, flags: flags) }
-            // Every key goes to the recorder while it waits.
-            return nil
+            let isTaken = MainActor.assumeIsolated {
+                // Keys go to the key window, so only keys while its own window is key are the recorder's.
+                guard window != nil, NSApp.keyWindow?.windowNumber == window else { return false }
+                record(keyCode: keyCode, flags: flags)
+                return true
+            }
+            // Every key in the recorder's window goes to it while it waits.
+            return isTaken ? nil : event
         }
     }
 
@@ -85,15 +110,16 @@ private struct ShortcutRecorder: View {
     private func record(keyCode: Int, flags: NSEvent.ModifierFlags) {
         let modifiers = GlobalShortcut.modifiers(of: flags)
         if keyCode == 53, modifiers.isEmpty {
-            isRefused = false
+            refusal = nil
             stop()
             return
         }
         guard let new = GlobalShortcut(keyCode: keyCode, modifiers: modifiers) else {
-            isRefused = true
+            let isAppCommand = GlobalShortcut.isAppCommand(keyCode: keyCode, modifiers: modifiers)
+            refusal = isAppCommand ? .appCommand : .noModifier
             return
         }
-        isRefused = false
+        refusal = nil
         shortcut.shortcut = new
         stop()
     }

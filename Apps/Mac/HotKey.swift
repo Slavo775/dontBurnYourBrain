@@ -72,7 +72,13 @@ final class CarbonHotKey: HotKeyRegistering {
         }
         hotKey = reference
         self.onPress = onPress
-        installHandler()
+        // A shortcut that registered but would never open the bar is refused, so Settings shows it.
+        let handlerStatus = installHandler()
+        guard handlerStatus == noErr else {
+            unregister()
+            log.error("Dropped the shortcut \(name, privacy: .public): no press handler, status \(handlerStatus)")
+            throw .notAllowed
+        }
         log.info("Registered the command bar's shortcut \(name, privacy: .public)")
     }
 
@@ -88,18 +94,16 @@ final class CarbonHotKey: HotKeyRegistering {
         log.info("Unregistered the command bar's shortcut")
     }
 
-    private func installHandler() {
+    /// Installs the handler for presses and returns Carbon's status.
+    private func installHandler() -> OSStatus {
         var type = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
-        let status = InstallEventHandler(GetApplicationEventTarget(), { _, _, userData in
+        return InstallEventHandler(GetApplicationEventTarget(), { _, _, userData in
             guard let userData else { return OSStatus(eventNotHandledErr) }
             let hotKey = Unmanaged<CarbonHotKey>.fromOpaque(userData).takeUnretainedValue()
             // Carbon calls the application target's handlers on the main thread.
             MainActor.assumeIsolated { hotKey.onPress?() }
             return noErr
         }, 1, &type, Unmanaged.passUnretained(self).toOpaque(), &handler)
-        if status != noErr {
-            log.error("The shortcut's press handler could not be installed: status \(status)")
-        }
     }
 
     /// Carbon's modifier mask for `modifiers`.

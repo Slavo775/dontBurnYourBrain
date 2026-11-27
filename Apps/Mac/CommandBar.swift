@@ -163,8 +163,12 @@ final class CommandBarController: NSObject, NSWindowDelegate {
     /// Enter takes it. With the field empty, 1 to 3 start the first three
     /// workspaces at once. Every other key types. Returns whether the key was used.
     ///
-    /// A held key acts once, as in the panel.
+    /// A held key acts once, as in the panel. While an input method is still
+    /// composing, every key is its own.
     private func handleKey(_ event: NSEvent) -> Bool {
+        if (panel.firstResponder as? NSTextView)?.hasMarkedText() == true {
+            return false
+        }
         switch event.keyCode {
         case 53:
             close()
