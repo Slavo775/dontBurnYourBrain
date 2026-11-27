@@ -4,8 +4,11 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
+# Set once this script has quit the running app. Nothing after that starts it
+# again until the new app is opened, so each fail from then on says so.
+quit_note=""
 fail() {
-    echo "install-release: $*" >&2
+    echo "install-release: $*${quit_note:+ $quit_note}" >&2
     exit 1
 }
 
@@ -40,6 +43,9 @@ derived=$(mktemp -d "${TMPDIR:-/tmp}/dontburn-release.XXXXXX")
 staged=""
 partial=""
 cleanup() {
+    # A second signal, such as one sent to the whole process group, would cut
+    # the cleanup short and leave an unfinished backup under a finished name.
+    trap '' INT TERM HUP
     case "$derived" in
     */dontburn-release.??????) rm -rf "$derived" ;;
     esac
@@ -93,6 +99,7 @@ if [ -n "$(lsappinfo find bundleid="$bundle_id")" ]; then
         sleep 0.5
     done
     [ -z "$(lsappinfo find bundleid="$bundle_id")" ] || fail "$name did not quit. Quit it yourself and run this again."
+    quit_note="$name is not running: start it yourself."
 fi
 
 # The new app may migrate the store on its first start, so the store is copied
