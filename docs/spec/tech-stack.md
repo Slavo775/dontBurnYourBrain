@@ -28,7 +28,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 
 **Shared package**
 
-- **DontBurnCore**: Data model, timer engine, rounding rules, week and month totals (`HistoryRange`, `RangeTotals`), splitting an entry, the CSV export (`EntryExport`), session states from hook events, the hook installer, the issue tracker protocol and one adapter per tracker. Pure Swift, fully unit tested.
+- **DontBurnCore**: Data model, timer engine, rounding rules, week and month totals (`HistoryRange`, `RangeTotals`), splitting an entry, the CSV export (`EntryExport`), what the command bar reads from typed text (`BarCommand`) and the keys a global shortcut may use (`GlobalShortcut`), session states from hook events, the hook installer, the issue tracker protocol and one adapter per tracker. Pure Swift, fully unit tested.
 
 **Mac-only services**
 
@@ -36,6 +36,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 - **HookSocket**: The hook channel, a Unix datagram socket, `Hook.socket`, in the folder named after the bundle identifier, with mode 0600. It refuses a message over 64 KB or of the wrong shape. A socket left behind by a crash or a `kill` is replaced at the next launch, and quitting removes it. A socket another running copy listens on is left alone, and the second copy runs without a channel. So does a copy whose socket path is longer than the 103 bytes a socket address holds. Both cases are logged
 - **HookSetup**: Finds the Claude Code profiles for Settings, Sessions, and installs or removes the hook through `HookInstaller` in `DontBurnCore`. Each install's record and the settings file's backup go to `HookInstalls/` in the folder named after the bundle identifier, with mode 0600. The profile folders added by hand go to the defaults as `ClaudeProfileFolders`. No profile is read until the tab shows
 - **AwayWatcher**: Notices time away from the Mac. It reads how long the Mac has had no input through `IdleTimeReading`, with `CGEventSource.secondsSinceLastEventType` and no permission, or the Dev build's stand-in, and takes sleep and wake from `NSWorkspace`. `AwayQuestion` keeps the waiting question in memory. The rule for each answer is `TimeAway` in `DontBurnCore`
+- **HotKey**: The command bar's global shortcut, a Carbon hot key (`RegisterEventHotKey`) behind `HotKeyRegistering`, registered exclusively. It needs no permission, because it reads no other key. `CommandBarShortcut` keeps the setting and registers again on a change
 - **TerminalFocus**: One adapter per terminal host
 - **CalendarService**: EventKit
 - **InsightFlowBridge**: Reads the current task per repo from the CLI
@@ -47,7 +48,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 - **SwiftData, local only**: The folders of each project, kept in a second store for this Mac only: `Local.store`, next to `DontBurn.store` in the folder named after the bundle identifier, with its own `LocalSchemaV1` and migration plan. It is never synced, and no relationship crosses the two stores: a folder names its project by the project's identifier
 - **A JSON file, this Mac only**: The agent sessions, with their terminal and tab, in `Sessions.json` next to `Local.store`. Not SwiftData, so it has no schema and no migration. A file that is missing, larger than 1 MiB or broken gives an empty list, because each session comes back with its next event. Card 47 built its loading and saving in `SessionStore`. Since card 48 the app loads it at launch and saves it after each hook event, and drops sessions whose `claude` process is gone. With the sample data the sessions stay in memory
 - **Keychain**: Issue tracker tokens
-- **The app's own defaults, this Mac only**: the alert switches, the last break length, the latest break with nothing running, which is never a time entry, whether the presets the app comes with were added, the Claude Code profile folders added by hand, as `ClaudeProfileFolders`, and whether the app asks about time away and after how many minutes, as `away.ask` and `away.thresholdMinutes`
+- **The app's own defaults, this Mac only**: the alert switches, the last break length, the latest break with nothing running, which is never a time entry, whether the presets the app comes with were added, the Claude Code profile folders added by hand, as `ClaudeProfileFolders`, whether the app asks about time away and after how many minutes, as `away.ask` and `away.thresholdMinutes`, and the command bar's shortcut, as `commandBar.shortcutOn`, `commandBar.keyCode` and `commandBar.modifiers`
 
 **Outside**
 
