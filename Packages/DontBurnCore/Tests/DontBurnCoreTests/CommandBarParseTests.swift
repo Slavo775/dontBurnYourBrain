@@ -108,8 +108,33 @@ func `two words that are not hours then minutes, or a number then its unit, are 
     #expect(try read("acme 2 1h", more: copy) == ["start Acme 2 for 60"])
     #expect(try read("acme 2 25", more: copy) == ["start Acme 2 for 25"])
     #expect(try read("acme 2 1h 30m", more: copy) == ["start Acme 2 for 90"])
-    // Both readings are offered. Which one comes first is not pinned here.
-    #expect(try Set(read("acme 2", more: copy)) == ["start Acme for 2", "start Acme 2"])
+    #expect(try read("acme 2", more: copy) == ["start Acme 2", "start Acme for 2"])
+}
+
+@Test func `the workspaces the whole text names come first, each group in Settings order`() throws {
+    // "Acme 2" and "Acme 25" both begin with all of `acme 2`, and Acme only with `acme`.
+    let copies = [(name: "Acme 2", archived: false), (name: "Acme 25", archived: false)]
+    #expect(try read("acme 2", more: copies) == ["start Acme 2", "start Acme 25", "start Acme for 2"])
+    #expect(try read("acme 2", more: copies.reversed()) == ["start Acme 25", "start Acme 2", "start Acme for 2"])
+    #expect(try read("acme 25", more: copies) == ["start Acme 25", "start Acme for 25", "start Acme 2 for 25"])
+
+    // Earlier in Settings order than Acme, and still first either way.
+    let desk = try Desk()
+    let copy = Workspace(name: "Acme 2", color: .teal, sortOrder: 0)
+    desk.context.insert(copy)
+    for order in [[copy, desk.acme], [desk.acme, copy]] {
+        #expect(BarCommand.commands(for: "acme 2", in: order).map(phrase) == ["start Acme 2", "start Acme for 2"])
+    }
+
+    // A name that only matches with a length keeps its place among the other starts.
+    #expect(try read("ac 2h", more: copies) == ["start Acme for 120", "start Acme 2 for 120", "start Acme 25 for 120"])
+    #expect(try read("ac", more: copies) == ["start Acme", "start Acme 2", "start Acme 25"])
+}
+
+@Test func `the timer's commands still come before a workspace the whole text names`() throws {
+    #expect(try read("p") == ["pause", "start Personal"])
+    #expect(try read("p", more: [("P", false)]) == ["pause", "start Personal", "start P"])
+    #expect(try read("e", more: [("E", false)]) == ["end", "start E"])
 }
 
 @Test func `an archived workspace never matches, even by its full name`() throws {
