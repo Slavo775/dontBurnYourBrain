@@ -38,12 +38,20 @@ fi
 # daily app stays behind where LaunchServices could open it on real data.
 derived=$(mktemp -d "${TMPDIR:-/tmp}/dontburn-release.XXXXXX")
 staged=""
+partial=""
 cleanup() {
     case "$derived" in
     */dontburn-release.??????) rm -rf "$derived" ;;
     esac
     if [ -n "$staged" ] && [ -e "$staged" ]; then
         rm -rf "$staged"
+    fi
+    # Only a backup folder this run made and did not finish, and in it only the
+    # store files it copied, so the store's own folder and an earlier backup are
+    # never touched. rmdir refuses a folder that still holds anything else.
+    if [ -n "$partial" ]; then
+        rm -f "$partial"/DontBurn.store* "$partial"/Local.store* || true
+        rmdir "$partial" || echo "install-release: could not remove the unfinished backup $partial. Remove it yourself." >&2
     fi
 }
 trap cleanup EXIT
@@ -87,6 +95,32 @@ if [ -n "$(lsappinfo find bundleid="$bundle_id")" ]; then
     [ -z "$(lsappinfo find bundleid="$bundle_id")" ] || fail "$name did not quit. Quit it yourself and run this again."
 fi
 
+# The new app may migrate the store on its first start, so the store is copied
+# aside first, while no app has it open, and a failed copy installs nothing.
+# Only the store files: the hook's socket and the rest of the folder are not
+# the data a migration changes. The store itself is only ever read by cp.
+data="$HOME/Library/Application Support/$bundle_id"
+stores=()
+for file in "$data"/DontBurn.store* "$data"/Local.store*; do
+    if [ -f "$file" ]; then
+        stores+=("$file")
+    fi
+done
+backup=""
+if [ ${#stores[@]} -eq 0 ]; then
+    echo "==> No store to back up yet"
+else
+    backup="$HOME/Library/Application Support/$bundle_id.backup-$(date +%Y-%m-%d-%H%M%S)"
+    echo "==> Backing up the store to $backup"
+    # Without -p, mkdir refuses a folder that is there already, so a second run
+    # in the same second never writes into an earlier backup.
+    mkdir "$backup" || fail "could not make the backup folder $backup. Nothing was installed."
+    partial=$backup
+    cp -p "${stores[@]}" "$backup/" ||
+        fail "could not copy the store to $backup. Nothing was installed, and the store was not changed."
+    partial=""
+fi
+
 # Copied next to the old app first, and the old app moved aside rather than
 # deleted, so a failure at any step leaves one working app in place. The EXIT
 # trap only ever removes the staged copy, never the old or the installed app.
@@ -124,4 +158,8 @@ open "$target"
 echo "Installed $name $(info CFBundleShortVersionString "$target") ($(info CFBundleVersion "$target"))."
 if [ -z "$team" ]; then
     echo "Signed to run locally: no DEVELOPMENT_TEAM in Local.xcconfig. macOS may ask for permissions again after each update."
+fi
+if [ -n "$backup" ]; then
+    echo "The store from before this update is backed up in $backup."
+    echo "Nothing removes backups for you: delete that folder yourself once you no longer need it."
 fi
