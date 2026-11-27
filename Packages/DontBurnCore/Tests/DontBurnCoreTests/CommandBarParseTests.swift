@@ -66,7 +66,8 @@ func `a length too large for an Int reads as none and does not crash`(text: Stri
     ("ac 90", "start Acme for 90"), ("ac 90m", "start Acme for 90"), ("ac 90 min", "start Acme for 90"),
     ("ac 2h", "start Acme for 120"), ("AC 2H", "start Acme for 120"), ("ac 1h30", "start Acme for 90"),
     ("ac 1h30m", "start Acme for 90"), ("ac 1h 30m", "start Acme for 90"), ("ac 1:30", "start Acme for 90"),
-    ("ac 0:30", "start Acme for 30"),
+    ("ac 0:30", "start Acme for 30"), ("ac 1h 30", "start Acme for 90"), ("ac 1h 30min", "start Acme for 90"),
+    ("ac 90 m", "start Acme for 90"), ("AC 1H 30M", "start Acme for 90"), ("ac 24h", "start Acme for 1440"),
 ])
 func `every form of a length works after a workspace's name`(text: String, expected: String) throws {
     #expect(try read(text) == [expected])
@@ -93,6 +94,22 @@ func `a workspace matches by the beginning of its name without regard to case`(
 @Test(arguments: ["xyz", "xyz 2h", "acmex", "acme corp", "cme", "acme 1 30", "ac 2x"])
 func `a name no workspace begins with gives nothing`(text: String) throws {
     #expect(try read(text).isEmpty)
+}
+
+@Test(arguments: [
+    "ac 1 30", "ac 1 30m", "ac 2 30m", "ac 1h 1h", "ac 30m 1h", "ac 30m 30m", "ac 1:30 30", "ac 90 min 5",
+])
+func `two words that are not hours then minutes, or a number then its unit, are not one length`(text: String) throws {
+    #expect(try read(text).isEmpty)
+}
+
+@Test func `a workspace whose name ends in a number keeps that number in its name`() throws {
+    let copy = [(name: "Acme 2", archived: false)]
+    #expect(try read("acme 2 1h", more: copy) == ["start Acme 2 for 60"])
+    #expect(try read("acme 2 25", more: copy) == ["start Acme 2 for 25"])
+    #expect(try read("acme 2 1h 30m", more: copy) == ["start Acme 2 for 90"])
+    // Both readings are offered. Which one comes first is not pinned here.
+    #expect(try Set(read("acme 2", more: copy)) == ["start Acme for 2", "start Acme 2"])
 }
 
 @Test func `an archived workspace never matches, even by its full name`() throws {
@@ -145,6 +162,8 @@ func `a name no workspace begins with gives nothing`(text: String) throws {
     ("br 1h", ["break 60"]),
     ("break 1:30", ["break 90"]),
     ("break 1h 30m", ["break 90"]),
+    ("break 1h 30", ["break 90"]),
+    ("break 90 min", ["break 90"]),
     ("+", ["+15"]),
     ("+15", ["+15"]),
     ("+ 15", ["+15"]),
@@ -158,7 +177,7 @@ func `a command matches by the beginning of its word, ahead of any workspace`(
 
 @Test(arguments: [
     "paused", "ends", "end 5", "pause 5", "resume 5", "breaks", "break 0", "break x", "break 1 30",
-    "+30", "+0", "+x", "++15", "x",
+    "break 2 1h", "break 1h 1h", "+30", "+0", "+x", "++15", "x",
 ])
 func `a command with the wrong word or a length it does not take gives nothing`(text: String) throws {
     #expect(try read(text).isEmpty)

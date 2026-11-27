@@ -95,13 +95,27 @@ private func expect(
     #expect(outcome(.takeBreak(minutes: 1441), in: .paused) == BarResult(.startBreak(minutes: 1441), refusal: .paused))
 }
 
-@Test func `a start is never refused and takes the workspace's default length when none is typed`() throws {
+@Test func `a start up to a day is never refused and takes the workspace's default length when none is typed`() throws {
     let desk = try Desk()
     let (acme, globex, personal) = (desk.acme, desk.globex, desk.personal)
     for state in TimerState.allCases {
         #expect(outcome(.start(acme, minutes: nil), in: state) == BarResult(.start(acme, minutes: 60)))
         #expect(outcome(.start(personal, minutes: nil), in: state) == BarResult(.start(personal, minutes: 25)))
         #expect(outcome(.start(globex, minutes: 90), in: state) == BarResult(.start(globex, minutes: 90)))
+    }
+}
+
+@Test func `a typed start longer than a day is refused, and a default length is never refused`() throws {
+    let desk = try Desk()
+    let acme = desk.acme
+    acme.defaultBlockMinutes = 2000
+    for state in TimerState.allCases {
+        #expect(outcome(.start(acme, minutes: 1440), in: state) == BarResult(.start(acme, minutes: 1440)))
+        #expect(
+            outcome(.start(acme, minutes: 1441), in: state)
+                == BarResult(.start(acme, minutes: 1441), refusal: .blockTooLong),
+        )
+        #expect(outcome(.start(acme, minutes: nil), in: state) == BarResult(.start(acme, minutes: 2000)))
     }
 }
 
@@ -119,4 +133,7 @@ private func expect(
     #expect(results("e", .idle) == [BarResult(.endBlock, refusal: .nothingRunning)])
     #expect(results("+15", .idleBreak) == [BarResult(.extend)])
     #expect(results("", .working).isEmpty)
+    #expect(results("ac 24h", .idle) == [BarResult(.start(desk.acme, minutes: 1440))])
+    #expect(results("ac 1441", .idle) == [BarResult(.start(desk.acme, minutes: 1441), refusal: .blockTooLong)])
+    #expect(results("ac 9999999999999999h", .working).map(\.refusal) == [.blockTooLong])
 }
