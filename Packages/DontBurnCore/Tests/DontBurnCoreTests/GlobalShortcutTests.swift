@@ -44,7 +44,7 @@ func `a modifier key itself makes no shortcut`(keyCode: Int) {
 
 @Test(arguments: [0, 53, 127])
 func `key codes from 0 to 127 outside the modifier keys make a shortcut`(keyCode: Int) {
-    #expect(GlobalShortcut(keyCode: keyCode, modifiers: .command)?.keyCode == keyCode)
+    #expect(GlobalShortcut(keyCode: keyCode, modifiers: .control)?.keyCode == keyCode)
 }
 
 @Test(arguments: [-1, 128, 255, Int.max, Int.min])
@@ -67,7 +67,7 @@ func `an unknown modifier bit makes no shortcut`(rawValue: Int) {
     (111, 0), (111, 4), (111, 16), (111, 2 | 16), (56, 2), (128, 2), (-1, 2),
 ])
 func `a remembered shortcut that is missing or makes none falls back`(keyCode: Int?, modifiers: Int?) throws {
-    let fallback = try #require(GlobalShortcut(keyCode: 0, modifiers: .command))
+    let fallback = try #require(GlobalShortcut(keyCode: f12, modifiers: [.control, .option, .command]))
     #expect(GlobalShortcut.remembered(keyCode: keyCode, modifiers: modifiers, fallback: fallback) == fallback)
     #expect(GlobalShortcut.remembered(keyCode: keyCode, modifiers: modifiers, fallback: .commandBar) == .commandBar)
 }
