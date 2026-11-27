@@ -23,7 +23,7 @@ A rhythm of focus and breaks, a question about time away from the Mac, history b
 - **Shortcuts tab** in Settings: change the command bar's shortcut or switch it off. It says when macOS or another app already uses the keys.
 - **Start at login**, a switch in Settings, General. It adds the app to the login items that System Settings, Login Items lists.
 - **Projects** in Settings, Workspaces: a Workspace | Projects switch, and per project a name, a "Track time" switch and its folders on this Mac. Folder paths never leave this Mac. Nothing gives a block or an entry a project yet. Projects are there for the session list.
-- **Sessions tab** in Settings: it lists your Claude Code profiles, installs the hook into a profile's settings file after showing the exact lines that change, and removes it again so that the file is byte for byte what it was. With the hook installed, `dontburn-hook` reports each session's events to the running app.
+- **Sessions tab** in Settings: it lists your Claude Code profiles, installs the hook into a profile's settings file after showing the exact lines that change, and removes exactly its own lines again. When nothing else changed the file in between, it is byte for byte what it was. Otherwise the app says what differs and keeps the backup. With the hook installed, `dontburn-hook` reports each session's events to the running app.
 - **VoiceOver opens the right-click menu** with the menu bar item's "Show menu" action.
 
 ### Changed
