@@ -80,9 +80,10 @@ The maintainer runs `./scripts/install-release` when a version is tagged, or whe
 3. Runs `xcodegen generate` and builds Release into a temporary folder, removed when the script ends, so no second copy of the daily app is left in the checkout.
 4. Signs with the Personal Team when the git-ignored `Local.xcconfig` in the repository root has a line `DEVELOPMENT_TEAM = <team ID>`. Without it, the app is signed to run locally, and the script warns that macOS may ask for permissions again after each update. The Personal Team avoids that.
 5. Refuses to replace an app in `/Applications` that has another bundle identifier, or none.
-6. Quits the running Release app politely, by its bundle identifier, and waits up to 10 seconds. It never forces. The first time, macOS asks to let the terminal control the app (Automation). Denied, the script stops, changes nothing, and points to System Settings → Privacy & Security → Automation.
-7. Swaps the app safely: the new app is copied to `/Applications/.DontBurn.app.new`, the old one is moved to `.DontBurn.app.old`, and the new one is moved into place. If that move fails, the old app is moved back. Then `.old` is removed, with only a warning if that fails.
-8. Opens the app and prints its name, version and build.
+6. Quits the running Release app politely, by its bundle identifier, and waits up to 10 seconds. It never forces. The first time, macOS asks to let the terminal control the app (Automation). Denied, the script stops, changes nothing, and points to System Settings → Privacy & Security → Automation. Once it has quit the app, any later stop before the new app opens ends with "Don't Burn Your Brain is not running: start it yourself."
+7. Backs up the store before the new app goes in, because the new app may migrate it on its first start. It copies every `DontBurn.store*` and `Local.store*` file of `~/Library/Application Support/<bundle identifier>/`, the `-wal` and `-shm` files included, into a new folder beside it: `~/Library/Application Support/<bundle identifier>.backup-YYYY-MM-DD-HHMMSS`, such as `io.github.slavo775.dontburn.backup-2026-12-01-093000`. It only copies, and never opens the store. `Hook.socket`, `Sessions.json` and `HookInstalls/` are not copied. Without a store file it says "No store to back up yet" and goes on. If a folder of that name exists already, or a copy fails, it stops before anything is installed and removes only the unfinished folder it made. It never removes a backup: the maintainer deletes old ones himself.
+8. Swaps the app safely: the new app is copied to `/Applications/.DontBurn.app.new`, the old one is moved to `.DontBurn.app.old`, and the new one is moved into place. If that move fails, the old app is moved back. Then `.old` is removed, with only a warning if that fails.
+9. Opens the app and prints its name, version and build, and where the backup is.
 
 **From phase 8:**
 
@@ -112,7 +113,7 @@ The Release master runs it after the maintainer says "release vX.Y.Z":
 4. From phase 6: if any merged card was marked "schema change", the maintainer confirms the CloudKit schema is deployed to Production.
 5. An annotated tag `vX.Y.Z` on the merged commit, pushed.
 6. A pull request that moves `MARKETING_VERSION` on `main` to the next version.
-7. The maintainer installs it: `./scripts/install-release` until phase 8, then the release workflow and TestFlight.
+7. The maintainer installs it: `./scripts/install-release` until phase 8, which backs up the store first ([On the Mac](#on-the-mac)), then the release workflow and TestFlight.
 8. A comment on each card of the version with the version number.
 
 ## Rules for agents
