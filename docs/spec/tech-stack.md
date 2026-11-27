@@ -28,7 +28,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 
 **Shared package**
 
-- **DontBurnCore**: Data model, timer engine, rounding rules, week and month totals (`HistoryRange`, `RangeTotals`), splitting an entry, the CSV export (`EntryExport`), what the command bar reads from typed text (`BarCommand`) and the keys a global shortcut may use (`GlobalShortcut`), session states from hook events, the hook installer, the issue tracker protocol and one adapter per tracker. Pure Swift, fully unit tested.
+- **DontBurnCore**: Data model, timer engine, rounding rules, week and month totals (`HistoryRange`, `RangeTotals`), splitting an entry, the CSV export (`EntryExport`), what the command bar reads from typed text (`BarCommand`), the keys a global shortcut may use (`GlobalShortcut`) and what the Start at login switch shows (`LoginItemSwitch`), session states from hook events, the hook installer, the issue tracker protocol and one adapter per tracker. Pure Swift, fully unit tested.
 
 **Mac-only services**
 
@@ -37,6 +37,7 @@ Part of the product spec. First written as draft 13 of the product spec, 15 Nove
 - **HookSetup**: Finds the Claude Code profiles for Settings, Sessions, and installs or removes the hook through `HookInstaller` in `DontBurnCore`. Each install's record and the settings file's backup go to `HookInstalls/` in the folder named after the bundle identifier, with mode 0600. The profile folders added by hand go to the defaults as `ClaudeProfileFolders`. No profile is read until the tab shows
 - **AwayWatcher**: Notices time away from the Mac. It reads how long the Mac has had no input through `IdleTimeReading`, with `CGEventSource.secondsSinceLastEventType` and no permission, or the Dev build's stand-in, and takes sleep and wake from `NSWorkspace`. `AwayQuestion` keeps the waiting question in memory. The rule for each answer is `TimeAway` in `DontBurnCore`
 - **HotKey**: The command bar's global shortcut, a Carbon hot key (`RegisterEventHotKey`) behind `HotKeyRegistering`, registered exclusively. It needs no permission, because it reads no other key. `CommandBarShortcut` keeps the setting and registers again on a change
+- **LoginItem**: The Start at login switch, through `SMAppService.mainApp` behind `LoginItemRegistering`. The system keeps whether the app starts at login, so the app stores nothing and reads the status again each time Settings shows it. The Dev build never registers, and its stand-ins for checks keep the status in memory
 - **TerminalFocus**: One adapter per terminal host
 - **CalendarService**: EventKit
 - **InsightFlowBridge**: Reads the current task per repo from the CLI

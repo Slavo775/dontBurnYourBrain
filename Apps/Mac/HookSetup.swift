@@ -63,7 +63,7 @@ final class HookSetup {
     /// The setup of this build, with `standIn` from the Dev build's
     /// `-DontBurnStandInHome` launch argument.
     static func current(standIn: String?) -> HookSetup {
-        let isDev = isDevBuild
+        let isDev = BuildInfo.isDevBuild
         let reach = ProfileReach(
             isDev: isDev,
             standIn: standIn,
@@ -76,19 +76,6 @@ final class HookSetup {
             installer: makeInstaller(isDev: isDev, allowedFolder: reach.allowedFolder),
             defaults: .standard,
         )
-    }
-
-    /// Whether this is the Dev build: the Debug configuration, or a build that says it is Dev.
-    ///
-    /// A build whose variant is unknown counts as Release elsewhere. Here it
-    /// counts as Dev when it was built for Debug, so no Debug build ever
-    /// writes into a real profile.
-    private static var isDevBuild: Bool {
-        #if DEBUG
-            true
-        #else
-            BuildInfo.current.variant == .dev
-        #endif
     }
 
     private static func makeInstaller(isDev: Bool, allowedFolder: String?) -> Result<HookInstaller, HookInstallError> {
