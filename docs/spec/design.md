@@ -436,7 +436,7 @@ The order of the list is the order of the quick start presets and their number k
 
 #### What phase 1 builds
 
-The window has a fixed size of 760 × 470 pt and two tabs: General, with the alert switches described under [Sounds and notifications](#sounds-and-notifications) and the version at the bottom, and Workspaces. Card 59 added the question about time away to General ([its section](#the-question-about-time-away)). Phase 2 added the [Rhythm](#rhythm) tab, card 49 the [Sessions](#sessions) tab after it, and card 61 the [Shortcuts](#shortcuts-1) tab after Sessions. The other tabs and rows arrive with their phases.
+The window has a fixed size of 760 × 470 pt and two tabs: General, with the alert switches described under [Sounds and notifications](#sounds-and-notifications) and the version at the bottom, and Workspaces. Card 59 added the question about time away to General ([its section](#the-question-about-time-away)), and card 62 the [Start at login](#start-at-login) switch. Phase 2 added the [Rhythm](#rhythm) tab, card 49 the [Sessions](#sessions) tab after it, and card 61 the [Shortcuts](#shortcuts-1) tab after Sessions. The other tabs and rows arrive with their phases.
 
 - **The list** is 220 pt wide, with + and − below it. Rows are reordered by dragging.
 - **The form** holds the name, the six swatches, a "Default block" pop-up and "Shown on key N". From the tenth workspace on, it says "No number key".
@@ -550,6 +550,21 @@ How it works:
 
 The prototype names this tab but does not draw it.
 
+### Start at login
+
+Built on card 62. A switch in Settings → General makes the app start when the user logs in. It is off by default, and nothing is registered until the user switches it on. The prototype does not draw it.
+
+- **Where.** A section with no header after "When you're away from the Mac", before the note about notifications and the version. It holds one switch, "Start at login", which VoiceOver reads by that name. The form scrolls to reach it.
+- **How.** The switch registers the app itself with the system's service for login items, `SMAppService.mainApp`, by its bundle identifier. There is no helper app and no hand-written launch agent. System Settings → Login Items then lists the app under its name, and it can be switched off there too.
+- **The real state.** The switch is on only while the system says the app starts at login. The status is read from the system when the switch appears and whenever the app becomes active, such as back from System Settings. Only flipping the switch registers or unregisters, and then the status is read again. Nothing is kept in the app's defaults.
+- **Switched off in System Settings.** The app never switches it back on. The switch shows off, with "Starting at login is off for <app name>. Allow it in System Settings → Login Items." and an Open button, which only opens the Login Items pane. This note shows even after a refused change, because it is the reason.
+- **A refused change.** When macOS refuses, a line says "macOS refused the change: <the system's reason>", and the switch shows what the system reads, so a refused registration leaves it off. The log keeps only the error's domain and code.
+- **A login item the system doesn't know**, as for a build it never registered, shows off with no note.
+- **Started at login**, the app opens no window and no panel, as at any launch. It never starts a block.
+- **The log** has one line per read, "The login item reads <status>", in the `login` category.
+- **The Dev build** leaves the section out, and never registers or unregisters, so the two builds never both start at login. A Debug build counts as Dev, even when its variant is missing. For a check, `-DontBurnLoginItem` shows the section ([dev-setup.md](dev-setup.md#launch-arguments)). In its `system` mode the switch shows the Dev app's own status and is disabled.
+- What the switch shows lives in `LoginItemSwitch`, and the check modes in `LoginItemCheck`, both in `LoginItem.swift` in `DontBurnCore`. The system's service, its stand-ins and the section are in `Apps/Mac/LoginItem.swift`.
+
 ## Sounds and notifications
 
 - A soft chime when a focus interval ends
@@ -589,7 +604,7 @@ How it works:
 
 **Permission.** It is asked at the first start of a block or a break, while macOS has not asked yet, and never at launch. While the system prompt is open, the compact panel shows one line under the actions. After a refusal only the note in Settings → General remains. When it is allowed later in System Settings, the app picks it up at the next change of plan.
 
-**Settings → General** is a grouped form with four alert sections: When a block ends, When a break ends, When a focus interval ends, and 5 minutes before a block ends. Each has a Notification switch and a "Sound (Name)" switch. A fifth section, "When you're away from the Mac", follows them since card 59 ([its switches](#the-question-about-time-away)). The switches are stored in the defaults as `alert.<kind>.notification` and `alert.<kind>.sound`, such as `alert.focusEnd.notification`. When notifications are refused, a note says "Notifications are off for <app name>. Allow them in System Settings → Notifications." with an Open button, which only opens that pane. The version is the last row. The form is taller than the window and scrolls. The three sections that are on by default show without scrolling.
+**Settings → General** is a grouped form with four alert sections: When a block ends, When a break ends, When a focus interval ends, and 5 minutes before a block ends. Each has a Notification switch and a "Sound (Name)" switch. A fifth section, "When you're away from the Mac", follows them since card 59 ([its switches](#the-question-about-time-away)), and "Start at login" follows that since card 62 ([its switch](#start-at-login)). The switches are stored in the defaults as `alert.<kind>.notification` and `alert.<kind>.sound`, such as `alert.focusEnd.notification`. When notifications are refused, a note says "Notifications are off for <app name>. Allow them in System Settings → Notifications." with an Open button, which only opens that pane. The version is the last row. The form is taller than the window and scrolls. The three sections that are on by default show without scrolling.
 
 **Without notifications** the timer and the sounds work, nothing is scheduled, and Settings shows the way back.
 

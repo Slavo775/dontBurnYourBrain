@@ -35,6 +35,7 @@ The app reads these arguments from the command line, so a check or a screenshot 
 | `-DontBurnAwayMinutes 1` | The threshold for time away, in minutes, for that launch. It is not stored, and Settings shows it. Only ASCII digits, at most six of them, from 1 to 60. Anything else is ignored. |
 | `-DontBurnSimulatedIdle 90` | Replaces the real idle reading: input comes once every that many seconds from launch, so each cycle is a time away that ends in a return. It repeats, so a second cycle before the answer widens the question. Use a cycle longer than the threshold, such as 90 with `-DontBurnAwayMinutes 1`. Only ASCII digits, at most six of them, from 1 to 86400. Anything else is ignored. It cannot simulate a sleep. With `-DontBurnFixedTime` the clock stands still, and no time away is noticed at all. |
 | `-DontBurnExportFolder <folder>` | The folder History's save panel opens in for Export…. The value must be an absolute path of at most 1024 bytes to a folder that exists, or it is ignored. It only sets where the panel opens: nothing is written until Save. |
+| `-DontBurnLoginItem stand-in` | Shows the Start at login switch in Settings → General, which the Dev build otherwise leaves out. Dev never registers with the system either way. Values: `system` (the Dev app's own status, read from the system, with the switch disabled), `stand-in` (a login item in memory that starts off and follows the switch for the life of the app), `refuse` (in memory, and every registration fails with "macOS refused the change: The stand-in refuses every registration."), and `approval` (in memory, already switched off in System Settings, so the note and the Open button show). An unknown value, or one longer than 16 bytes, is ignored, and the section stays hidden. |
 
 ```sh
 open -g DerivedData/Build/Products/Debug/DontBurn.app --args -DontBurnFixedTime 2026-01-15T09:41:30+01:00 -DontBurnAppearance dark -DontBurnSampleData YES
@@ -91,7 +92,7 @@ How light and dark are checked is in "Checking a screen" of [../../rules/testing
 - **Notifications**, for timer and agent alerts. Asked at the first block start, never at launch
 - **Automation**, once per terminal app, to select the right tab in Terminal and iTerm2. The permission belongs to the app that asks, so the Dev and the Release build each ask, because each is its own app. VS Code and Cursor needed none in phase 0, because the app reaches them through LaunchServices and sends them no Apple event
 - **Calendars**, to read meetings (phase 5)
-- **Launch at login**, optional
+- **Start at login** asks nothing. It is a switch in Settings → General, off by default, and once it is on, System Settings → Login Items lists the app by its name
 
 Noticing time away needs no permission: the app reads only how long the Mac has had no input, never the input itself, so no Input Monitoring prompt comes.
 

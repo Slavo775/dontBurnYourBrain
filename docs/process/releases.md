@@ -31,7 +31,7 @@ How the app is versioned, and how a development build and the maintainer's daily
 | Data | Sample data (Acme, Globex, Personal) or throwaway | Real | Real |
 | iCloud environment | Development | Production | Production |
 | Global shortcuts | Off by default, and never on by default in a Debug build | On by default, as set by the user | On, as set by the user |
-| Launch at login | Off by default | Off until the user switches it on | Off until the user switches it on |
+| Launch at login | Never registers. The switch is hidden, and `-DontBurnLoginItem` shows it only for a check | Off until the user switches it on | Off until the user switches it on |
 | Gets updates from | Xcode | `./scripts/install-release`, later Sparkle | Sparkle's beta channel |
 
 Because the identifiers differ, macOS treats Dev and Release as two separate apps: separate data folders, settings, Keychain items, permissions and notifications. Both can sit in the menu bar at the same time.
@@ -47,7 +47,7 @@ Because the identifiers differ, macOS treats Dev and Release as two separate app
 - `project.yml` sets `APP_VARIANT` per configuration: `Dev` for Debug, `Release` for Release.
 - A build phase, "Variant and commit", writes it into the built Info.plist as `DontBurnVariant`. In Dev it also writes `DontBurnCommit`, the short git hash. Release, or a build without git, carries no `DontBurnCommit`.
 - The phase lists the built Info.plist as an input file, so Xcode runs it after it has written that file. Before card 61 an incremental build could write the Info.plist again after the phase, which dropped `DontBurnVariant`, and the Dev build read as Release. Card #70 stays open for that bug's own checks.
-- `BuildInfo` in `DontBurnCore` reads the version, build, variant and commit from the bundle. A missing or unknown variant counts as Release. So the command bar's shortcut does not trust the variant alone: a Debug build never turns it on by default ([design.md](../spec/design.md#shortcuts-1)).
+- `BuildInfo` in `DontBurnCore` reads the version, build, variant and commit from the bundle. A missing or unknown variant counts as Release. So the command bar's shortcut does not trust the variant alone: a Debug build never turns it on by default ([design.md](../spec/design.md#shortcuts-1)). The hook installer and the login item go by `BuildInfo.isDevBuild`, in `Apps/Mac/BuildInfo+Current.swift`, which counts every Debug build as Dev, so no Debug build writes into a real profile or registers a login item ([design.md](../spec/design.md#start-at-login)).
 - `project.yml` names both bundle identifiers once, as `DONTBURN_RELEASE_BUNDLE_IDENTIFIER` and `DONTBURN_DEV_BUNDLE_IDENTIFIER`, which is the Release one plus `.dev`. The app takes one per configuration. The hook tool takes its own, the Release one plus `.hook`, and carries both in its Info.plist as `DontBurnReleaseBundleIdentifier` and `DontBurnDevBundleIdentifier`, so it reaches either build whichever configuration built it.
 
 ### Everything with a name outside the app follows the bundle identifier
@@ -58,7 +58,7 @@ So that Dev and Release never answer each other's messages:
 - the channel the hook tool talks to: `Hook.socket` in the data folder, such as `~/Library/Application Support/io.github.slavo775.dontburn.dev/Hook.socket` for Dev
 - the URL scheme: `dontburn://` for Release, `dontburn-dev://` for Dev
 - Keychain service names, defaults suites and the logging subsystem
-- notification names and anything registered with launchd
+- notification names and anything registered with launchd, such as the login item, which `SMAppService.mainApp` registers for the app itself, by its bundle identifier
 
 The hook tool sends to Release by default. Only two forms name a target:
 
