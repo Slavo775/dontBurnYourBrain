@@ -10,11 +10,64 @@
     "%@ block finished" : {
 
     },
+    "%@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
+    "%@, %@ tracked" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@ tracked"
+          }
+        }
+      }
+    },
+    "%@, %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@."
+          }
+        }
+      }
+    },
     "%@, Dev build" : {
 
     },
     "%@, paused" : {
 
+    },
+    "%@. %@ In all, %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@. %2$@ In all, %3$@."
+          }
+        }
+      }
+    },
+    "%@. Nothing tracked." : {
+
+    },
+    "%@. Work, %@. Breaks, %@. Total, %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@. Work, %2$@. Breaks, %3$@. Total, %4$@."
+          }
+        }
+      }
     },
     "%@–now" : {
 
@@ -206,6 +259,9 @@
     "Blocks that already follow it keep their rhythm." : {
 
     },
+    "Both parts keep the workspace, project, kind and note, and each can then be changed." : {
+
+    },
     "Break" : {
 
     },
@@ -243,6 +299,9 @@
         }
       }
     },
+    "Breaks" : {
+
+    },
     "Cancel" : {
 
     },
@@ -250,6 +309,9 @@
 
     },
     "Choose a project" : {
+
+    },
+    "Choose a time that leaves at least a minute on each side." : {
 
     },
     "Choose a workspace" : {
@@ -321,7 +383,16 @@
     "Entries can't be shown or changed right now." : {
 
     },
+    "Entry" : {
+
+    },
+    "Export…" : {
+
+    },
     "File" : {
+
+    },
+    "First part" : {
 
     },
     "Focus" : {
@@ -337,6 +408,9 @@
 
     },
     "History" : {
+
+    },
+    "Hours" : {
 
     },
     "Indigo" : {
@@ -369,6 +443,9 @@
     "Kind" : {
 
     },
+    "Last week" : {
+
+    },
     "Length" : {
 
     },
@@ -384,6 +461,9 @@
     "Minutes without input before it asks" : {
 
     },
+    "Month" : {
+
+    },
     "Name" : {
 
     },
@@ -397,6 +477,12 @@
 
     },
     "Next day" : {
+
+    },
+    "Next month" : {
+
+    },
+    "Next week" : {
 
     },
     "No Claude Code profile found." : {
@@ -459,6 +545,12 @@
     "Open the window" : {
 
     },
+    "Open this day" : {
+
+    },
+    "Open this week" : {
+
+    },
     "Orange" : {
 
     },
@@ -484,6 +576,12 @@
 
     },
     "Previous day" : {
+
+    },
+    "Previous month" : {
+
+    },
+    "Previous week" : {
 
     },
     "Profiles" : {
@@ -540,6 +638,18 @@
     "Save" : {
 
     },
+    "Save this day's entries as a CSV file" : {
+
+    },
+    "Save this month's entries as a CSV file" : {
+
+    },
+    "Save this week's entries as a CSV file" : {
+
+    },
+    "Second part" : {
+
+    },
     "Sessions" : {
 
     },
@@ -552,6 +662,9 @@
     "Shares its settings file with %@" : {
 
     },
+    "Show" : {
+
+    },
     "Show menu" : {
 
     },
@@ -562,6 +675,18 @@
 
     },
     "Sound (%@)" : {
+
+    },
+    "Split" : {
+
+    },
+    "Split at" : {
+
+    },
+    "Split entry" : {
+
+    },
+    "Split…" : {
 
     },
     "Start" : {
@@ -618,10 +743,16 @@
     "The entry could not be saved." : {
 
     },
+    "The entry could not be split." : {
+
+    },
     "The entry was not deleted" : {
 
     },
     "The file changed while it was being edited. Nothing was written. Try again." : {
+
+    },
+    "The file could not be saved" : {
 
     },
     "The file differs from before the install. The difference was kept." : {
@@ -709,6 +840,9 @@
 
     },
     "Was it work? The answer waits in the panel." : {
+
+    },
+    "Week" : {
 
     },
     "When a block ends" : {

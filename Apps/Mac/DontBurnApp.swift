@@ -71,7 +71,7 @@ struct DontBurnApp: App {
     /// Always `nil` outside the Debug configuration, so a Release build never
     /// runs a frozen clock, a forced appearance, the sample data, a stand-in
     /// home folder for the Claude Code profiles, or a short or simulated time away.
-    private static func launchArgument(_ name: String) -> String? {
+    static func launchArgument(_ name: String) -> String? {
         #if DEBUG
             UserDefaults.standard.volatileDomain(forName: UserDefaults.argumentDomain)[name] as? String
         #else
@@ -80,8 +80,9 @@ struct DontBurnApp: App {
     }
 
     /// The sample set in memory with `-DontBurnSampleData YES`, seeded at
-    /// `now`, otherwise the store on disk in the folder named after the bundle
-    /// identifier, with the presets the app comes with, added once.
+    /// `now` with weeks of history before it, otherwise the store on disk in
+    /// the folder named after the bundle identifier, with the presets the app
+    /// comes with, added once.
     ///
     /// With the sample set, `scenario`, from `-DontBurnTimerState <scenario>`,
     /// also puts the timer into one of the ``TimerScenario`` states.
@@ -94,6 +95,7 @@ struct DontBurnApp: App {
             if sampleData {
                 let container = try ModelStore.inMemory()
                 try SampleData.seed(into: container.mainContext, now: now)
+                try SampleData.seedHistory(into: container.mainContext, now: now, calendar: .current)
                 if let scenario {
                     try scenario.apply(to: container.mainContext, now: now)
                     log.info("Put the sample timer into the \(scenario.rawValue) state")

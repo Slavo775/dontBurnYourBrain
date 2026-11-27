@@ -203,7 +203,9 @@ extension ModelContainer {
         do {
             let container = try ModelStore.inMemory()
             // 2026-01-15 08:41:30 UTC, as in the clock's preview.
-            try SampleData.seed(into: container.mainContext, now: Date(timeIntervalSince1970: 1_768_466_490))
+            let now = Date(timeIntervalSince1970: 1_768_466_490)
+            try SampleData.seed(into: container.mainContext, now: now)
+            try SampleData.seedHistory(into: container.mainContext, now: now, calendar: .current)
             return container
         } catch {
             return nil
