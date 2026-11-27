@@ -47,6 +47,9 @@ final class Countdown {
     /// Today's tracked time, such as `0:10`, or `nil` without a store.
     private(set) var trackedToday: String?
 
+    /// Whether the timer refused the latest step taken on it, such as Pause after the block ran out.
+    @ObservationIgnored private(set) var lastStepFailed = false
+
     /// Whether the panel is open. While it is, the countdown ticks every second.
     var isPanelOpen = false {
         didSet {
@@ -174,14 +177,17 @@ final class Countdown {
     }
 
     /// Starts a break of `minutes` now, inside the running block or with
-    /// nothing running, and remembers the length for next time.
+    /// nothing running, and remembers the length for next time when "Break
+    /// for" offers it.
     func startBreak(minutes: Int) {
         act("start a break") { engine, now in
             try changeBreak(with: engine, at: now) {
                 try QuickAction.startBreak(minutes: minutes, with: engine, idleBreak: &$0, at: now)
             }
-            // Only a break that started moves the preselection.
-            breakMinutes = minutes
+            // Only a break that started moves the preselection, and only to a row of "Break for".
+            if TimerEngine.breakLengthChoices.contains(minutes) {
+                breakMinutes = minutes
+            }
         }
         // Its end is announced too, so a first break asks as a first start does.
         alerts?.askPermissionIfUndetermined()
@@ -255,10 +261,12 @@ final class Countdown {
         guard let context else { return }
         do {
             try body(TimerEngine(context: context), fixedTime ?? .now)
+            lastStepFailed = false
             if !keepsTimeAway {
                 away?.drop()
             }
         } catch {
+            lastStepFailed = true
             log.error("Could not \(what): \(error.localizedDescription)")
         }
         settled = nil
