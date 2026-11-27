@@ -62,18 +62,21 @@ public enum BarCommand: Equatable {
     /// The length is the last word, or the last two as in `1h 30m`, and the
     /// words before it name the workspace. Without a length the whole text
     /// names it. Each workspace takes the first reading that matches it, the
-    /// one with the longest name first, so `acme 2` starts "Acme 2" at its
-    /// default length, and Acme for 2 minutes.
+    /// one with the longest name first. The workspaces the whole text names
+    /// come first, then the others, each in Settings order, so `acme 2`
+    /// offers "Acme 2" at its default length before Acme for 2 minutes.
     private static func starts(_ words: [String], in workspaces: [Workspace]) -> [Self] {
         let readings: [(name: String, minutes: Int?)] = (0 ... min(2, words.count - 1)).compactMap { count in
             guard count > 0 else { return (words.joined(separator: " "), nil) }
             return length(of: Array(words.suffix(count))).map { (words.dropLast(count).joined(separator: " "), $0) }
         }
-        return workspaces.filter { !$0.isArchived }.compactMap { workspace in
+        let matches = workspaces.filter { !$0.isArchived }.compactMap { workspace -> (reading: Int, start: Self)? in
             let name = workspace.name.split(whereSeparator: \.isWhitespace).joined(separator: " ")
-            return readings.first { name.range(of: $0.name, options: [.anchored, .caseInsensitive]) != nil }
-                .map { .start(workspace, minutes: $0.minutes) }
+            return readings.firstIndex { name.range(of: $0.name, options: [.anchored, .caseInsensitive]) != nil }
+                .map { ($0, .start(workspace, minutes: readings[$0].minutes)) }
         }
+        // The first reading is the whole text.
+        return matches.filter { $0.reading == 0 }.map(\.start) + matches.filter { $0.reading != 0 }.map(\.start)
     }
 
     /// The minutes in one or two typed words, or `nil`.
