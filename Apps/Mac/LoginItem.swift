@@ -97,7 +97,7 @@ final class LoginItem {
     /// Whether the switch can be flipped. Not in Dev on the system's service.
     let canChange: Bool
     /// What the switch shows now.
-    private(set) var shown: LoginItemSwitch
+    private(set) var shown = LoginItemSwitch(status: .notRegistered)
 
     @ObservationIgnored private let service: any LoginItemRegistering
     @ObservationIgnored private let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "login")
@@ -105,13 +105,13 @@ final class LoginItem {
     init(service: any LoginItemRegistering, canChange: Bool) {
         self.service = service
         self.canChange = canChange
-        shown = LoginItemSwitch(status: service.status)
+        refresh()
     }
 
     /// Reads the status again, as when Settings shows the switch or the app
     /// comes back from System Settings. It never changes the status.
     func refresh() {
-        shown = LoginItemSwitch(status: service.status)
+        show(refusal: nil)
     }
 
     /// Registers when `isOn`, otherwise unregisters, then shows the status
@@ -128,8 +128,16 @@ final class LoginItem {
             // The domain and the code only: the description is the system's and is shown, not logged.
             let error = error as NSError
             log.error("The login item was not changed: \(error.domain, privacy: .public) \(error.code)")
-            shown = LoginItemSwitch(status: service.status, refusal: error.localizedDescription)
+            show(refusal: error.localizedDescription)
         }
+    }
+
+    /// Shows the status read from the system, after a change it refused for `refusal`, or after none.
+    private func show(refusal: String?) {
+        let status = service.status
+        // Logged, so a check reads what the system said without pressing the switch.
+        log.info("The login item reads \(String(describing: status), privacy: .public)")
+        shown = LoginItemSwitch(status: status, refusal: refusal)
     }
 
     private static func make(check: LoginItemCheck?) -> LoginItem? {
