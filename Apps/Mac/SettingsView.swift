@@ -66,8 +66,8 @@ struct SettingsView: View {
     }
 }
 
-/// The General tab: the alerts' switches, the question about time away, and
-/// the app's version at the bottom.
+/// The General tab: the alerts' switches, the question about time away, the
+/// Start at login switch, and the app's version at the bottom.
 private struct GeneralPane: View {
     let awaySettings: AwaySettings
     @State private var isNotificationRefused = false
@@ -79,6 +79,9 @@ private struct GeneralPane: View {
             AlertSection("When a focus interval ends", kind: .focusEnd)
             AlertSection("5 minutes before a block ends", kind: .warning)
             AwaySection(settings: awaySettings)
+            if let loginItem = LoginItem.current {
+                LoginItemSection(item: loginItem)
+            }
             if isNotificationRefused {
                 Section {
                     HStack {

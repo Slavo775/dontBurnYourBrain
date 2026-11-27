@@ -761,6 +761,12 @@
     "Start a block when you're ready." : {
 
     },
+    "Start at login" : {
+
+    },
+    "Starting at login is off for %@. Allow it in System Settings → Login Items." : {
+
+    },
     "Switch" : {
 
     },
@@ -783,6 +789,9 @@
 
     },
     "The Dev build installs only into profiles in its stand-in folder." : {
+
+    },
+    "The Dev build never starts at login." : {
 
     },
     "The app's path can't go into a hook command safely. Move the app to another folder." : {
@@ -852,6 +861,9 @@
 
     },
     "The profile has no settings.json." : {
+
+    },
+    "The stand-in refuses every registration." : {
 
     },
     "These lines change. Nothing else in the file does." : {
@@ -1016,6 +1028,9 @@
 
     },
     "macOS doesn't allow this shortcut." : {
+
+    },
+    "macOS refused the change: %@" : {
 
     },
     "min" : {

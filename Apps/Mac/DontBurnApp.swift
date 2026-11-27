@@ -93,7 +93,8 @@ struct DontBurnApp: App {
     ///
     /// Always `nil` outside the Debug configuration, so a Release build never
     /// runs a frozen clock, a forced appearance, the sample data, a stand-in
-    /// home folder for the Claude Code profiles, or a short or simulated time away.
+    /// home folder for the Claude Code profiles, a short or simulated time away,
+    /// or a stand-in login item.
     static func launchArgument(_ name: String) -> String? {
         #if DEBUG
             UserDefaults.standard.volatileDomain(forName: UserDefaults.argumentDomain)[name] as? String
