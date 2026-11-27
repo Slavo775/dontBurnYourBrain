@@ -15,6 +15,8 @@ struct DontBurnApp: App {
     @State private var hookSetup: HookSetup
     /// The question about time away, shared by the countdown and Settings.
     @State private var awaySettings: AwaySettings
+    /// The command bar's shortcut, shared by the bar and Settings, or `nil` without a store.
+    @State private var commandBarShortcut: CommandBarShortcut?
 
     /// The open store, or `nil` when it could not be opened.
     private let container: ModelContainer?
@@ -50,7 +52,16 @@ struct DontBurnApp: App {
         let mainWindow = MainWindowController(container: container, fixedTime: Self.fixedTime) {
             countdown.reschedule()
         }
-        _statusItem = State(initialValue: StatusItemController(countdown: countdown, mainWindow: mainWindow))
+        // Without a store there is nothing to act on, so no bar and no shortcut.
+        let commandBar = container.map { _ in
+            CommandBarController(countdown: countdown, shortcut: CommandBarShortcut(
+                defaults: sampleData ? nil : .standard, isOnByDefault: Self.isShortcutOnByDefault,
+            ))
+        }
+        _commandBarShortcut = State(initialValue: commandBar?.shortcut)
+        _statusItem = State(initialValue: StatusItemController(
+            countdown: countdown, mainWindow: mainWindow, commandBar: commandBar,
+        ))
         _sessions = State(initialValue: Self.startSessions(sampleData: sampleData))
         _hookSetup = State(initialValue: HookSetup.current(standIn: Self.launchArgument("DontBurnStandInHome")))
         switch Self.launchArgument("DontBurnAppearance").flatMap(Appearance.init(rawValue:)) {
@@ -58,6 +69,18 @@ struct DontBurnApp: App {
         case .dark: NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
         case nil: break
         }
+    }
+
+    /// Whether the command bar's shortcut is on until it is switched: in the
+    /// Release build only. Never in a Debug build, which is always Dev, so Dev
+    /// takes no shortcut by default even when its variant is missing, which
+    /// ``BuildInfo`` reads as Release.
+    private static var isShortcutOnByDefault: Bool {
+        #if DEBUG
+            false
+        #else
+            BuildInfo.current.variant == .release
+        #endif
     }
 
     /// The defaults key that remembers that the presets the app comes with were added.
@@ -197,6 +220,7 @@ struct DontBurnApp: App {
         Settings {
             SettingsView(
                 container: container, localContainer: localContainer, hookSetup: hookSetup, awaySettings: awaySettings,
+                commandBarShortcut: commandBarShortcut,
             )
         }
     }

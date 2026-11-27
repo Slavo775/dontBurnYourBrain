@@ -230,7 +230,7 @@ struct StartRow<Content: View>: View {
 
 /// A key shown beside a row, such as a number key, as the prototype's `m-key`.
 /// VoiceOver skips it, because the row says what it does.
-private struct KeyCap: View {
+struct KeyCap: View {
     let key: String
 
     init(_ key: String) {

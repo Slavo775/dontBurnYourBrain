@@ -4,7 +4,7 @@ How the app looks and behaves, surface by surface.
 
 The drawn screens are in [../design/prototype/index.html](../design/prototype/index.html). Open it in a browser. Several of them are live: the compact panel, Jira review and the Workspaces settings. When this text and the prototype disagree, the prototype wins on looks and this text wins on behaviour. Tell the owner about the difference either way.
 
-Where this text is ahead of the prototype: the prototype draws folders and a Jira link on each workspace, a Jira tab in Settings and a Jira review, and no projects. Here the projects of a workspace hold the folders and the issue tracker, the tab is Trackers, and the review is Time review. The prototype also does not draw the End block row, "Break for", a break with nothing running, a planned break that is due or the content of the Rhythm tab. It draws the minutes in the Rhythm pop-up, where the app shows the preset's name, and in dark its gaps in the strip have another color (see [The rhythm in the panel](#the-rhythm-in-the-panel)).
+Where this text is ahead of the prototype: the prototype draws folders and a Jira link on each workspace, a Jira tab in Settings and a Jira review, and no projects. Here the projects of a workspace hold the folders and the issue tracker, the tab is Trackers, and the review is Time review. The prototype also does not draw the End block row, "Break for", a break with nothing running, a planned break that is due or the content of the Rhythm tab. It draws the minutes in the Rhythm pop-up, where the app shows the preset's name, and in dark its gaps in the strip have another color (see [The rhythm in the panel](#the-rhythm-in-the-panel)). In the command bar and the list of shortcuts it still draws P, B and F as keys that act at once with the field empty. Since card 61 only 1 to 3 do, and the others are typed (see [Command bar](#command-bar)).
 
 Acme, Globex, Personal and the issue keys are sample data. Users create their own workspaces.
 
@@ -137,7 +137,7 @@ How the panel behaves today, in phase 1:
 - "Break for" opens from Break or B while working with no planned break due, and from "Take a break" with nothing running. Like Switch, it has a title, a Back button and rows: 5, 15, 30 and 60 min on the keys 1 to 4. There is no typed length. The last length used is preselected: its row has a 2 pt ink outline and the Return key ↵ beside its number, and Return or keypad Enter starts it. VoiceOver reads the rows as "5 minutes" to "60 minutes", the preselected one as selected. The length is remembered across launches. It is 5 min at first, and a stored value outside the list becomes 5.
 - Keys: P pauses and resumes, B opens "Break for" while working, starts a planned break that is due and ends a break, + adds 15 minutes, S opens Switch, E ends the block, Escape closes the panel. On a break with nothing running, B ends it, + lengthens it and S opens Switch, and P and E do nothing. P, B, +, S and E act on the running block or break, and not in Switch or "Break for". With nothing running only B is taken, and it opens "Break for" when there is a store. 1 to 9 start a workspace in the "Nothing running" list and in Switch. In "Break for", 1 to 4 start a break of that length, Return or keypad Enter starts the preselected one, and Escape closes the panel, as in Switch. ⌘N opens the custom block form, but not from "Break for". In the form, Return or keypad Enter starts, and Escape goes back to the list instead of closing the panel. Each key acts once per press, and a held key does not repeat. ⌘O closes the panel and opens [the window](#the-window). ⌘N and ⌘O are the only keys with ⌘, ⌃ or ⌥ that are taken, each with ⌘ alone; the others are ignored.
 - Switch uses the same rows as "Nothing running": every active workspace in the order from Settings, the running one included, with the dot, the name, the default length and the number key. Back returns to the running block.
-- The panel closes on Escape, on a second click on the item, on a right-click, on the item's "Show menu" action, and when it loses focus, such as on a click elsewhere.
+- The panel closes on Escape, on a second click on the item, on a right-click, on the item's "Show menu" action, and when it loses focus, such as on a click elsewhere or when the [command bar](#command-bar) opens.
 - The countdown ticks every second only while the panel is open.
 - It follows the app's appearance, so `-DontBurnAppearance` reaches it. The item and its menu follow the system.
 - Today's tracked total counts work and meetings always, and a break only when its workspace counts breaks. Entries are clipped to today and to now. It is the window's Today total: the sum of each entry's whole minutes, rounded down per entry.
@@ -282,14 +282,34 @@ Opened with ⌥ Space from anywhere. About 580 pt wide, one text field, results 
 
 - Typing `ac 2h 412` offers "Start Acme for 2 h" with the issue `ACM-412`. Return starts it. ⌘ Return starts it without an issue.
 - Other things to type: `globex 1h`, `break 10`, `+15`, `end`, `focus web`, `log`.
-- With the field empty, one key acts at once: P pause, B break, E end the block, F focus the waiting session, 1 to 3 the quick start presets.
-- A day off can be taken from here too, with no calendar involved.
+- With the field empty, only 1 to 3 act at once: they start the quick start presets. Pause, break, end and focus are typed and taken with Return, such as `p` and Return, so a command or a workspace that begins with one of those letters can be typed too. This is the owner's decision on card 61.
+- A day off can be taken from here too, with no calendar involved. This comes with the calendar in phase 5.
+
+How the command bar behaves today, since card 61:
+
+- **Opening.** The global shortcut opens it from any app, and a second press closes it. The shortcut is ⌥ Space until it is changed in [Settings → Shortcuts](#shortcuts-1). "Open the command bar" in the right-click menu opens it too, once the menu has closed. It opens with an empty field, centred on the screen with the mouse and its top a fifth of the way down.
+- **The look.** A borderless panel 580 pt wide with 16 pt corners: a magnifying glass and one field, "Type a workspace or a command", at 20 pt. Under it the results, one row 54 pt high each, then the footer. The bar grows downwards as the results change. It follows the app's appearance, so `-DontBurnAppearance` reaches it.
+- **Focus.** It takes the keys at once without bringing the app forward, so the first letters typed after the shortcut reach the field, and the keys go back to the app in front when it closes. Opening it closes the compact panel, and opening the panel closes it.
+- **A row** shows an icon, the workspace's dot for a start, and what it does: "Start Acme for 2 h", "Pause", "Resume", "Break for 15 min", "Break now, 5 min", "End break", "Add 15 minutes" or "End block". The timer's commands come first, then the workspaces. The selected row has the sunken background and ↵. When nothing matches, one row says "No match". VoiceOver reads the field as "Command" and each row as one button.
+- **Keys.** ↑ and ↓ move the selection, Return or keypad Enter takes it, and a click takes a row. Escape closes the bar. With the field empty, 1 to 3 without ⌘, ⌃ or ⌥ start the first three active workspaces. Every other key types. A held key acts once. While an input method composes, every key is its own, Return and Escape included.
+- **Typed commands.** `pause`, `resume`, `break`, `break 10`, `end` and `+15`, each matched by its beginning without regard to case. So a letter offers its command first, selected: `p` gives Pause, or Resume while paused, before Personal. A bare `+` offers +15 too.
+- **Workspaces.** The active workspaces whose name begins with the typed name match, without regard to case, in the order from Settings: `ac 2h` offers "Start Acme for 2 h". A workspace that the whole typed text names comes first, so with workspaces named Acme and Acme 2, `acme 2` offers Acme 2 at its default length before Acme for 2 minutes. This is the owner's decision on card 61.
+- **Lengths.** `90`, `90m`, `90min`, `2h`, `1h30`, `1h30m` and `1:30`, and as two words only `1h 30m`, `1h 30` and `90 min`. A start without a length takes the workspace's default length, and every start, 1 to 3 included, takes the workspace's default rhythm. While a block runs, a start switches to that workspace.
+- **Breaks.** `b` or `break` does what Return does in "Break for": it starts the planned break that is due, otherwise a break of the last length used, and on a break it ends the break. `break 10` starts a break of that length. While paused both are refused. A typed length becomes the last length used only when it is one of the rows of "Break for", 5, 15, 30 or 60, as `break.lastMinutes`. This is the owner's decision on card 61.
+- **Refusals.** A row the timer's state does not allow is muted, with its reason under it, and Return on it leaves the bar open: "Nothing is running.", "The block is paused. Resume first.", "Nothing is paused.", "A break is already running.", "No block is running.", "A break can't be longer than a day." for a break with nothing running, and "A block can't be longer than a day." for a start with a typed length over 24 hours, the owner's decision on card 61. A step that the timer refuses all the same says "This can't be done right now." The rules are the panel's.
+- **Closing.** Escape, the shortcut, a click elsewhere and a command that succeeded close it.
+- **The footer.** "You can also type" with chips: the first workspace's first word with `1h`, such as `acme 1h`, then `break 10`, `+15`, `pause` and `end`. Under it "Or press one key while the field is empty", the key 1–3 and "start a workspace". Without workspaces, the example chip and the second line are left out.
+- **Without a store** there is no bar, no menu item and no shortcut.
+- **Not yet:** an issue, ⌘ Return, `focus`, `log` and a day off come with their phases. A project's name is left out too, because a block gets no project by hand yet.
+- The rules live in `BarCommand` in `DontBurnCore`. The parser's doc comments and `CommandBarResultTests` hold the result in each timer state.
 
 ### Right-click menu on the menu bar item
 
 Pause, Take a break, Add 15 minutes, End block. Then the quick start presets ("Start Acme for 2 h"). Then Focus the waiting session, Open the command bar, and Open the window ⌘O.
 
-Opened with a right-click, a Control-click, or the item's "Show menu" accessibility action. In phase 1, while a block runs, it holds Pause or Resume, "Take a break" or End break, Add 15 minutes and End block, then a divider. "Take a break" is a submenu with 5, 15, 30 and 60 min, disabled while paused. On a break with nothing running it holds End break and Add 15 minutes, with no Pause and no End block, then a divider. Then "Start Acme for 1 h" for the first three active workspaces at their default lengths, then a divider. While a block runs, picking one switches to that workspace. On a break with nothing running, it ends the break and starts that block. Then "Open the window" on ⌘O, "Settings…" on ⌘ and comma, another divider, and "Quit" with the app's name, on ⌘Q. With nothing running it holds the "Take a break" submenu and a divider when there is a store, then the start items, Open the window, Settings and Quit. With no workspaces or no store, the start items are left out.
+Opened with a right-click, a Control-click, or the item's "Show menu" accessibility action. In phase 1, while a block runs, it holds Pause or Resume, "Take a break" or End break, Add 15 minutes and End block, then a divider. "Take a break" is a submenu with 5, 15, 30 and 60 min, disabled while paused. On a break with nothing running it holds End break and Add 15 minutes, with no Pause and no End block, then a divider. Then "Start Acme for 1 h" for the first three active workspaces at their default lengths, then a divider. While a block runs, picking one switches to that workspace. On a break with nothing running, it ends the break and starts that block. Then "Open the command bar", "Open the window" on ⌘O, "Settings…" on ⌘ and comma, another divider, and "Quit" with the app's name, on ⌘Q. With nothing running it holds the "Take a break" submenu and a divider when there is a store, then the start items, Open the command bar, Open the window, Settings and Quit. With no workspaces or no store, the start items are left out.
+
+"Open the command bar" came with card 61. It shows the shortcut's keys at its right while the shortcut is registered, and none while it is off or refused. It opens the bar once the menu has closed. Without a store it is left out.
 
 ### Session switcher
 
@@ -301,12 +321,14 @@ Hold ⌥ and tap Tab to step through the sessions, and release to jump there. Th
 |---|---|
 | Open the command bar | ⌥ Space |
 | Switch between sessions | ⌥ Tab |
-| Pause, break, end, focus the waiting session | ⌥ Space, then P, B, E or F |
+| Pause, break, end, focus the waiting session | ⌥ Space, then P, B, E or F and Return |
 | Start preset 1 to 3 | ⌥ Space, then 1, 2 or 3 |
 | Expand or collapse the open panel | ⌘E |
 | Jump to a session while the panel is open | ⌘1 to ⌘9 |
 
-Only ⌥ Space and ⌥ Tab are global. Both can be changed in Settings, in case they clash with something.
+Only ⌥ Space and ⌥ Tab are global. Both can be changed in Settings, in case they clash with something. Since card 61, [Settings → Shortcuts](#shortcuts-1) changes ⌥ Space or switches it off. ⌥ Tab comes with the session switcher.
+
+⌥ Space types a non-breaking space in most keyboard layouts. While the shortcut is registered, that character can't be typed in any app, and a 1, 2 or 3 typed next, without ⌥, starts a block at once. The owner kept ⌥ Space as the default knowing both, on card 61.
 
 ## The window
 
@@ -393,7 +415,7 @@ An Out of office entry in a calendar is not a meeting. It says the user is not w
 - If it covers only part of a day, only those hours are off.
 - Out of office is never a meeting and never time worked. It is not logged anywhere.
 - History keeps the mark, so a short week does not look like forgotten time.
-- The user can also take a day off by hand, from the command bar.
+- The user can also take a day off by hand, from the command bar. The bar does not offer it yet.
 
 ## Settings
 
@@ -414,7 +436,7 @@ The order of the list is the order of the quick start presets and their number k
 
 #### What phase 1 builds
 
-The window has a fixed size of 760 × 470 pt and two tabs: General, with the alert switches described under [Sounds and notifications](#sounds-and-notifications) and the version at the bottom, and Workspaces. Card 59 added the question about time away to General ([its section](#the-question-about-time-away)). Phase 2 added the [Rhythm](#rhythm) tab, and card 49 the [Sessions](#sessions) tab after it. The other tabs and rows arrive with their phases.
+The window has a fixed size of 760 × 470 pt and two tabs: General, with the alert switches described under [Sounds and notifications](#sounds-and-notifications) and the version at the bottom, and Workspaces. Card 59 added the question about time away to General ([its section](#the-question-about-time-away)). Phase 2 added the [Rhythm](#rhythm) tab, card 49 the [Sessions](#sessions) tab after it, and card 61 the [Shortcuts](#shortcuts-1) tab after Sessions. The other tabs and rows arrive with their phases.
 
 - **The list** is 220 pt wide, with + and − below it. Rows are reordered by dragging.
 - **The form** holds the name, the six swatches, a "Default block" pop-up and "Shown on key N". From the tenth workspace on, it says "No number key".
@@ -505,6 +527,29 @@ The prototype draws no Uninstall, no shared settings file and no sheets. The row
 
 The issue trackers the user connected, Jira and Trello first, each with its account. The token goes to the Keychain. A project chooses its tracker under Workspaces. This arrives in phase 4.
 
+### Shortcuts
+
+The global shortcuts: the [command bar](#command-bar)'s, and from card 54 the session switcher's.
+
+What card 61 builds: the tab after Sessions, within the same 760 × 470 pt, as one grouped section, "Command bar".
+
+- **The switch** "Open the command bar with a shortcut". Off, nothing is registered.
+- **The recorder** on the "Shortcut" row shows the keys, such as ⌥Space or ⌃⌥⌘F12. A click shows "Type the shortcut", and the next keys pressed become the shortcut. Escape alone, or a second click, keeps the old one. It works while the switch is off too, so new keys can be chosen before anything is registered. While it waits, the shortcut is unregistered, so its own keys reach it. It takes keys only while its own window is the key window, and stops when that window stops being key or closes.
+- **Refused keys** leave the recorder waiting, with a line beside it: "Use ⌘, ⌃ or ⌥ with the key" for a key with none of them, ⇧ alone included, and "Apps use ⌘ with this key. Add ⌃ or ⌥" for ⌘ or ⌘⇧ with any key but Space and F1 to F20, because apps use those for their own commands.
+- **What macOS refused** shows in one line with a warning sign: "macOS doesn't allow this shortcut." for one of macOS's own enabled shortcuts, such as Spotlight's, and "Another app already uses this shortcut." when another app holds it exclusively.
+- **A hint** under the section, always visible: "If the shortcut doesn't open the bar, another app may use it."
+- **Without a store** the tab says "The data could not be opened" and "The command bar can't be used right now."
+
+How it works:
+
+- The shortcut is a Carbon hot key, `RegisterEventHotKey`, which needs no permission, registered exclusively. Before registering, the app compares it with macOS's own enabled shortcuts (`CopySymbolicHotKeys`). If installing the handler for presses fails, the hot key is dropped and reported as not allowed. Each register, unregister and refusal is one line in the log's `shortcut` category. A change registers again at once.
+- **A known limit.** Another app that registered the same keys without asking for them exclusively can't be seen, and both then hold them. The hint covers that case. This is the owner's decision on card 61.
+- **Kept in the app's own defaults** as `commandBar.shortcutOn`, `commandBar.keyCode`, the Mac's virtual key code, and `commandBar.modifiers`, with the bits ⌃ 1, ⌥ 2, ⇧ 4 and ⌘ 8. A stored value that makes no valid shortcut falls back to ⌥ Space. Under `-DontBurnSampleData` all three stay in memory.
+- **On by default** in Release, and off in Dev, so by default the two builds never take the same keys. A Debug build never turns it on by default, even when its variant is missing ([releases.md](../process/releases.md#build-variants)).
+- The rules for valid keys live in `GlobalShortcut` in `DontBurnCore`, the hot key in `Apps/Mac/HotKey.swift`, and the setting in `Apps/Mac/CommandBarShortcut.swift`.
+
+The prototype names this tab but does not draw it.
+
 ## Sounds and notifications
 
 - A soft chime when a focus interval ends
@@ -558,7 +603,7 @@ How it works:
 | Window: Today as a list, simple history | 1 |
 | Right-click menu: the block actions and the quick start items | 1 |
 | Break gaps in the strip, "break in", the break that is due, the alert at the end of a focus interval, Settings: Rhythm, and the Rhythm rows in Workspaces and Custom block | 2 |
-| Command bar, also from the right-click menu, week and month charts, last week's totals, splitting an entry, CSV export, the idle question, start at login | 2 |
+| Command bar, also from the right-click menu, Settings: Shortcuts, week and month charts, last week's totals, splitting an entry, CSV export, the idle question, start at login | 2 |
 | Settings: the projects of a workspace, with their folders and the "Track time" switch | 3 |
 | Needs-you strip, expanded panel, session switcher, Settings: Sessions, the amber badge, "Focus the waiting session" in the right-click menu | 3 |
 | Issue on a block, a project's tracker, time review, Settings: Trackers | 4 |

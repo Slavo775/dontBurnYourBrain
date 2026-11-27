@@ -78,6 +78,11 @@ targets:
       # hash, read at build time; without git it carries none.
       - name: Variant and commit
         basedOnDependencyAnalysis: false
+        # The built Info.plist as an input, so the script runs after Xcode
+        # writes that file. Without it an incremental build could write the
+        # plist again afterwards, and the Dev build then read as Release.
+        inputFiles:
+          - $(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)
         script: |
           plist="$TARGET_BUILD_DIR/$INFOPLIST_PATH"
           plutil -replace DontBurnVariant -string "$APP_VARIANT" "$plist"

@@ -154,6 +154,15 @@
     "5 minutes left" : {
 
     },
+    "A block can't be longer than a day." : {
+
+    },
+    "A break can't be longer than a day." : {
+
+    },
+    "A break is already running." : {
+
+    },
     "A file could not be written. settings.json is unchanged." : {
 
     },
@@ -217,7 +226,13 @@
     "An entry can't reach into the future." : {
 
     },
+    "Another app already uses this shortcut." : {
+
+    },
     "Another file stands at this path since the install, so another app may have written it." : {
+
+    },
+    "Apps use ⌘ with this key. Add ⌃ or ⌥" : {
 
     },
     "Archive" : {
@@ -268,6 +283,9 @@
     "Break for" : {
 
     },
+    "Break for %@" : {
+
+    },
     "Break is over" : {
 
     },
@@ -275,6 +293,9 @@
 
     },
     "Break now" : {
+
+    },
+    "Break now, %@" : {
 
     },
     "Break now, %lld minutes" : {
@@ -324,6 +345,12 @@
 
     },
     "Color" : {
+
+    },
+    "Command" : {
+
+    },
+    "Command bar" : {
 
     },
     "Create a preset" : {
@@ -413,6 +440,9 @@
     "Hours" : {
 
     },
+    "If the shortcut doesn't open the bar, another app may use it." : {
+
+    },
     "Indigo" : {
 
     },
@@ -435,6 +465,9 @@
 
     },
     "Its history and its folders stay. You can restore it from the Archived list." : {
+
+    },
+    "Key %lld" : {
 
     },
     "Keys that differ: %@" : {
@@ -488,10 +521,16 @@
     "No Claude Code profile found." : {
 
     },
+    "No block is running." : {
+
+    },
     "No block running" : {
 
     },
     "No install of the hook into this file is on record." : {
+
+    },
+    "No match" : {
 
     },
     "No number key" : {
@@ -507,6 +546,12 @@
 
     },
     "Note" : {
+
+    },
+    "Nothing is paused." : {
+
+    },
+    "Nothing is running." : {
 
     },
     "Nothing running" : {
@@ -542,6 +587,12 @@
     "Open" : {
 
     },
+    "Open the command bar" : {
+
+    },
+    "Open the command bar with a shortcut" : {
+
+    },
     "Open the window" : {
 
     },
@@ -549,6 +600,9 @@
 
     },
     "Open this week" : {
+
+    },
+    "Or press one key while the field is empty" : {
 
     },
     "Orange" : {
@@ -662,6 +716,12 @@
     "Shares its settings file with %@" : {
 
     },
+    "Shortcut" : {
+
+    },
+    "Shortcuts" : {
+
+    },
     "Show" : {
 
     },
@@ -675,6 +735,9 @@
 
     },
     "Sound (%@)" : {
+
+    },
+    "Space" : {
 
     },
     "Split" : {
@@ -729,6 +792,12 @@
 
     },
     "The block ends soon." : {
+
+    },
+    "The block is paused. Resume first." : {
+
+    },
+    "The command bar can't be used right now." : {
 
     },
     "The data could not be opened" : {
@@ -788,6 +857,9 @@
     "These lines change. Nothing else in the file does." : {
 
     },
+    "This can't be done right now." : {
+
+    },
     "This entry's block is still running. Only its note can change until the block ends." : {
 
     },
@@ -818,10 +890,19 @@
     "Track time" : {
 
     },
+    "Type a workspace or a command" : {
+
+    },
+    "Type the shortcut" : {
+
+    },
     "Uninstall" : {
 
     },
     "Unnamed" : {
+
+    },
+    "Use ⌘, ⌃ or ⌥ with the key" : {
 
     },
     "Used by %@, so it can't be removed." : {
@@ -887,6 +968,9 @@
     "Workspaces can't be shown or changed right now." : {
 
     },
+    "You can also type" : {
+
+    },
     "added later" : {
 
     },
@@ -931,6 +1015,9 @@
     "left of %@, break in less than 1 min" : {
 
     },
+    "macOS doesn't allow this shortcut." : {
+
+    },
     "min" : {
 
     },
@@ -962,6 +1049,9 @@
 
     },
     "settings.json is too large to edit safely." : {
+
+    },
+    "start a workspace" : {
 
     },
     "“%@” already belongs to %@." : {

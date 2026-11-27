@@ -3,7 +3,7 @@ import SwiftData
 import SwiftUI
 import UserNotifications
 
-/// The Settings window: General, Workspaces, Rhythm and Sessions for now.
+/// The Settings window: General, Workspaces, Rhythm, Sessions and Shortcuts for now.
 struct SettingsView: View {
     /// The open store, or `nil` when it could not be opened.
     let container: ModelContainer?
@@ -13,6 +13,8 @@ struct SettingsView: View {
     let hookSetup: HookSetup
     /// The question about time away from the Mac.
     let awaySettings: AwaySettings
+    /// The command bar's shortcut, or `nil` without a store, when there is no bar.
+    let commandBarShortcut: CommandBarShortcut?
 
     var body: some View {
         TabView {
@@ -45,6 +47,17 @@ struct SettingsView: View {
             }
             Tab("Sessions", systemImage: "terminal") {
                 SessionsPane(setup: hookSetup)
+            }
+            Tab("Shortcuts", systemImage: "keyboard") {
+                if let commandBarShortcut {
+                    ShortcutsPane(shortcut: commandBarShortcut)
+                } else {
+                    ContentUnavailableView(
+                        "The data could not be opened",
+                        systemImage: "exclamationmark.triangle",
+                        description: Text("The command bar can't be used right now."),
+                    )
+                }
             }
         }
         // One fixed size for every tab, the prototype's 760 pt, so the window
@@ -236,10 +249,13 @@ extension ModelContainer {
     let container = ModelContainer.sample
     SettingsView(
         container: container, localContainer: .sampleFolders(for: container), hookSetup: .sample,
-        awaySettings: AwaySettings(defaults: nil),
+        awaySettings: AwaySettings(defaults: nil), commandBarShortcut: nil,
     )
 }
 
 #Preview("No store") {
-    SettingsView(container: nil, localContainer: nil, hookSetup: .sample, awaySettings: AwaySettings(defaults: nil))
+    SettingsView(
+        container: nil, localContainer: nil, hookSetup: .sample, awaySettings: AwaySettings(defaults: nil),
+        commandBarShortcut: nil,
+    )
 }
