@@ -60,6 +60,20 @@ func `without the argument, or with any other value, the session scenario is the
     }
 }
 
+@Test(arguments: [SessionScenario.list, .many])
+func `in the sample list every Terminal and iTerm2 row has Focus, and no other row has`(
+    scenario: SessionScenario,
+) throws {
+    try withTemporaryFolder { temporary in
+        let list = try sampleList(scenario, root: temporary.url)
+
+        for row in list.rows {
+            #expect(row.canFocus == [.terminal, .iTerm2].contains(row.terminal))
+        }
+        #expect(list.sections.map { $0.rows.map(\.canFocus).contains(true) } == [true, false, true])
+    }
+}
+
 @Test func `the many sessions are the list five times over and one in a folder with a long name`() throws {
     try withTemporaryFolder { temporary in
         let list = try sampleList(.many, root: temporary.url)
