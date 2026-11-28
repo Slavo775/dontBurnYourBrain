@@ -131,11 +131,11 @@ End block is not among the four. It is a quieter row under them, and it also liv
 How the panel behaves today, in phase 1:
 
 - It is a borderless panel under the menu bar item. It takes the keys as soon as it opens, without bringing the app to the front.
-- It shows the workspace dot and name, the countdown, one line ("left of 2:00", "Paused", or "On a break, then back to Acme"), the strip, the four actions, the End block row, and the footer "Today: 1:42 tracked". The line stays one line, so a long workspace name is cut off with "…". A block with a rhythm says more, see [The rhythm in the panel](#the-rhythm-in-the-panel). The issue, the expand button, the needs-you strip, the next meeting and the sessions link come in later phases.
+- It shows the workspace dot and name, the countdown, one line ("left of 2:00", "Paused", or "On a break, then back to Acme"), the strip, the four actions, the End block row, and the footer "Today: 1:42 tracked". The line stays one line, so a long workspace name is cut off with "…". A block with a rhythm says more, see [The rhythm in the panel](#the-rhythm-in-the-panel). Since card 50 the header has the expand button, described under [Expanded panel on the Mac](#expanded-panel-on-the-mac). The issue, the needs-you strip, the next meeting and the sessions link come in later phases.
 - The countdown shows `h:mm` large and `:ss` small from one hour left on, and `m` with `:ss` below that. During a break the strip is filled in the muted color.
 - The End block row is drawn like the outlined "Custom block" row, 8 pt under the four actions: a small muted stop icon, "End block", and the key hint E on the right. It shows only while a block runs, is paused or is on a break, so not on a break with nothing running. VoiceOver reads it as one element, "End block".
 - "Break for" opens from Break or B while working with no planned break due, and from "Take a break" with nothing running. Like Switch, it has a title, a Back button and rows: 5, 15, 30 and 60 min on the keys 1 to 4. There is no typed length. The last length used is preselected: its row has a 2 pt ink outline and the Return key ↵ beside its number, and Return or keypad Enter starts it. VoiceOver reads the rows as "5 minutes" to "60 minutes", the preselected one as selected. The length is remembered across launches. It is 5 min at first, and a stored value outside the list becomes 5.
-- Keys: P pauses and resumes, B opens "Break for" while working, starts a planned break that is due and ends a break, + adds 15 minutes, S opens Switch, E ends the block, Escape closes the panel. On a break with nothing running, B ends it, + lengthens it and S opens Switch, and P and E do nothing. P, B, +, S and E act on the running block or break, and not in Switch or "Break for". With nothing running only B is taken, and it opens "Break for" when there is a store. 1 to 9 start a workspace in the "Nothing running" list and in Switch. In "Break for", 1 to 4 start a break of that length, Return or keypad Enter starts the preselected one, and Escape closes the panel, as in Switch. ⌘N opens the custom block form, but not from "Break for". In the form, Return or keypad Enter starts, and Escape goes back to the list instead of closing the panel. Each key acts once per press, and a held key does not repeat. ⌘O closes the panel and opens [the window](#the-window). ⌘N and ⌘O are the only keys with ⌘, ⌃ or ⌥ that are taken, each with ⌘ alone; the others are ignored.
+- Keys: P pauses and resumes, B opens "Break for" while working, starts a planned break that is due and ends a break, + adds 15 minutes, S opens Switch, E ends the block, Escape closes the panel. On a break with nothing running, B ends it, + lengthens it and S opens Switch, and P and E do nothing. P, B, +, S and E act on the running block or break, and not in Switch or "Break for". With nothing running only B is taken, and it opens "Break for" when there is a store. 1 to 9 start a workspace in the "Nothing running" list and in Switch. In "Break for", 1 to 4 start a break of that length, Return or keypad Enter starts the preselected one, and Escape closes the panel, as in Switch. ⌘N opens the custom block form, but not from "Break for". In the form, Return or keypad Enter starts, and Escape goes back to the list instead of closing the panel. Each key acts once per press, and a held key does not repeat. ⌘O closes the panel and opens [the window](#the-window). Since card 50, ⌘E widens and collapses the panel on every page ([Expanded panel on the Mac](#expanded-panel-on-the-mac)). ⌘N, ⌘O and ⌘E are the only keys with ⌘, ⌃ or ⌥ that are taken, each with ⌘ alone; the others are ignored.
 - Switch uses the same rows as "Nothing running": every active workspace in the order from Settings, the running one included, with the dot, the name, the default length and the number key. Back returns to the running block.
 - The panel closes on Escape, on a second click on the item, on a right-click, on the item's "Show menu" action, and when it loses focus, such as on a click elsewhere or when the [command bar](#command-bar) opens.
 - The countdown ticks every second only while the panel is open.
@@ -240,20 +240,20 @@ Built on card 59. When a block counted time away from the Mac as work, the app a
 
 Decided: the Mac gets one wide panel, the iPhone gets pages.
 
-⌘E widens the panel to about 780 pt, and it stays wide until it is collapsed. The expand button in the compact panel does the same. Two columns:
+⌘E widens the panel to about 780 pt, and it stays wide until it is collapsed. The expand button in the compact panel's header does the same. Two columns:
 
-- **Left, 320 pt.** The compact panel's header, countdown, strip and four actions. Below them "Today": the day as a short list of blocks and meetings with their start times and lengths.
+- **Left, 320 pt.** The compact panel's header, countdown, strip and four actions. Below them "Today": the day as a short list of blocks and meetings with their start times and lengths. This list comes with the day plan in phase 5.
 - **Right.** "Sessions": every agent session on this Mac, the same whether a block runs, is paused or nothing runs. A session belongs to the project whose folder it runs in, and through it to a workspace. Filter chips (All 5, Acme 3, Globex 1, Personal 1), plus "Other" when a session is in no project's folder. Then the sessions in three groups:
-  - **Needs you:** the project, or the folder's name when it has no project, the session title, "Claude (work) in iTerm2", a Focus button and ⌘1.
+  - **Needs you:** the project, or the folder's name when it has no project, the session title, "Claude (acme) in iTerm2", a Focus button and ⌘1.
   - **Working:** the same row with ⌘2, ⌘3.
-  - **Idle:** dimmed, with the time since the last activity.
-- **Footer.** Today's totals per workspace, "Log time", and "Open window ⌘O".
+  - **Idle:** the same row with the time since the last activity. Only the row's tile is dimmed, as the prototype draws it.
+- **Footer.** Today's totals per workspace, "Log time", and "Open window ⌘O". "Log time" comes with time review in phase 4.
 
 A session of a project whose time is not tracked is listed like any other, and nothing in its row offers to start a block. With no sessions the column says so in one line. Without the hook it says so and links to Settings, Sessions.
 
 ⌘1 to ⌘9 jump straight to a session while the panel is open. A session's state shows as a small dot on its icon: amber for waiting, green for working, grey for idle.
 
-**Which group a session is in,** ready for the panel later in phase 3:
+**Which group a session is in:**
 
 - **Needs you:** a permission prompt waits for the user.
 - **Working:** a turn runs, or the turn stopped while a subagent, a workflow or a teammate it waits for still runs. A background shell does not count. A turn that stopped still reads working for 3 s, so a turn that wakes right after does not flicker. After an Esc no event comes, so the session stays here until its next event.
@@ -262,6 +262,23 @@ A session of a project whose time is not tracked is listed like any other, and n
 - A session keeps the folder, profile, terminal and tab of its process's first event, and takes new ones when it is resumed in another process. Its project is found through [the folder rule](#projects-from-phase-3) each time it is read. An empty or relative folder has none, so the session goes under "Other".
 
 The rules live in `SessionStore` and `HookEvent` in `DontBurnCore`.
+
+What card 50 builds: the wide panel with its session column. Focus and ⌘1 to ⌘9, the session title, the needs-you strip, "Log time" and the "Today" list are not built yet.
+
+- **Widening.** ⌘E, with ⌘ alone, widens the open panel and collapses it again, on every page, Switch, "Break for" and the custom block form included. The header's button does the same where the header has one: on the running block, on a break and in "Nothing running". VoiceOver reads it as "Expand the panel" or "Collapse the panel". The same panel widens, and no window is added. It stays wide across closing and reopening, in memory only, so the app starts with it compact after a restart.
+- **Size.** 780 pt wide: the timer's column 320 pt, the sessions' 460 pt. The timer sets the height, at least 500 pt, so the panel does not jump as sessions come and go, and a longer list scrolls.
+- **The left column** is the compact panel without its footer, with the same pages and keys, and the question about time away above them.
+- **The footer** holds today's tracked time per workspace, in the order from Settings, with 0:00 for an active workspace that has none, and "Open window ⌘O", which closes the panel and opens the window. More workspaces than fit scroll sideways. Without a store it holds only the button.
+- **The chips.** All, then one per workspace with a session, in the order from Settings, then Other when a session is in no project, each with its count. A workspace without a name reads "Unnamed". When the chosen chip's last session leaves, All is chosen. Chips that do not fit stand closer together, and then scroll sideways.
+- **A row** shows a tile, the project's name, or the folder's name for a session in no project, and below it the profile and the terminal. The tile is the terminal icon on the workspace's color, or on a neutral tile for a session in no project, with the state's dot at its corner. The profile folder `.claude-acme` reads "Claude (acme) in iTerm2", and the default profile, `.claude`, reads "Claude in iTerm2". Any other folder keeps its whole name, such as "Claude (acme-claude) in iTerm2". Without a known terminal it is "Claude (acme)" alone. The known terminals are Terminal, iTerm2, VS Code and Cursor. Settings, Sessions keeps showing the folders' names.
+- **The idle time** stands at the end of an idle row, rounded down: "less than 1 min", then minutes, hours and days, such as "12 min", "3 h" and "2 d".
+- **The order inside a group.** Needs you and Working list the oldest session first, so rows never swap as their events come in. Idle starts with the session that was active last.
+- **Renewing.** The column follows each event and looks again once a second, so a stopped turn turns idle, the idle times count up, and a session whose process is gone leaves. Nothing runs while the panel is closed or compact. The sessions' projects are looked up when the column appears and with each event, so a project or a folder changed in Settings counts the next time the panel appears, or with the next event.
+- **No sessions.** "No sessions on this Mac." When no profile has the hook: "The hook is not installed, so no session shows here.", with an "Open Settings, Sessions" button that opens Settings on that tab. To tell the two apart, the app reads each profile's hook, read-only as [Settings, Sessions](#sessions) does, when the wide panel appears with no session, once each time. This is the owner's answer on card 50. A session that showed since proves a hook, so when it leaves the column says "No sessions on this Mac."
+- **A known limit.** A hook installed only in a project's own `.claude/settings.json`, as in a scratch project, is not seen. Its sessions show, but once the panel is reopened with none, the column reads "The hook is not installed…", because the reason comes from the profiles only. This is as designed.
+- **When a part is missing.** Without a bundle identifier, or with a hook channel that cannot be opened, there are no sessions, and the column says one of the two lines above. Without the store or the local store, every session is under Other. The compact panel works as before.
+- **VoiceOver** reads each column as a whole, each row as one element and each group's name as a heading. The chosen chip reads as selected.
+- The list's rules live in `SessionList` in `DontBurnCore`, and the column in `Apps/Mac/SessionColumn.swift` and `Apps/Mac/SessionColumnView.swift`.
 
 ## Pages on the iPhone
 
@@ -436,7 +453,9 @@ The order of the list is the order of the quick start presets and their number k
 
 #### What phase 1 builds
 
-The window has a fixed size of 760 × 470 pt and two tabs: General, with the alert switches described under [Sounds and notifications](#sounds-and-notifications) and the version at the bottom, and Workspaces. Card 59 added the question about time away to General ([its section](#the-question-about-time-away)), and card 62 the [Start at login](#start-at-login) switch. Phase 2 added the [Rhythm](#rhythm) tab, card 49 the [Sessions](#sessions) tab after it, and card 61 the [Shortcuts](#shortcuts-1) tab after Sessions. The other tabs and rows arrive with their phases.
+The window has a fixed size of 760 × 470 pt and two tabs: General, with the alert switches described under [Sounds and notifications](#sounds-and-notifications) and the version at the bottom, and Workspaces. Card 59 added the question about time away to General ([its section](#the-question-about-time-away)), and card 62 the [Start at login](#start-at-login) switch. Phase 2 added the [Rhythm](#rhythm) tab, card 49 the [Sessions](#sessions) tab after it, and card 61 the [Shortcuts](#shortcuts-1) tab after Sessions. So the tabs are General, Workspaces, Rhythm, Sessions and Shortcuts. The other tabs and rows arrive with their phases.
+
+Since card 50 the window opens on the tab it was left on. The app keeps the tab by name in its own defaults, as `settings.tab`, with the sample data too, and a missing or unknown value opens General. SwiftUI's own memory of the tab is not used, because it stops once the app chooses the tab, as the expanded panel's "Open Settings, Sessions" does.
 
 - **The list** is 220 pt wide, with + and − below it. Rows are reordered by dragging.
 - **The form** holds the name, the six swatches, a "Default block" pop-up and "Shown on key N". From the tenth workspace on, it says "No number key".
@@ -519,7 +538,7 @@ What card 49 builds: the tab after Rhythm, with the profiles and Codex. Terminal
 - **No profile:** "No Claude Code profile found." and "Add one by its folder, such as .claude in your home folder."
 - **The Dev build** never looks in the real home folder. It looks for profiles only in the stand-in folder named by `-DontBurnStandInHome` ([dev-setup.md](dev-setup.md#launch-arguments)), installs only into settings files inside it, and writes the command with `--target dev`. Without a stand-in, or for a profile outside it, a "Dev build" section shows the lines for a scratch project's `.claude/settings.json`.
 - **Without the hook tool** in the app, the tab says "The hook tool is missing from this copy of the app." and installs nothing.
-- **Without the hook** the rest of the app works as before. No profile is read until the tab shows.
+- **Without the hook** the rest of the app works as before. No profile is read until the tab shows, or until the wide panel appears with no session. Then each profile's hook is read, read-only as here, to tell "no sessions" from "hook not installed" ([Expanded panel on the Mac](#expanded-panel-on-the-mac)). This is the owner's answer on card 50.
 
 The prototype draws no Uninstall, no shared settings file and no sheets. The rows follow the owner's answer to question 14 in [phase-0.md](../spikes/phase-0.md#open-questions-for-the-owner). How a file is changed is in [../spikes/claude-hook.md](../spikes/claude-hook.md#rules-for-phase-3s-installer). The rules live in `HookSettings`, `HookInstaller`, `ClaudeProfile` and `ProfileReach` in `DontBurnCore`.
 

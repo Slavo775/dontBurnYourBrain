@@ -59,7 +59,7 @@ Length: 2 to 3 weeks. Runs side by side with phase 2.
 - A fallback for a turn that ends without a `Stop`. After a denied permission the `idle_prompt` notification ends it. After an Esc no event comes at all, so the session stays "working" until its next event, a limit the owner accepted on card 47
 - The hook tool hands each event to the running app, and a session never waits for it when the app is not running
 - Hook installer with a clean uninstall, once per settings file even when several profiles share it through a symlink, and only into a file that comes back byte for byte from a two-space JSON round trip
-- Expanded panel with the session list and state, grouped by workspace and project through the projects' folders. A session in no project's folder is listed under "Other". The list is the same with no block running, and it lists the sessions of projects whose time is not tracked
+- Expanded panel with the session list in three state groups, Needs you, Working and Idle, and a filter chip per workspace that has sessions, found through the projects' folders. A session in no project's folder is listed under "Other". The list is the same with no block running, and it lists the sessions of projects whose time is not tracked
 - Focus adapters: Terminal, iTerm2, VS Code, Cursor, plus ⌘1 to ⌘9 and the keyboard session switcher
 - Terminal checks before every focus that the session's `claude` process still holds the tab's tty. No adapter focuses while the screen is locked
 - VS Code and Cursor get the session's folder only when it is likely the window's own folder, and are only brought forward otherwise. The rule is measured before it ships, because phase 0 only reasoned it. Nothing is sent to an editor that is not running
