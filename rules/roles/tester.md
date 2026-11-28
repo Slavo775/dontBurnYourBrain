@@ -34,7 +34,7 @@ Build, run and test only the Dev variant.
 
 Every time, right before you start the Dev build, check both conditions:
 
-- **The screen is unlocked.** `printf '%s\n' 'import CoreGraphics' 'print((CGSessionCopyCurrentDictionary() as? [String: Any])?["CGSSessionScreenIsLocked"] as? Bool ?? false)' | swift -` prints `false`. It reads the key that "Running the Dev build" in `rules/testing.md` names.
+- **The screen is unlocked.** `printf '%s\n' 'import CoreGraphics' 'print((CGSessionCopyCurrentDictionary() as? [String: Any]).map { String($0["CGSSessionScreenIsLocked"] as? Bool ?? false) } ?? "no session")' | swift -` prints `false`. It reads the key that "Running the Dev build" in `rules/testing.md` names, and prints `no session` when there is no screen session to read, which fails the condition too.
 - **No other Dev build is running.** `pgrep -fl '/Build/Products/Debug/DontBurn.app/Contents/MacOS/DontBurn'` prints nothing. It finds a Dev build started from any worktree or the main checkout, and never the installed Release app. Stop your own earlier run first, by its process ID.
 
 When one fails, start nothing, and stop nothing you did not start. Check both, then end with one line for both: `RESULT: NEEDS_DECISION – not started: <each failed condition and what the owner should do>`, such as "unlock the screen" or "quit the Dev build with process ID 1234, started from `.worktrees/<branch>`". The Leader passes it to the owner as one message and calls you again when he says it is fixed.

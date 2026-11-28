@@ -114,7 +114,7 @@ These were learned in the reference flow before this project started. All are `a
 
 ## 2026-11-28 · Start each card with the AI Session Lab brief · accepted
 
-- **What happened:** In the last 30 days, the same tool error came back in 40 sessions (mcp:trello: "MCP error -‹n›: Input validation error: Invalid arguments for tool trelloReadList…"), and roles stopped for a decision or failed (tester: 14 asked, 16 failed; developer: 18 asked, 0 failed).
+- **What happened:** In the 30 days up to 28 November 2026, the same Trello tool error, a rejected `boardId` on `trelloReadList`, came back in 40 sessions, and roles stopped for a decision or failed (tester: 14 asked, 16 failed; developer: 18 asked, 0 failed).
 - **Root cause:** Nothing carries what earlier sessions taught into the next one, apart from lessons written by hand.
 - **Proposed change:** At the start of a card, if `~/.ai-session-lab/bin/aisess` exists, run `~/.ai-session-lab/bin/aisess brief .` and follow the rules it lists. Where it does not exist, nothing changes. Where: `rules/roles/leader.md`, section 1 "Start", step 1.
 
