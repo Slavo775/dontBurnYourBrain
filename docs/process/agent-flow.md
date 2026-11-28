@@ -41,9 +41,9 @@ The roles cannot do each other's job: only the Tester writes tests, only the Dev
 
 ## The path of one task
 
-1. **Leader.** Picks the card (`/next` shows which one and why), writes the brief from the card and the spec, and asks the owner only what they leave open. Checks the card's `Blocked by` line and the open pull requests that touch the same files.
+1. **Leader.** Picks the card (`/next` shows which one and why), writes the brief from the card and the spec, and asks the owner only what they leave open. Checks the card's `Blocked by` line and the open pull requests that touch the same files. Where AI Session Lab is installed, the Leader also reads its brief of earlier sessions first, as "Start" in [../../rules/roles/leader.md](../../rules/roles/leader.md) says. Without the tool, nothing changes.
 2. **Developer or Designer.** Works on the card's branch, in its worktree made from a fresh `origin/main`, and opens the pull request.
-3. **Tester.** `APPROVE:` or `REJECTED:` on the pull request. When a screen changed, the Tester takes screenshots in light and dark. They are never committed or uploaded: the Leader shows them to the owner. See "Checking a screen" in [../../rules/testing.md](../../rules/testing.md).
+3. **Tester.** `APPROVE:` or `REJECTED:` on the pull request. When a screen changed, the Tester takes screenshots in light and dark. They are never committed or uploaded: the Leader shows them to the owner. See "Checking a screen" in [../../rules/testing.md](../../rules/testing.md). When the Mac is not ready for a run in the Dev build, such as a locked screen, the Tester starts nothing and the owner gets one message that says what to fix. The card waits in In testing, and this is not a failed round. See "Before starting the Dev build" in [../../rules/roles/tester.md](../../rules/roles/tester.md) and the routing table in [../../rules/roles/leader.md](../../rules/roles/leader.md).
 4. **Reviewer.** `APPROVE:` or `REJECTED:`. A serious finding sends the task back.
 5. **Documenter.** Docs updated in the same pull request, or a note that none are needed.
 6. **Release master.** The owner's yes, then the merge.
@@ -64,7 +64,7 @@ Each status is a list on the Trello board, in this order. Moving a card is how i
 | Ready | Can be pulled. The top card whose blockers are all in Done goes next | The owner or the Leader |
 | In design | The Designer is working | Leader |
 | In development | The Developer is working | Leader |
-| In testing | The Tester is checking | Leader |
+| In testing | The Tester is checking, or waits for the owner to make the Mac ready for a run (step 3 above) | Leader |
 | In review | The Reviewer is reading | Leader |
 | Changes requested | The Tester or the Reviewer rejected it | Leader |
 | In docs | The Documenter is working | Leader |
