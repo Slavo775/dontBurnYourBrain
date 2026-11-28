@@ -41,7 +41,9 @@ struct SessionColumnView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
                         ForEach(sessions.list.sections) { section in
-                            SessionGroupView(section: section, isFirst: section == sessions.list.sections.first)
+                            SessionGroupView(
+                                section: section, isFirst: section == sessions.list.sections.first, sessions: sessions,
+                            )
                         }
                     }
                     .frame(width: Self.width - 2 * Self.inset, alignment: .leading)
@@ -111,6 +113,7 @@ private struct SessionChips: View {
 private struct SessionGroupView: View {
     let section: SessionList.Section
     let isFirst: Bool
+    let sessions: SessionColumn
 
     var body: some View {
         Text(title)
@@ -120,7 +123,9 @@ private struct SessionGroupView: View {
             .padding(.bottom, 4)
             .accessibilityAddTraits(.isHeader)
         ForEach(section.rows) { row in
-            SessionRow(row: row, group: section.group)
+            SessionRow(
+                row: row, group: section.group, note: sessions.notes[row.id], isFocusing: sessions.focusing == row.id,
+            ) { sessions.focus(row.id) }
                 .overlay(alignment: .top) {
                     if row != section.rows.first {
                         Color.line.frame(height: 1)
@@ -139,10 +144,17 @@ private struct SessionGroupView: View {
 }
 
 /// One session: its tile with the state's dot, its project or folder, then
-/// its profile and terminal, and for an idle one the time since its last event.
+/// its profile and terminal, or what the last Focus came to, its Focus button
+/// in Terminal and iTerm2, and for an idle one the time since its last event.
+///
+/// VoiceOver reads the row as one element, and Focus is its action.
 private struct SessionRow: View {
     let row: SessionList.Row
     let group: SessionGroup
+    /// What the last Focus came to, when the row says it.
+    let note: FocusOutcome?
+    let isFocusing: Bool
+    let focus: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
@@ -150,12 +162,20 @@ private struct SessionRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: row.title.isEmpty ? String(localized: "Unknown folder") : row.title)
                     .fontWeight(.semibold)
-                Text(source)
+                Text(noteText ?? source)
                     .font(.system(size: 12))
                     .foregroundStyle(Color.muted)
             }
             .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
+            if row.canFocus {
+                Button("Focus", action: focus)
+                    .buttonStyle(PanelButtonStyle(isProminent: true))
+                    .fixedSize()
+                    .disabled(isFocusing)
+                    // The row's action, below, so the row stays one element.
+                    .accessibilityHidden(true)
+            }
             if let idleTime = row.idleTime {
                 Text(text(idleTime))
                     .font(.system(size: 12))
@@ -167,6 +187,24 @@ private struct SessionRow: View {
         .padding(.vertical, 6)
         .frame(minHeight: 52)
         .accessibilityElement(children: .combine)
+        .accessibilityActions {
+            // The column ignores a second Focus while one runs.
+            if row.canFocus {
+                Button("Focus", action: focus)
+            }
+        }
+    }
+
+    /// What the last Focus came to, for the line under the name, or `nil` to
+    /// show the profile and terminal.
+    private var noteText: LocalizedStringKey? {
+        let terminal = row.terminal?.name ?? ""
+        switch note {
+        case .gone: return "This session's tab is gone."
+        case .timedOut: return "\(terminal) didn't answer. A dialog may be open."
+        case .failed: return "\(terminal) could not be brought forward."
+        case .focused, .denied, .notSent, nil: return nil
+        }
     }
 
     /// The agent with its profile and terminal, without what is not known.
@@ -260,7 +298,8 @@ extension SessionColumn {
             monitor = (try? scenario.store(root: root, now: now)).map(SessionMonitor.init(sample:))
         }
         let column = SessionColumn(
-            monitor: monitor, container: container, localContainer: localContainer, fixedTime: now,
+            monitor: monitor, focus: TerminalFocus(isSample: true), container: container,
+            localContainer: localContainer, fixedTime: now,
         ) { scenario.hooks }
         column.isShown = true
         return column

@@ -58,6 +58,8 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         self.commandBar = commandBar
         super.init()
         navigation.onExpandedChange = { [weak self] in self?.updateSessions() }
+        // The tab is in front now, and the panel would cover it.
+        sessions.onFocused = { [weak self] in self?.closePanel() }
         if let button = statusItem.button {
             button.target = self
             button.action = #selector(clicked)

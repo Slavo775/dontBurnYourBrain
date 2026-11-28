@@ -34,6 +34,8 @@ struct SettingsView: View {
     let localContainer: ModelContainer?
     /// The Claude Code profiles and their hook.
     let hookSetup: HookSetup
+    /// Whether macOS lets the app control each terminal.
+    let terminalFocus: TerminalFocus
     /// The question about time away from the Mac.
     let awaySettings: AwaySettings
     /// The command bar's shortcut, or `nil` without a store, when there is no bar.
@@ -70,7 +72,7 @@ struct SettingsView: View {
                 }
             }
             Tab("Sessions", systemImage: "terminal", value: .sessions) {
-                SessionsPane(setup: hookSetup)
+                SessionsPane(setup: hookSetup, terminalFocus: terminalFocus)
             }
             Tab("Shortcuts", systemImage: "keyboard", value: .shortcuts) {
                 if let commandBarShortcut {
@@ -280,14 +282,15 @@ extension ModelContainer {
     let container = ModelContainer.sample
     SettingsView(
         container: container, localContainer: .sampleFolders(for: container), hookSetup: .sample,
-        awaySettings: AwaySettings(defaults: nil), commandBarShortcut: nil,
+        terminalFocus: TerminalFocus(isSample: true), awaySettings: AwaySettings(defaults: nil),
+        commandBarShortcut: nil,
         navigation: SettingsNavigation(),
     )
 }
 
 #Preview("No store") {
     SettingsView(
-        container: nil, localContainer: nil, hookSetup: .sample, awaySettings: AwaySettings(defaults: nil),
-        commandBarShortcut: nil, navigation: SettingsNavigation(),
+        container: nil, localContainer: nil, hookSetup: .sample, terminalFocus: TerminalFocus(isSample: true),
+        awaySettings: AwaySettings(defaults: nil), commandBarShortcut: nil, navigation: SettingsNavigation(),
     )
 }

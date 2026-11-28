@@ -70,6 +70,10 @@ public struct SessionList: Equatable, Sendable {
         /// The whole minutes since the last activity, rounded down, for an
         /// idle session, and `nil` for any other.
         public let idleMinutes: Int?
+        /// Whether the row has a Focus button, whatever its group: the session
+        /// has a ``AgentSession/focusHandle``, and macOS has not refused the
+        /// app control of its terminal.
+        public let canFocus: Bool
 
         /// ``idleMinutes`` in the largest unit that fits.
         public var idleTime: IdleTime? {
@@ -134,10 +138,12 @@ public struct SessionList: Equatable, Sendable {
     ///
     /// `project` finds a session's project, as
     /// ``AgentSession/project(in:among:)`` does. A project without a workspace
-    /// counts as none. A session that ended is left out.
+    /// counts as none. A session that ended is left out. The sessions in a
+    /// terminal of `automationDenied` get no Focus button.
     public init(
         sessions: [AgentSession],
         filter: SessionFilter = .all,
+        automationDenied: Set<TerminalApp> = [],
         at now: Date,
         project: (AgentSession) throws -> Project?,
     ) rethrows {
@@ -151,7 +157,9 @@ public struct SessionList: Equatable, Sendable {
         self.filter = filter
         let shown = filter == .all ? listed : listed.filter { $0.filter == filter }
         sections = SessionGroup.allCases.compactMap { group in
-            let rows = Self.ordered(shown.filter { $0.group == group }, in: group).map { $0.row(at: now) }
+            let rows = Self.ordered(shown.filter { $0.group == group }, in: group).map {
+                $0.row(at: now, automationDenied: automationDenied)
+            }
             return rows.isEmpty ? nil : Section(group: group, rows: rows)
         }
     }
@@ -202,7 +210,7 @@ public struct SessionList: Equatable, Sendable {
             project?.workspace.map { .workspace($0.id) } ?? .other
         }
 
-        func row(at now: Date) -> Row {
+        func row(at now: Date, automationDenied: Set<TerminalApp>) -> Row {
             let name = project?.name ?? ""
             // Through the capped rounding, so a damaged stored time never stops the app.
             let idle = MenuBarLabel.wholeSeconds(now.timeIntervalSince(session.lastActivity)) / 60
@@ -213,6 +221,7 @@ public struct SessionList: Equatable, Sendable {
                 profile: Self.shortName(ofProfile: session.profileName),
                 terminal: session.terminalBundleIdentifier.flatMap(TerminalApp.init(rawValue:)),
                 idleMinutes: group == .idle ? idle : nil,
+                canFocus: session.focusHandle.map { !automationDenied.contains($0.terminal) } ?? false,
             )
         }
 

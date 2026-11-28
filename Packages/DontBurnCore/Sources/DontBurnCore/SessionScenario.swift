@@ -42,7 +42,9 @@ public enum SessionScenario: String, CaseIterable, Sendable {
     /// `root`, the sample root.
     ///
     /// Nothing is read or made on disk. Each session's process ID is above any
-    /// that macOS gives out, so it never names a real process.
+    /// that macOS gives out, so it never names a real process. A session in
+    /// iTerm2 or Terminal has a made-up tab handle, so its row shows Focus, and
+    /// the app sends no Apple event with the sample data.
     public func store(root: URL, now: Date) throws -> SessionStore {
         func path(_ folder: String) -> String {
             root.appending(path: folder).path(percentEncoded: false)
@@ -56,7 +58,11 @@ public enum SessionScenario: String, CaseIterable, Sendable {
                 var environment = ["CLAUDE_PID": "\(Int32.max - Int32(index))"]
                 environment["CLAUDE_CONFIG_DIR"] = sample.profile.map(path)
                 environment["__CFBundleIdentifier"] = sample.terminal?.rawValue
-                let event = try HookEvent(claudeEvent: message, environment: environment) { _ in nil }
+                environment["ITERM_SESSION_ID"] = sample.terminal == .iTerm2
+                    ? String(format: "w0t0p0:00000000-0000-4000-8000-%012d", index)
+                    : nil
+                let tty = sample.terminal == .terminal ? String(format: "ttys9%02d", index) : nil
+                let event = try HookEvent(claudeEvent: message, environment: environment) { _ in tty }
                 store.apply(event, at: now.addingTimeInterval(-minutesAgo * 60))
             }
         }

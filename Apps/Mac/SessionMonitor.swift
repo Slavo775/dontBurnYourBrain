@@ -67,6 +67,13 @@ final class SessionMonitor {
         return store.sessions
     }
 
+    /// Drops the session `id`, as when Focus found its tab gone. Its next
+    /// event brings it back.
+    func forget(_ id: AgentSession.ID) {
+        store.forget(id)
+        save()
+    }
+
     private func receive(_ message: Data, at arrival: Date) {
         let event: HookEvent
         do {
@@ -79,7 +86,11 @@ final class SessionMonitor {
         let name = Self.knownEventNames.contains(event.name) ? event.name : "an unknown event"
         log.info("Received \(name, privacy: .public)")
         prune()
-        defer { onEvent?() }
+        save()
+        onEvent?()
+    }
+
+    private func save() {
         guard let directory else { return }
         do {
             try store.save(in: directory)
