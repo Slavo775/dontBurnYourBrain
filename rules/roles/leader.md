@@ -8,14 +8,14 @@ You run in the main session, started by the owner with `/lead`. You take one car
 
 ## 1. Start
 
-1. Read the files in "Must read" above.
-2. **The board.** The board's address is in `CLAUDE.md`. Read its lists with `trelloReadList` `list_by_board`. All 13 lists of `docs/process/agent-flow.md` must exist with exactly those names. If one is missing or renamed, stop and tell the owner. A typo in a list name breaks the flow quietly.
+1. Read the files in "Must read" above. **The AI Session Lab brief:** where `~/.ai-session-lab/bin/aisess` exists, also run `~/.ai-session-lab/bin/aisess brief .` in the main checkout and follow the rules it lists. When one of them disagrees with `rules/` or `CLAUDE.md`, the repository wins, as `rules/README.md` says, and you tell the owner. Its output stays in the chat, never in the repository or on the board. Where the tool does not exist, skip this, and nothing else changes.
+2. **The board.** The board's link and its ARI are in `CLAUDE.md`. Read its lists with `trelloReadList` `list_by_board`, with the ARI as `boardId`. When the ARI is missing or rejected, get it once with `trelloReadBoard` `get` and the link, use it for the rest of the session, and tell the owner. All 13 lists of `docs/process/agent-flow.md` must exist with exactly those names. If one is missing or renamed, stop and tell the owner. A typo in a list name breaks the flow quietly.
 3. **No board.** When the Trello tools are not available or the board cannot be read, work from the task the person wrote in the chat. Keep the status in your replies (`Status: In testing`), and do everything else the same. Never invent a card number.
 4. **The card.** Take the card the owner names (`#5` or its link). Without one, take the next card, chosen as `/next` does. A card's number is the number at the start of the last part of its link: `https://trello.com/c/<shortLink>/<number>-<slug>`.
 5. **Blocked by.** Every card in the card's `Blocked by:` line must be in Done. Otherwise refuse, and say which cards block it and where they are.
 6. **Resume.** A card that is already past Ready is continued from its list and its comments. Never start it again from the beginning. When this session did not start it, continue only after the owner confirms the other session is closed.
 
-Trello tools take the long `ari:cloud:trello::…` ids from read results, never links or guessed ids. Fetch a card's checklist with `trelloReadChecklist` `list_by_card`. Card listings leave checklists out, and long fields are shortened previews.
+Trello tools take the long `ari:cloud:trello::…` ids, never links or guessed ids: the board's from `CLAUDE.md`, and every other one from read results. The one link a tool gets is the board's, in the fallback of step 2. Fetch a card's checklist with `trelloReadChecklist` `list_by_card`. Card listings leave checklists out, and long fields are shortened previews.
 
 ## 2. Intake and brief
 
@@ -44,6 +44,7 @@ The card's list is its status. Move the card before you call the next role.
 | Developer or Designer `DONE` | Tester | In testing |
 | Developer or Designer `DONE`, committed but not pushed because tests fail on purpose | Tester, only to update those tests and push. Then the author opens the pull request if there is none, then the Tester's full check | In testing |
 | Tester `DONE` after that push-only step | The author, to open the pull request when there is none. Then the Tester's full check | In testing |
+| Tester `NEEDS_DECISION` that starts "not started" (its test conditions, in `rules/roles/tester.md`) | The owner, with the Tester's message as one message. When he says it is fixed, the Tester again. Not a failed round | Stays in In testing |
 | Tester `PASS` | Reviewer | In review |
 | Tester `FAIL` or Reviewer `REJECTED` | Whoever owns the finding | Changes requested, then In development or In design |
 | Reviewer `APPROVE` | Documenter | In docs |

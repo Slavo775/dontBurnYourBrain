@@ -111,3 +111,21 @@ These were learned in the reference flow before this project started. All are `a
 - **What happened:** on card #56 (PR #50), the Tester rejected round 1: the README had no step for one reported result, and its clean-up check never matched a running instance, because the path was spelled `/private/var` in one place and `/var` in the other. The Reviewer rejected round 2: the recommendation gave two opposite rules for the case without the App Data permission. In round 3, the Developer pointed the profile-name reader at a differently cased path to the owner's real Chrome folder, outside the commands the owner had approved. It refused before reading anything. Earlier, Chrome's binary was started as Terminal's child, and macOS charged Chrome's Local Network request to Terminal with a prompt the owner had to answer.
 - **Root cause:** no rule says that a spike's author runs every written step as written, on a fresh folder, before the Tester. No rule says that a proof that code refuses the owner's real data uses a stand-in at another path. No rule says how an agent starts another app.
 - **Proposed change:** three rules. Running a spike's steps before the Tester, in `rules/roles/developer.md`, "Workflow". Another app's real data and a stand-in for a refusal proof, in `rules/safety-and-privacy.md`, "Builds and data". Starting another app with `open`, in `rules/safety-and-privacy.md`, "Permissions and the system".
+
+## 2026-11-28 · Start each card with the AI Session Lab brief · accepted
+
+- **What happened:** In the last 30 days, the same tool error came back in 40 sessions (mcp:trello: "MCP error -‹n›: Input validation error: Invalid arguments for tool trelloReadList…"), and roles stopped for a decision or failed (tester: 14 asked, 16 failed; developer: 18 asked, 0 failed).
+- **Root cause:** Nothing carries what earlier sessions taught into the next one, apart from lessons written by hand.
+- **Proposed change:** At the start of a card, if `~/.ai-session-lab/bin/aisess` exists, run `~/.ai-session-lab/bin/aisess brief .` and follow the rules it lists. Where it does not exist, nothing changes. Where: `rules/roles/leader.md`, section 1 "Start", step 1.
+
+## 2026-11-28 · Check the test conditions before a run in the Dev build · accepted
+
+- **What happened:** On cards 49, 58 and 60 (25 to 27 November 2026) the Tester stopped with NEEDS_DECISION several times for conditions that could have been checked first: a locked screen, a window in the wrong place, another Dev build still running. Card 49 took about 17 hours and was released twice.
+- **Root cause:** Nothing checks the maintainer's Mac before a run, so the Tester finds out during the test and has to wait for the owner.
+- **Proposed change:** Before starting the Dev build for a check, the Tester verifies that the screen is unlocked and no other Dev build is running; if a condition fails, the check waits and the owner gets one message that says what to fix. Where: `rules/roles/tester.md`, "Before starting the Dev build", with its row in the routing table of `rules/roles/leader.md`.
+
+## 2026-11-28 · Give Trello the board's ARI, not its link · accepted
+
+- **What happened:** From 16 to 27 November, 40 of 64 sessions began with a failed `trelloReadList` `list_by_board` call. The tool takes a board ARI (`ari:cloud:trello::board/workspace/...`) and got the board's link or short id. Each time the agent found the ARI by itself, with a median of two extra calls and about a minute, and the error came back in the next session.
+- **Root cause:** The only board id in the repository is the link in `CLAUDE.md`, and the first step of `/next` and of the Leader is a list read that needs the ARI. The rule to take ids from read results cannot help before the first read.
+- **Proposed change:** Keep the board's ARI in `CLAUDE.md` beside its link and pass it as `boardId`; when it is missing or rejected, get it once with `trelloReadBoard` `get` and the link. Where: rule 1 of `CLAUDE.md` for the ARI; step 1 of `.claude/skills/next/SKILL.md` and step 2 of `rules/roles/leader.md` for its use.
