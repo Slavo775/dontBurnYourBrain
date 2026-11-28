@@ -18,6 +18,8 @@ struct DontBurnApp: App {
     @State private var settings: SettingsNavigation
     /// The question about time away, shared by the countdown and Settings.
     @State private var awaySettings: AwaySettings
+    /// The command bar's shortcut, shared by the bar and Settings, or `nil` without a store.
+    @State private var commandBarShortcut: CommandBarShortcut?
 
     /// The open store, or `nil` when it could not be opened.
     private let container: ModelContainer?
@@ -66,17 +68,50 @@ struct DontBurnApp: App {
             // With the sample data no profile is read, not even in a stand-in folder.
             sampleSessions?.hooks ?? hookSetup.currentStatuses()
         }
+        let commandBar = Self.commandBar(countdown: countdown, container: container, sampleData: sampleData)
+        _commandBarShortcut = State(initialValue: commandBar?.shortcut)
         _statusItem = State(initialValue: StatusItemController(
             countdown: countdown, sessions: sessionColumn, mainWindow: mainWindow, settings: settings,
+            commandBar: commandBar,
         ))
         _sessions = State(initialValue: sessions)
         _hookSetup = State(initialValue: hookSetup)
         _settings = State(initialValue: settings)
-        switch Self.launchArgument("DontBurnAppearance").flatMap(Appearance.init(rawValue:)) {
+        Self.applyAppearance()
+    }
+
+    /// The command bar over `countdown`, or `nil` without a store: with
+    /// nothing to act on there is no bar and no shortcut. The sample data
+    /// keeps the shortcut's settings in memory.
+    private static func commandBar(
+        countdown: Countdown, container: ModelContainer?, sampleData: Bool,
+    ) -> CommandBarController? {
+        container.map { _ in
+            CommandBarController(countdown: countdown, shortcut: CommandBarShortcut(
+                defaults: sampleData ? nil : .standard, isOnByDefault: isShortcutOnByDefault,
+            ))
+        }
+    }
+
+    /// The appearance `-DontBurnAppearance light` or `dark` asks for, or the system's.
+    private static func applyAppearance() {
+        switch launchArgument("DontBurnAppearance").flatMap(Appearance.init(rawValue:)) {
         case .light: NSApplication.shared.appearance = NSAppearance(named: .aqua)
         case .dark: NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
         case nil: break
         }
+    }
+
+    /// Whether the command bar's shortcut is on until it is switched: in the
+    /// Release build only. Never in a Debug build, which is always Dev, so Dev
+    /// takes no shortcut by default even when its variant is missing, which
+    /// ``BuildInfo`` reads as Release.
+    private static var isShortcutOnByDefault: Bool {
+        #if DEBUG
+            false
+        #else
+            BuildInfo.current.variant == .release
+        #endif
     }
 
     /// The defaults key that remembers that the presets the app comes with were added.
@@ -89,8 +124,9 @@ struct DontBurnApp: App {
     ///
     /// Always `nil` outside the Debug configuration, so a Release build never
     /// runs a frozen clock, a forced appearance, the sample data, a stand-in
-    /// home folder for the Claude Code profiles, or a short or simulated time away.
-    private static func launchArgument(_ name: String) -> String? {
+    /// home folder for the Claude Code profiles, a short or simulated time away,
+    /// or a stand-in login item.
+    static func launchArgument(_ name: String) -> String? {
         #if DEBUG
             UserDefaults.standard.volatileDomain(forName: UserDefaults.argumentDomain)[name] as? String
         #else
@@ -99,8 +135,9 @@ struct DontBurnApp: App {
     }
 
     /// The sample set in memory with `-DontBurnSampleData YES`, seeded at
-    /// `now`, otherwise the store on disk in the folder named after the bundle
-    /// identifier, with the presets the app comes with, added once.
+    /// `now` with weeks of history before it, otherwise the store on disk in
+    /// the folder named after the bundle identifier, with the presets the app
+    /// comes with, added once.
     ///
     /// With the sample set, `scenario`, from `-DontBurnTimerState <scenario>`,
     /// also puts the timer into one of the ``TimerScenario`` states.
@@ -113,6 +150,7 @@ struct DontBurnApp: App {
             if sampleData {
                 let container = try ModelStore.inMemory()
                 try SampleData.seed(into: container.mainContext, now: now)
+                try SampleData.seedHistory(into: container.mainContext, now: now, calendar: .current)
                 if let scenario {
                     try scenario.apply(to: container.mainContext, now: now)
                     log.info("Put the sample timer into the \(scenario.rawValue) state")
@@ -230,7 +268,7 @@ struct DontBurnApp: App {
         Settings {
             SettingsView(
                 container: container, localContainer: localContainer, hookSetup: hookSetup,
-                awaySettings: awaySettings, navigation: settings,
+                awaySettings: awaySettings, commandBarShortcut: commandBarShortcut, navigation: settings,
             )
         }
     }

@@ -10,11 +10,64 @@
     "%@ block finished" : {
 
     },
+    "%@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
+    "%@, %@ tracked" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@ tracked"
+          }
+        }
+      }
+    },
+    "%@, %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@."
+          }
+        }
+      }
+    },
     "%@, Dev build" : {
 
     },
     "%@, paused" : {
 
+    },
+    "%@. %@ In all, %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@. %2$@ In all, %3$@."
+          }
+        }
+      }
+    },
+    "%@. Nothing tracked." : {
+
+    },
+    "%@. Work, %@. Breaks, %@. Total, %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@. Work, %2$@. Breaks, %3$@. Total, %4$@."
+          }
+        }
+      }
     },
     "%@–now" : {
 
@@ -104,6 +157,15 @@
     "5 minutes left" : {
 
     },
+    "A block can't be longer than a day." : {
+
+    },
+    "A break can't be longer than a day." : {
+
+    },
+    "A break is already running." : {
+
+    },
     "A file could not be written. settings.json is unchanged." : {
 
     },
@@ -170,7 +232,13 @@
     "An entry can't reach into the future." : {
 
     },
+    "Another app already uses this shortcut." : {
+
+    },
     "Another file stands at this path since the install, so another app may have written it." : {
+
+    },
+    "Apps use ⌘ with this key. Add ⌃ or ⌥" : {
 
     },
     "Archive" : {
@@ -212,10 +280,16 @@
     "Blocks that already follow it keep their rhythm." : {
 
     },
+    "Both parts keep the workspace, project, kind and note, and each can then be changed." : {
+
+    },
     "Break" : {
 
     },
     "Break for" : {
+
+    },
+    "Break for %@" : {
 
     },
     "Break is over" : {
@@ -225,6 +299,9 @@
 
     },
     "Break now" : {
+
+    },
+    "Break now, %@" : {
 
     },
     "Break now, %lld minutes" : {
@@ -249,6 +326,9 @@
         }
       }
     },
+    "Breaks" : {
+
+    },
     "Cancel" : {
 
     },
@@ -256,6 +336,9 @@
 
     },
     "Choose a project" : {
+
+    },
+    "Choose a time that leaves at least a minute on each side." : {
 
     },
     "Choose a workspace" : {
@@ -290,6 +373,12 @@
 
     },
     "Color" : {
+
+    },
+    "Command" : {
+
+    },
+    "Command bar" : {
 
     },
     "Create a preset" : {
@@ -349,10 +438,19 @@
     "Entries can't be shown or changed right now." : {
 
     },
+    "Entry" : {
+
+    },
     "Expand the panel" : {
 
     },
+    "Export…" : {
+
+    },
     "File" : {
+
+    },
+    "First part" : {
 
     },
     "Focus" : {
@@ -370,7 +468,13 @@
     "History" : {
 
     },
+    "Hours" : {
+
+    },
     "Idle" : {
+
+    },
+    "If the shortcut doesn't open the bar, another app may use it." : {
 
     },
     "Indigo" : {
@@ -397,10 +501,16 @@
     "Its history and its folders stay. You can restore it from the Archived list." : {
 
     },
+    "Key %lld" : {
+
+    },
     "Keys that differ: %@" : {
 
     },
     "Kind" : {
+
+    },
+    "Last week" : {
 
     },
     "Length" : {
@@ -416,6 +526,9 @@
 
     },
     "Minutes without input before it asks" : {
+
+    },
+    "Month" : {
 
     },
     "Name" : {
@@ -436,13 +549,25 @@
     "Next day" : {
 
     },
+    "Next month" : {
+
+    },
+    "Next week" : {
+
+    },
     "No Claude Code profile found." : {
+
+    },
+    "No block is running." : {
 
     },
     "No block running" : {
 
     },
     "No install of the hook into this file is on record." : {
+
+    },
+    "No match" : {
 
     },
     "No number key" : {
@@ -461,6 +586,12 @@
 
     },
     "Note" : {
+
+    },
+    "Nothing is paused." : {
+
+    },
+    "Nothing is running." : {
 
     },
     "Nothing running" : {
@@ -499,10 +630,25 @@
     "Open Settings, Sessions" : {
 
     },
+    "Open the command bar with a shortcut" : {
+
+    },
+    "Open the command bar" : {
+
+    },
     "Open the window" : {
 
     },
+    "Open this day" : {
+
+    },
+    "Open this week" : {
+
+    },
     "Open window ⌘O" : {
+
+    },
+    "Or press one key while the field is empty" : {
 
     },
     "Orange" : {
@@ -533,6 +679,12 @@
 
     },
     "Previous day" : {
+
+    },
+    "Previous month" : {
+
+    },
+    "Previous week" : {
 
     },
     "Profiles" : {
@@ -589,6 +741,18 @@
     "Save" : {
 
     },
+    "Save this day's entries as a CSV file" : {
+
+    },
+    "Save this month's entries as a CSV file" : {
+
+    },
+    "Save this week's entries as a CSV file" : {
+
+    },
+    "Second part" : {
+
+    },
     "Sessions" : {
 
     },
@@ -599,6 +763,15 @@
 
     },
     "Shares its settings file with %@" : {
+
+    },
+    "Shortcut" : {
+
+    },
+    "Shortcuts" : {
+
+    },
+    "Show" : {
 
     },
     "Show menu" : {
@@ -613,6 +786,21 @@
     "Sound (%@)" : {
 
     },
+    "Space" : {
+
+    },
+    "Split" : {
+
+    },
+    "Split at" : {
+
+    },
+    "Split entry" : {
+
+    },
+    "Split…" : {
+
+    },
     "Start" : {
 
     },
@@ -620,6 +808,12 @@
 
     },
     "Start a block when you're ready." : {
+
+    },
+    "Start at login" : {
+
+    },
+    "Starting at login is off for %@. Allow it in System Settings → Login Items." : {
 
     },
     "Switch" : {
@@ -646,6 +840,9 @@
     "The Dev build installs only into profiles in its stand-in folder." : {
 
     },
+    "The Dev build never starts at login." : {
+
+    },
     "The app's path can't go into a hook command safely. Move the app to another folder." : {
 
     },
@@ -653,6 +850,12 @@
 
     },
     "The block ends soon." : {
+
+    },
+    "The block is paused. Resume first." : {
+
+    },
+    "The command bar can't be used right now." : {
 
     },
     "The data could not be opened" : {
@@ -667,10 +870,16 @@
     "The entry could not be saved." : {
 
     },
+    "The entry could not be split." : {
+
+    },
     "The entry was not deleted" : {
 
     },
     "The file changed while it was being edited. Nothing was written. Try again." : {
+
+    },
+    "The file could not be saved" : {
 
     },
     "The file differs from before the install. The difference was kept." : {
@@ -706,7 +915,13 @@
     "The profile has no settings.json." : {
 
     },
+    "The stand-in refuses every registration." : {
+
+    },
     "These lines change. Nothing else in the file does." : {
+
+    },
+    "This can't be done right now." : {
 
     },
     "This entry's block is still running. Only its note can change until the block ends." : {
@@ -739,6 +954,12 @@
     "Track time" : {
 
     },
+    "Type a workspace or a command" : {
+
+    },
+    "Type the shortcut" : {
+
+    },
     "Uninstall" : {
 
     },
@@ -746,6 +967,9 @@
 
     },
     "Unnamed" : {
+
+    },
+    "Use ⌘, ⌃ or ⌥ with the key" : {
 
     },
     "Used by %@, so it can't be removed." : {
@@ -764,6 +988,9 @@
 
     },
     "Was it work? The answer waits in the panel." : {
+
+    },
+    "Week" : {
 
     },
     "When a block ends" : {
@@ -809,6 +1036,9 @@
 
     },
     "Workspaces can't be shown or changed right now." : {
+
+    },
+    "You can also type" : {
 
     },
     "added later" : {
@@ -858,6 +1088,12 @@
     "less than 1 min" : {
 
     },
+    "macOS doesn't allow this shortcut." : {
+
+    },
+    "macOS refused the change: %@" : {
+
+    },
     "min" : {
 
     },
@@ -889,6 +1125,9 @@
 
     },
     "settings.json is too large to edit safely." : {
+
+    },
+    "start a workspace" : {
 
     },
     "“%@” already belongs to %@." : {

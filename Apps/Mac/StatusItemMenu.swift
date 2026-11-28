@@ -4,9 +4,11 @@ import SwiftUI
 
 /// The right-click menu: the timer's actions while a block or a break runs,
 /// or "Take a break" while nothing runs, then the first three workspaces to
-/// start, then the window, Settings and Quit.
+/// start, then the command bar, the window, Settings and Quit.
 struct StatusItemMenu: View {
     let countdown: Countdown
+    /// The command bar, or `nil` without a store, which leaves its item out.
+    let commandBar: CommandBarController?
     let openWindow: () -> Void
 
     var body: some View {
@@ -47,6 +49,11 @@ struct StatusItemMenu: View {
                 }
             }
             Divider()
+        }
+        if let commandBar {
+            Button("Open the command bar") { commandBar.openAfterMenu() }
+                // Its keys show only while the system holds them for the app.
+                .keyboardShortcut(commandBar.shortcut.registered?.keyboardShortcut)
         }
         Button("Open the window", action: openWindow)
             .keyboardShortcut("o")

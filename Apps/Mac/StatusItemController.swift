@@ -15,6 +15,8 @@ final class StatusItemController: NSObject, NSWindowDelegate {
     private let sessions: SessionColumn
     private let mainWindow: MainWindowController
     private let settings: SettingsNavigation
+    /// The command bar, or `nil` without a store.
+    private let commandBar: CommandBarController?
     private let navigation = PanelNavigation()
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
@@ -39,17 +41,21 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         return panel
     }()
 
-    private lazy var menu = NSHostingMenu(rootView: StatusItemMenu(countdown: countdown) { [weak self] in
-        self?.mainWindow.show()
-    })
+    private lazy var menu = NSHostingMenu(
+        rootView: StatusItemMenu(countdown: countdown, commandBar: commandBar) { [weak self] in
+            self?.mainWindow.show()
+        },
+    )
 
     init(
         countdown: Countdown, sessions: SessionColumn, mainWindow: MainWindowController, settings: SettingsNavigation,
+        commandBar: CommandBarController?,
     ) {
         self.countdown = countdown
         self.sessions = sessions
         self.mainWindow = mainWindow
         self.settings = settings
+        self.commandBar = commandBar
         super.init()
         navigation.onExpandedChange = { [weak self] in self?.updateSessions() }
         if let button = statusItem.button {
@@ -316,7 +322,7 @@ final class StatusItemController: NSObject, NSWindowDelegate {
 }
 
 /// A borderless panel that can become key and hands key presses to `onKey` first.
-private final class KeyPanel: NSPanel {
+final class KeyPanel: NSPanel {
     var onKey: ((NSEvent) -> Bool)?
 
     override var canBecomeKey: Bool {

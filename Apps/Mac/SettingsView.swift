@@ -9,6 +9,7 @@ enum SettingsTab: String {
     case workspaces
     case rhythm
     case sessions
+    case shortcuts
 }
 
 /// Which tab the Settings window shows, so a link elsewhere can choose it.
@@ -25,7 +26,7 @@ final class SettingsNavigation {
     }
 }
 
-/// The Settings window: General, Workspaces, Rhythm and Sessions for now.
+/// The Settings window: General, Workspaces, Rhythm, Sessions and Shortcuts for now.
 struct SettingsView: View {
     /// The open store, or `nil` when it could not be opened.
     let container: ModelContainer?
@@ -35,6 +36,8 @@ struct SettingsView: View {
     let hookSetup: HookSetup
     /// The question about time away from the Mac.
     let awaySettings: AwaySettings
+    /// The command bar's shortcut, or `nil` without a store, when there is no bar.
+    let commandBarShortcut: CommandBarShortcut?
     @Bindable var navigation: SettingsNavigation
 
     var body: some View {
@@ -69,6 +72,17 @@ struct SettingsView: View {
             Tab("Sessions", systemImage: "terminal", value: .sessions) {
                 SessionsPane(setup: hookSetup)
             }
+            Tab("Shortcuts", systemImage: "keyboard", value: .shortcuts) {
+                if let commandBarShortcut {
+                    ShortcutsPane(shortcut: commandBarShortcut)
+                } else {
+                    ContentUnavailableView(
+                        "The data could not be opened",
+                        systemImage: "exclamationmark.triangle",
+                        description: Text("The command bar can't be used right now."),
+                    )
+                }
+            }
         }
         // One fixed size for every tab, the prototype's 760 pt, so the window
         // neither jumps between launches nor between tabs.
@@ -76,8 +90,8 @@ struct SettingsView: View {
     }
 }
 
-/// The General tab: the alerts' switches, the question about time away, and
-/// the app's version at the bottom.
+/// The General tab: the alerts' switches, the question about time away, the
+/// Start at login switch, and the app's version at the bottom.
 private struct GeneralPane: View {
     let awaySettings: AwaySettings
     @State private var isNotificationRefused = false
@@ -89,6 +103,9 @@ private struct GeneralPane: View {
             AlertSection("When a focus interval ends", kind: .focusEnd)
             AlertSection("5 minutes before a block ends", kind: .warning)
             AwaySection(settings: awaySettings)
+            if let loginItem = LoginItem.current {
+                LoginItemSection(item: loginItem)
+            }
             if isNotificationRefused {
                 Section {
                     HStack {
@@ -232,7 +249,9 @@ extension ModelContainer {
         do {
             let container = try ModelStore.inMemory()
             // 2026-01-15 08:41:30 UTC, as in the clock's preview.
-            try SampleData.seed(into: container.mainContext, now: Date(timeIntervalSince1970: 1_768_466_490))
+            let now = Date(timeIntervalSince1970: 1_768_466_490)
+            try SampleData.seed(into: container.mainContext, now: now)
+            try SampleData.seedHistory(into: container.mainContext, now: now, calendar: .current)
             return container
         } catch {
             return nil
@@ -261,7 +280,7 @@ extension ModelContainer {
     let container = ModelContainer.sample
     SettingsView(
         container: container, localContainer: .sampleFolders(for: container), hookSetup: .sample,
-        awaySettings: AwaySettings(defaults: nil),
+        awaySettings: AwaySettings(defaults: nil), commandBarShortcut: nil,
         navigation: SettingsNavigation(),
     )
 }
@@ -269,6 +288,6 @@ extension ModelContainer {
 #Preview("No store") {
     SettingsView(
         container: nil, localContainer: nil, hookSetup: .sample, awaySettings: AwaySettings(defaults: nil),
-        navigation: SettingsNavigation(),
+        commandBarShortcut: nil, navigation: SettingsNavigation(),
     )
 }

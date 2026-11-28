@@ -61,7 +61,7 @@ private enum WindowPage: Hashable {
     case history
 }
 
-/// The sidebar with Today and History, and the chosen page.
+/// The sidebar with Today and History and last week's totals, and the chosen page.
 struct MainWindowView: View {
     let container: ModelContainer?
     let fixedTime: Date?
@@ -76,6 +76,11 @@ struct MainWindowView: View {
                 Label("Today", systemImage: "clock").tag(WindowPage.today)
                 Label("History", systemImage: "chart.bar").tag(WindowPage.history)
             }
+            .safeAreaInset(edge: .bottom) {
+                if let context = container?.mainContext {
+                    LastWeekTotals(context: context, fixedTime: fixedTime)
+                }
+            }
             .navigationSplitViewColumnWidth(210)
             .scrollContentBackground(.hidden)
             .background(Color.sunken)
@@ -84,9 +89,11 @@ struct MainWindowView: View {
                 if let context = container?.mainContext {
                     switch page {
                     case .history:
-                        DayView(context: context, fixedTime: fixedTime, isHistory: true, onChange: onChange)
+                        HistoryView(context: context, fixedTime: fixedTime, onChange: onChange) {
+                            page = .today
+                        }
                     default:
-                        DayView(context: context, fixedTime: fixedTime, isHistory: false, onChange: onChange)
+                        DayView(context: context, fixedTime: fixedTime, historyDay: nil, onChange: onChange)
                     }
                 } else {
                     ContentUnavailableView(
@@ -99,6 +106,55 @@ struct MainWindowView: View {
             .foregroundStyle(Color.ink)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.surface)
+        }
+    }
+}
+
+/// Last week's time per workspace, at the bottom of the window's sidebar,
+/// where it doubles as the legend for the charts.
+struct LastWeekTotals: View {
+    let context: ModelContext
+    let fixedTime: Date?
+
+    var body: some View {
+        // Every second, so a correction to last week shows at once.
+        TimelineView(.periodic(from: .now, by: 1)) { timeline in
+            let now = fixedTime ?? timeline.date
+            // The prototype's "Last week" group: 12 pt muted title, then 26 pt rows.
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Last week")
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(Color.muted)
+                    .padding(.bottom, 4)
+                    .accessibilityAddTraits(.isHeader)
+                // A failed read reads as nothing tracked; History says why.
+                let week = HistoryRange.lastWeek(now: now, calendar: .current)
+                let totals = try? RangeTotals(week, in: context, now: now, calendar: .current)
+                if let totals, !totals.totals.isEmpty {
+                    ForEach(totals.totals) { total in
+                        HStack(spacing: 8) {
+                            // A long name is cut, so the time always shows.
+                            WorkspaceName(workspace: total.workspace)
+                            Spacer(minLength: 0)
+                            Text(verbatim: MenuBarLabel.hoursAndMinutes(total.time.tracked))
+                                .fontWeight(.semibold)
+                                .monospacedDigit()
+                                .fixedSize()
+                        }
+                        .frame(height: 26)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityAddTraits(.isStaticText)
+                        .accessibilityLabel(Text("\(total.workspace.name), \(spokenTime(total.time.tracked))"))
+                    }
+                } else {
+                    Text("Nothing tracked")
+                        .foregroundStyle(Color.muted)
+                        .frame(height: 26)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }

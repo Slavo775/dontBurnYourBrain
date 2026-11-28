@@ -50,6 +50,9 @@ final class Countdown {
     /// Today's tracked time per workspace, while the panel is open.
     private(set) var totals: [DayLog.Total] = []
 
+    /// Whether the timer refused the latest step taken on it, such as Pause after the block ran out.
+    @ObservationIgnored private(set) var lastStepFailed = false
+
     /// Whether the panel is open. While it is, the countdown ticks every second.
     var isPanelOpen = false {
         didSet {
@@ -177,14 +180,17 @@ final class Countdown {
     }
 
     /// Starts a break of `minutes` now, inside the running block or with
-    /// nothing running, and remembers the length for next time.
+    /// nothing running, and remembers the length for next time when "Break
+    /// for" offers it.
     func startBreak(minutes: Int) {
         act("start a break") { engine, now in
             try changeBreak(with: engine, at: now) {
                 try QuickAction.startBreak(minutes: minutes, with: engine, idleBreak: &$0, at: now)
             }
-            // Only a break that started moves the preselection.
-            breakMinutes = minutes
+            // Only a break that started moves the preselection, and only to a row of "Break for".
+            if TimerEngine.breakLengthChoices.contains(minutes) {
+                breakMinutes = minutes
+            }
         }
         // Its end is announced too, so a first break asks as a first start does.
         alerts?.askPermissionIfUndetermined()
@@ -258,10 +264,12 @@ final class Countdown {
         guard let context else { return }
         do {
             try body(TimerEngine(context: context), fixedTime ?? .now)
+            lastStepFailed = false
             if !keepsTimeAway {
                 away?.drop()
             }
         } catch {
+            lastStepFailed = true
             log.error("Could not \(what): \(error.localizedDescription)")
         }
         settled = nil
@@ -327,6 +335,25 @@ final class Countdown {
         let time: Date
     }
 
+    /// Plays the sound of an alert whose moment passed since the last settle,
+    /// and replans the pending notifications.
+    private func announce(_ status: TimerStatus, rhythm: FocusRhythm?, workspace: String, at now: Date) {
+        defer { settled = Settled(status: status, rhythm: rhythm, time: now) }
+        guard let alerts else { return }
+        if let settled, let kind = AlertKind.due(
+            from: settled.status, rhythm: settled.rhythm, at: settled.time, to: status, at: now,
+        ) {
+            alerts.play(kind)
+        }
+        let plan = PlannedAlert.plan(
+            for: status, rhythm: rhythm, workspace: workspace, settings: alerts.settings, at: now,
+        )
+        alerts.schedule(plan, at: now)
+    }
+}
+
+/// Keeping the latest break with nothing running and the last break length across launches.
+extension Countdown {
     private static let breakMinutesKey = "break.lastMinutes"
     private static let idleBreakStartKey = "break.idle.start"
     private static let idleBreakEndKey = "break.idle.end"
@@ -355,22 +382,6 @@ final class Countdown {
                 defaults.set(date, forKey: key)
             }
         }
-    }
-
-    /// Plays the sound of an alert whose moment passed since the last settle,
-    /// and replans the pending notifications.
-    private func announce(_ status: TimerStatus, rhythm: FocusRhythm?, workspace: String, at now: Date) {
-        defer { settled = Settled(status: status, rhythm: rhythm, time: now) }
-        guard let alerts else { return }
-        if let settled, let kind = AlertKind.due(
-            from: settled.status, rhythm: settled.rhythm, at: settled.time, to: status, at: now,
-        ) {
-            alerts.play(kind)
-        }
-        let plan = PlannedAlert.plan(
-            for: status, rhythm: rhythm, workspace: workspace, settings: alerts.settings, at: now,
-        )
-        alerts.schedule(plan, at: now)
     }
 }
 
