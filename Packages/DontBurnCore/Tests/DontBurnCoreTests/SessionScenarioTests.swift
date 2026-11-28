@@ -111,8 +111,10 @@ func `the sample sessions lie below the root, and name no real process, tab or p
         #expect(session.profile?.hasPrefix("/sample/.claude-") ?? true)
         // macOS gives out process IDs up to 99,999.
         #expect(session.processID > 99999)
-        #expect(session.tty == nil)
-        #expect(session.tabID == nil)
+        // macOS gives out ttys up to ttys511 by default (kern.tty.ptmx_max).
+        #expect(session.tty.map { $0.wholeMatch(of: /ttys9\d\d/) != nil } ?? true)
+        // iTerm2 makes random UUIDs, never one that is all zeros but its version, variant and index.
+        #expect(session.tabID.map { $0.wholeMatch(of: /00000000-0000-4000-8000-0{10}\d\d/) != nil } ?? true)
         #expect(session.lastActivity <= now)
     }
     #expect(Set(sessions.map(\.processID)).count == sessions.count)
