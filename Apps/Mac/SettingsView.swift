@@ -3,6 +3,29 @@ import SwiftData
 import SwiftUI
 import UserNotifications
 
+/// A tab of the Settings window. Its name is what the defaults keep.
+enum SettingsTab: String {
+    case general
+    case workspaces
+    case rhythm
+    case sessions
+    case shortcuts
+}
+
+/// Which tab the Settings window shows, so a link elsewhere can choose it.
+@MainActor
+@Observable
+final class SettingsNavigation {
+    /// SwiftUI does not remember the tab of a Settings window that is told its
+    /// tab, so the app does, and the window opens as it was left.
+    private static let key = "settings.tab"
+
+    /// The tab, General when none or an unknown one was kept.
+    var tab = UserDefaults.standard.string(forKey: key).flatMap(SettingsTab.init(rawValue:)) ?? .general {
+        didSet { UserDefaults.standard.set(tab.rawValue, forKey: Self.key) }
+    }
+}
+
 /// The Settings window: General, Workspaces, Rhythm, Sessions and Shortcuts for now.
 struct SettingsView: View {
     /// The open store, or `nil` when it could not be opened.
@@ -15,13 +38,14 @@ struct SettingsView: View {
     let awaySettings: AwaySettings
     /// The command bar's shortcut, or `nil` without a store, when there is no bar.
     let commandBarShortcut: CommandBarShortcut?
+    @Bindable var navigation: SettingsNavigation
 
     var body: some View {
-        TabView {
-            Tab("General", systemImage: "gearshape") {
+        TabView(selection: $navigation.tab) {
+            Tab("General", systemImage: "gearshape", value: .general) {
                 GeneralPane(awaySettings: awaySettings)
             }
-            Tab("Workspaces", systemImage: "square.grid.2x2") {
+            Tab("Workspaces", systemImage: "square.grid.2x2", value: .workspaces) {
                 if let container {
                     WorkspacesPane(localContainer: localContainer)
                         .modelContainer(container)
@@ -33,7 +57,7 @@ struct SettingsView: View {
                     )
                 }
             }
-            Tab("Rhythm", systemImage: "clock") {
+            Tab("Rhythm", systemImage: "clock", value: .rhythm) {
                 if let container {
                     RhythmPane()
                         .modelContainer(container)
@@ -45,10 +69,10 @@ struct SettingsView: View {
                     )
                 }
             }
-            Tab("Sessions", systemImage: "terminal") {
+            Tab("Sessions", systemImage: "terminal", value: .sessions) {
                 SessionsPane(setup: hookSetup)
             }
-            Tab("Shortcuts", systemImage: "keyboard") {
+            Tab("Shortcuts", systemImage: "keyboard", value: .shortcuts) {
                 if let commandBarShortcut {
                     ShortcutsPane(shortcut: commandBarShortcut)
                 } else {
@@ -195,10 +219,15 @@ private struct AwaySection: View {
 /// The app has no Dock icon, so its windows open behind the active app unless
 /// the app is activated and the window is ordered front by hand.
 struct OpenSettingsButton: View {
+    /// The window's navigation, to open it on the Sessions tab, or `nil` to
+    /// open it as it was left.
+    var sessionsTab: SettingsNavigation?
+
     @Environment(\.openSettings) private var openSettings
 
     var body: some View {
-        Button("Settings…") {
+        Button(sessionsTab == nil ? "Settings…" : "Open Settings, Sessions") {
+            sessionsTab?.tab = .sessions
             openSettings()
             // `openSettings` alone leaves the window on the Space it was first
             // opened on, and behind the active app.
@@ -208,7 +237,8 @@ struct OpenSettingsButton: View {
             NSApplication.shared.activate()
             window?.makeKeyAndOrderFront(nil)
         }
-        .keyboardShortcut(",")
+        // A link to one tab takes no key, so ⌘ and comma keep their one meaning.
+        .keyboardShortcut(sessionsTab == nil ? KeyboardShortcut(",") : nil)
     }
 }
 
@@ -235,11 +265,9 @@ extension ModelContainer {
     /// identifier, as the app's own sample folders are. Without a bundle
     /// identifier there is none to name it after, so nothing is made.
     static func sampleFolders(for projects: ModelContainer?) -> ModelContainer? {
-        guard let projects, let bundleIdentifier = Bundle.main.bundleIdentifier else { return nil }
+        guard let projects, let root = Bundle.main.sampleRoot else { return nil }
         do {
             let container = try ModelStore.localInMemory()
-            let root = FileManager.default.temporaryDirectory
-                .appending(path: "\(bundleIdentifier).sample", directoryHint: .isDirectory)
             try SampleData.seedFolders(into: container.mainContext, projects: projects.mainContext, root: root)
             return container
         } catch {
@@ -253,12 +281,13 @@ extension ModelContainer {
     SettingsView(
         container: container, localContainer: .sampleFolders(for: container), hookSetup: .sample,
         awaySettings: AwaySettings(defaults: nil), commandBarShortcut: nil,
+        navigation: SettingsNavigation(),
     )
 }
 
 #Preview("No store") {
     SettingsView(
         container: nil, localContainer: nil, hookSetup: .sample, awaySettings: AwaySettings(defaults: nil),
-        commandBarShortcut: nil,
+        commandBarShortcut: nil, navigation: SettingsNavigation(),
     )
 }

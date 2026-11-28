@@ -194,6 +194,54 @@ private func hours(_ value: Double, from date: Date) -> Date {
     #expect(yesterday.items.first?.entry.source == .manual)
 }
 
+// MARK: - Totals with the other workspaces
+
+@Test func `the other workspaces come in with zero, in the same order, and the totals stay as they are`() throws {
+    let desk = try Desk()
+    desk.context.insert(TimeEntry(workspace: desk.globex, start: at(-60), end: at(-30)))
+    try desk.context.save()
+    let today = try DayLog(day: nine, in: desk.context, now: nine, calendar: utc)
+
+    let totals = today.totals(including: [desk.personal, desk.globex, desk.acme])
+    let expected: [TimeInterval] = [0, 1800, 0]
+
+    #expect(totals.map(\.workspace.name) == ["Acme", "Globex", "Personal"])
+    #expect(totals.map(\.tracked) == expected)
+    #expect(today.totals.map(\.workspace.name) == ["Globex"])
+    #expect(today.total == 1800)
+}
+
+@Test func `an archived workspace with an entry comes after the ones that come in with zero`() throws {
+    let desk = try Desk()
+    // First in the order, so only the archive rule puts it last.
+    desk.personal.isArchived = true
+    desk.personal.sortOrder = -1
+    desk.context.insert(TimeEntry(workspace: desk.personal, start: at(-30), end: at(-20)))
+    try desk.context.save()
+    let today = try DayLog(day: nine, in: desk.context, now: nine, calendar: utc)
+
+    let totals = today.totals(including: [desk.globex, desk.acme])
+    let expected: [TimeInterval] = [0, 0, 600]
+
+    #expect(totals.map(\.workspace.name) == ["Acme", "Globex", "Personal"])
+    #expect(totals.map(\.tracked) == expected)
+}
+
+@Test func `with no workspaces to add the totals are the day's own, and a day without entries is all zeros`() throws {
+    let desk = try Desk()
+    let empty = try DayLog(day: nine, in: desk.context, now: nine, calendar: utc)
+    let expected: [TimeInterval] = [0, 0]
+
+    #expect(empty.totals(including: []).isEmpty)
+    #expect(empty.totals(including: [desk.globex, desk.acme]).map(\.workspace.name) == ["Acme", "Globex"])
+    #expect(empty.totals(including: [desk.globex, desk.acme]).map(\.tracked) == expected)
+
+    desk.context.insert(TimeEntry(workspace: desk.acme, start: at(-60), end: at(-30)))
+    try desk.context.save()
+    let today = try DayLog(day: nine, in: desk.context, now: nine, calendar: utc)
+    #expect(today.totals(including: []).map(\.workspace.name) == ["Acme"])
+}
+
 // MARK: - Moving between days
 
 @Test func `the day before is the previous midnight, from any time of day`() {

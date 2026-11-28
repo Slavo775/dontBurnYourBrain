@@ -11,8 +11,11 @@ struct DontBurnApp: App {
     @State private var statusItem: StatusItemController
     /// The agent sessions, or `nil` without a bundle identifier. Kept for the life of the app.
     @State private var sessions: SessionMonitor?
-    /// The Claude Code profiles and their hook, for Settings. Reads nothing until Settings shows it.
+    /// The Claude Code profiles and their hook. Reads nothing until Settings
+    /// shows it, or the expanded panel has no session to show.
     @State private var hookSetup: HookSetup
+    /// The tab the Settings window shows.
+    @State private var settings: SettingsNavigation
     /// The question about time away, shared by the countdown and Settings.
     @State private var awaySettings: AwaySettings
     /// The command bar's shortcut, shared by the bar and Settings, or `nil` without a store.
@@ -27,10 +30,14 @@ struct DontBurnApp: App {
         let sampleData = SampleData.isRequested(by: Self.launchArgument("DontBurnSampleData"))
         // Ignored without the sample set, so it never changes the store on disk.
         let scenario = sampleData ? TimerScenario(launchArgument: Self.launchArgument("DontBurnTimerState")) : nil
+        let sampleSessions = sampleData
+            ? SessionScenario(launchArgument: Self.launchArgument("DontBurnSessionState"))
+            : nil
         let now = Self.fixedTime ?? .now
         let container = Self.openStore(sampleData: sampleData, scenario: scenario, now: now)
+        let localContainer = Self.openLocalStore(sampleSessions: sampleSessions, sampleProjects: container)
         self.container = container
-        localContainer = Self.openLocalStore(sampleData: sampleData, sampleProjects: container)
+        self.localContainer = localContainer
         // The sample data keeps its breaks and the question's settings in
         // memory, so a run with it leaves nothing in the defaults.
         let awaySettings = AwaySettings(
@@ -52,19 +59,43 @@ struct DontBurnApp: App {
         let mainWindow = MainWindowController(container: container, fixedTime: Self.fixedTime) {
             countdown.reschedule()
         }
-        // Without a store there is nothing to act on, so no bar and no shortcut.
-        let commandBar = container.map { _ in
-            CommandBarController(countdown: countdown, shortcut: CommandBarShortcut(
-                defaults: sampleData ? nil : .standard, isOnByDefault: Self.isShortcutOnByDefault,
-            ))
+        let sessions = Self.startSessions(sample: sampleSessions, now: now)
+        let hookSetup = HookSetup.current(standIn: Self.launchArgument("DontBurnStandInHome"))
+        let settings = SettingsNavigation()
+        let sessionColumn = SessionColumn(
+            monitor: sessions, container: container, localContainer: localContainer, fixedTime: Self.fixedTime,
+        ) {
+            // With the sample data no profile is read, not even in a stand-in folder.
+            sampleSessions?.hooks ?? hookSetup.currentStatuses()
         }
+        let commandBar = Self.commandBar(countdown: countdown, container: container, sampleData: sampleData)
         _commandBarShortcut = State(initialValue: commandBar?.shortcut)
         _statusItem = State(initialValue: StatusItemController(
-            countdown: countdown, mainWindow: mainWindow, commandBar: commandBar,
+            countdown: countdown, sessions: sessionColumn, mainWindow: mainWindow, settings: settings,
+            commandBar: commandBar,
         ))
-        _sessions = State(initialValue: Self.startSessions(sampleData: sampleData))
-        _hookSetup = State(initialValue: HookSetup.current(standIn: Self.launchArgument("DontBurnStandInHome")))
-        switch Self.launchArgument("DontBurnAppearance").flatMap(Appearance.init(rawValue:)) {
+        _sessions = State(initialValue: sessions)
+        _hookSetup = State(initialValue: hookSetup)
+        _settings = State(initialValue: settings)
+        Self.applyAppearance()
+    }
+
+    /// The command bar over `countdown`, or `nil` without a store: with
+    /// nothing to act on there is no bar and no shortcut. The sample data
+    /// keeps the shortcut's settings in memory.
+    private static func commandBar(
+        countdown: Countdown, container: ModelContainer?, sampleData: Bool,
+    ) -> CommandBarController? {
+        container.map { _ in
+            CommandBarController(countdown: countdown, shortcut: CommandBarShortcut(
+                defaults: sampleData ? nil : .standard, isOnByDefault: isShortcutOnByDefault,
+            ))
+        }
+    }
+
+    /// The appearance `-DontBurnAppearance light` or `dark` asks for, or the system's.
+    private static func applyAppearance() {
+        switch launchArgument("DontBurnAppearance").flatMap(Appearance.init(rawValue:)) {
         case .light: NSApplication.shared.appearance = NSAppearance(named: .aqua)
         case .dark: NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
         case nil: break
@@ -156,28 +187,32 @@ struct DontBurnApp: App {
     }
 
     /// The local store in memory with `-DontBurnSampleData YES`, holding the
-    /// sample folders for the projects in `sampleProjects`, otherwise the local
-    /// store on disk next to the synced one.
+    /// sample folders for the projects in `sampleProjects`, and those that
+    /// `sampleSessions` need, otherwise the local store on disk next to the
+    /// synced one.
     ///
-    /// The sample folders are made in a temporary folder named after the bundle
-    /// identifier, so no real folder shows. A local store that cannot be opened
-    /// is logged, and the app keeps running without one: projects still work,
-    /// without their folders.
-    private static func openLocalStore(sampleData: Bool, sampleProjects: ModelContainer?) -> ModelContainer? {
+    /// The sample folders are made below ``Foundation/Bundle/sampleRoot``, so no
+    /// real folder shows. A local store that cannot be opened is logged, and
+    /// the app keeps running without one: projects still work, without their
+    /// folders.
+    private static func openLocalStore(
+        sampleSessions: SessionScenario?, sampleProjects: ModelContainer?,
+    ) -> ModelContainer? {
         let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "store")
-        guard let bundleIdentifier = Bundle.main.bundleIdentifier else {
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier, let sampleRoot = Bundle.main.sampleRoot else {
             log.error("No bundle identifier, so the local store has no folder of its own and is not opened")
             return nil
         }
         do {
-            if sampleData {
+            if let sampleSessions {
                 let container = try ModelStore.localInMemory()
                 if let sampleProjects {
-                    let root = FileManager.default.temporaryDirectory
-                        .appending(path: "\(bundleIdentifier).sample", directoryHint: .isDirectory)
-                    try SampleData.seedFolders(
-                        into: container.mainContext, projects: sampleProjects.mainContext, root: root,
-                    )
+                    for folders in [SampleData.folders, sampleSessions.folders] {
+                        try SampleData.seedFolders(
+                            folders, into: container.mainContext, projects: sampleProjects.mainContext,
+                            root: sampleRoot,
+                        )
+                    }
                 }
                 log.info("Opened the sample folders in memory")
                 return container
@@ -196,19 +231,31 @@ struct DontBurnApp: App {
     }
 
     /// The sessions, listening on the hook channel in the folder named after
-    /// the bundle identifier. With the sample data they stay in memory, and
-    /// the channel is still opened.
-    private static func startSessions(sampleData: Bool) -> SessionMonitor? {
-        guard let bundleIdentifier = Bundle.main.bundleIdentifier else {
+    /// the bundle identifier. With the sample data they are the sessions of
+    /// `sample` at `now`, in memory, and the channel is not opened, so no real
+    /// session shows.
+    private static func startSessions(sample: SessionScenario?, now: Date) -> SessionMonitor? {
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier, let sampleRoot = Bundle.main.sampleRoot else {
             Logger(subsystem: "", category: "sessions")
                 .error("No bundle identifier, so the hook channel has no folder of its own and is not opened")
             return nil
         }
+        if let sample {
+            let log = Logger(subsystem: bundleIdentifier, category: "sessions")
+            do {
+                let store = try sample.store(root: sampleRoot, now: now)
+                log.info("Made the sample sessions, \(store.sessions.count) of them, and opened no channel")
+                return SessionMonitor(sample: store)
+            } catch {
+                log.error("The sample sessions could not be made: \(String(describing: error), privacy: .public)")
+                return nil
+            }
+        }
         let applicationSupport = URL.applicationSupportDirectory
         let monitor = SessionMonitor(
-            directory: sampleData
-                ? nil
-                : StoreLocation.directory(bundleIdentifier: bundleIdentifier, applicationSupport: applicationSupport),
+            directory: StoreLocation.directory(
+                bundleIdentifier: bundleIdentifier, applicationSupport: applicationSupport,
+            ),
             receiver: HookSocket(url: HookChannel.url(
                 bundleIdentifier: bundleIdentifier, applicationSupport: applicationSupport,
             )),
@@ -220,8 +267,8 @@ struct DontBurnApp: App {
     var body: some Scene {
         Settings {
             SettingsView(
-                container: container, localContainer: localContainer, hookSetup: hookSetup, awaySettings: awaySettings,
-                commandBarShortcut: commandBarShortcut,
+                container: container, localContainer: localContainer, hookSetup: hookSetup,
+                awaySettings: awaySettings, commandBarShortcut: commandBarShortcut, navigation: settings,
             )
         }
     }
@@ -233,5 +280,13 @@ extension Bundle {
         object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
             ?? object(forInfoDictionaryKey: "CFBundleName") as? String
             ?? ""
+    }
+
+    /// The temporary folder the sample folders and sessions lie in, named
+    /// after the bundle identifier, or `nil` without one.
+    var sampleRoot: URL? {
+        bundleIdentifier.map {
+            FileManager.default.temporaryDirectory.appending(path: "\($0).sample", directoryHint: .isDirectory)
+        }
     }
 }

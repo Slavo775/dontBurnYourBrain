@@ -47,6 +47,9 @@ final class Countdown {
     /// Today's tracked time, such as `0:10`, or `nil` without a store.
     private(set) var trackedToday: String?
 
+    /// Today's tracked time per workspace, while the panel is open.
+    private(set) var totals: [DayLog.Total] = []
+
     /// Whether the timer refused the latest step taken on it, such as Pause after the block ran out.
     @ObservationIgnored private(set) var lastStepFailed = false
 
@@ -282,6 +285,7 @@ final class Countdown {
             workspaces = []
             presets = []
             trackedToday = nil
+            totals = []
             return now.addingTimeInterval(MenuBarLabel.untrackedThreshold)
         }
         do {
@@ -304,6 +308,9 @@ final class Countdown {
                 ?? CompactPanel(status: status, block: block, rhythm: rhythm, tracked: tracked)
             trackedToday = MenuBarLabel.hoursAndMinutes(tracked)
             workspaces = try WorkspaceRoster(context: context).activeWorkspaces()
+            totals = try isPanelOpen
+                ? DayLog(day: now, in: context, now: now, calendar: .current).totals(including: workspaces)
+                : []
             presets = try PresetRoster(context: context).presets().map(PresetName.init)
             saveBreaks()
             let next = MenuBarLabel.nextRedraw(status: status, rhythm: rhythm, untrackedSince: since, after: now)
@@ -317,6 +324,7 @@ final class Countdown {
             workspaces = []
             presets = []
             trackedToday = nil
+            totals = []
             return now.addingTimeInterval(60)
         }
     }
@@ -327,6 +335,25 @@ final class Countdown {
         let time: Date
     }
 
+    /// Plays the sound of an alert whose moment passed since the last settle,
+    /// and replans the pending notifications.
+    private func announce(_ status: TimerStatus, rhythm: FocusRhythm?, workspace: String, at now: Date) {
+        defer { settled = Settled(status: status, rhythm: rhythm, time: now) }
+        guard let alerts else { return }
+        if let settled, let kind = AlertKind.due(
+            from: settled.status, rhythm: settled.rhythm, at: settled.time, to: status, at: now,
+        ) {
+            alerts.play(kind)
+        }
+        let plan = PlannedAlert.plan(
+            for: status, rhythm: rhythm, workspace: workspace, settings: alerts.settings, at: now,
+        )
+        alerts.schedule(plan, at: now)
+    }
+}
+
+/// Keeping the latest break with nothing running and the last break length across launches.
+extension Countdown {
     private static let breakMinutesKey = "break.lastMinutes"
     private static let idleBreakStartKey = "break.idle.start"
     private static let idleBreakEndKey = "break.idle.end"
@@ -355,22 +382,6 @@ final class Countdown {
                 defaults.set(date, forKey: key)
             }
         }
-    }
-
-    /// Plays the sound of an alert whose moment passed since the last settle,
-    /// and replans the pending notifications.
-    private func announce(_ status: TimerStatus, rhythm: FocusRhythm?, workspace: String, at now: Date) {
-        defer { settled = Settled(status: status, rhythm: rhythm, time: now) }
-        guard let alerts else { return }
-        if let settled, let kind = AlertKind.due(
-            from: settled.status, rhythm: settled.rhythm, at: settled.time, to: status, at: now,
-        ) {
-            alerts.play(kind)
-        }
-        let plan = PlannedAlert.plan(
-            for: status, rhythm: rhythm, workspace: workspace, settings: alerts.settings, at: now,
-        )
-        alerts.schedule(plan, at: now)
     }
 }
 

@@ -36,8 +36,8 @@ public enum AgentSessionState: String, Codable, Sendable {
     }
 }
 
-/// A group of the session list.
-public enum SessionGroup: Sendable {
+/// A group of the session list, in the order the list shows them.
+public enum SessionGroup: CaseIterable, Sendable {
     /// Sessions waiting for the user.
     case needsYou
     /// Sessions at work.
@@ -102,7 +102,7 @@ public struct AgentSession: Codable, Equatable, Identifiable, Sendable {
         return state
     }
 
-    /// The name the profile is shown by: its folder's name.
+    /// The name of the profile's folder, which ``SessionList/Row/profile`` shortens.
     public var profileName: String {
         profile.map { ($0 as NSString).lastPathComponent } ?? Self.defaultProfileName
     }

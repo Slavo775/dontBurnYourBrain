@@ -95,13 +95,23 @@ public struct DayLog {
             let tracked = item.counts ? item.length : 0
             byWorkspace[workspace.persistentModelID, default: (workspace, 0)].1 += tracked
         }
-        totals = byWorkspace.values
-            .map { Total(workspace: $0.0, tracked: $0.1) }
-            .sorted {
-                ($0.workspace.isArchived ? 1 : 0, $0.workspace.sortOrder, $0.workspace.name)
-                    < ($1.workspace.isArchived ? 1 : 0, $1.workspace.sortOrder, $1.workspace.name)
-            }
+        totals = Self.ordered(byWorkspace.values.map { Total(workspace: $0.0, tracked: $0.1) })
         total = items.reduce(0) { $0 + ($1.counts ? $1.length : 0) }
+    }
+
+    /// ``totals``, and a zero for each of `workspaces` without an entry on the
+    /// day, in the same order.
+    public func totals(including workspaces: [Workspace]) -> [Total] {
+        let present = Set(totals.map(\.id))
+        let missing = workspaces.filter { !present.contains($0.persistentModelID) }
+        return Self.ordered(totals + missing.map { Total(workspace: $0, tracked: 0) })
+    }
+
+    private static func ordered(_ totals: [Total]) -> [Total] {
+        totals.sorted {
+            ($0.workspace.isArchived ? 1 : 0, $0.workspace.sortOrder, $0.workspace.name)
+                < ($1.workspace.isArchived ? 1 : 0, $1.workspace.sortOrder, $1.workspace.name)
+        }
     }
 
     /// Midnight at the start of the day before `day`.

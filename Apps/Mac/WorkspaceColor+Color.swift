@@ -75,6 +75,10 @@ extension Color {
     static let ink = Color(nsColor: NSColor(light: 0x16201D, dark: 0xE6ECE9))
     /// Secondary text.
     static let muted = Color(nsColor: NSColor(light: 0x5A6964, dark: 0x96A59F))
+    /// A working session. The token `ok`.
+    static let good = Color(nsColor: NSColor(light: 0x1F7A3D, dark: 0x6BCF8A))
+    /// A session that needs you.
+    static let warn = Color(nsColor: NSColor(light: 0x9A5B00, dark: 0xE2B25A))
     /// Errors.
     static let bad = Color(nsColor: NSColor(light: 0xA8322A, dark: 0xEE8C83))
     /// The hairline around a floating panel, from the prototype's `--m-shadow`.

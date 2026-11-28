@@ -72,6 +72,9 @@
     "%@–now" : {
 
     },
+    "%lld d" : {
+
+    },
     "%lld h" : {
 
     },
@@ -220,6 +223,9 @@
     "After a break" : {
 
     },
+    "All %lld" : {
+
+    },
     "Allow notifications to hear when a block or break ends" : {
 
     },
@@ -341,7 +347,29 @@
     "Choose a workspace." : {
 
     },
+    "Claude" : {
+
+    },
+    "Claude (%@)" : {
+
+    },
+    "Claude (%@) in %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Claude (%1$@) in %2$@"
+          }
+        }
+      }
+    },
     "Claude Code profiles" : {
+
+    },
+    "Claude in %@" : {
+
+    },
+    "Collapse the panel" : {
 
     },
     "Color" : {
@@ -413,6 +441,9 @@
     "Entry" : {
 
     },
+    "Expand the panel" : {
+
+    },
     "Export…" : {
 
     },
@@ -438,6 +469,9 @@
 
     },
     "Hours" : {
+
+    },
+    "Idle" : {
 
     },
     "If the shortcut doesn't open the bar, another app may use it." : {
@@ -500,6 +534,9 @@
     "Name" : {
 
     },
+    "Needs you" : {
+
+    },
     "New preset" : {
 
     },
@@ -537,6 +574,9 @@
 
     },
     "No presets yet" : {
+
+    },
+    "No sessions on this Mac." : {
 
     },
     "No workspaces yet" : {
@@ -587,10 +627,13 @@
     "Open" : {
 
     },
-    "Open the command bar" : {
+    "Open Settings, Sessions" : {
 
     },
     "Open the command bar with a shortcut" : {
+
+    },
+    "Open the command bar" : {
 
     },
     "Open the window" : {
@@ -602,10 +645,16 @@
     "Open this week" : {
 
     },
+    "Open window ⌘O" : {
+
+    },
     "Or press one key while the field is empty" : {
 
     },
     "Orange" : {
+
+    },
+    "Other %lld" : {
 
     },
     "Other agents" : {
@@ -845,6 +894,9 @@
     "The hook is already in this file." : {
 
     },
+    "The hook is not installed, so no session shows here." : {
+
+    },
     "The hook is removed" : {
 
     },
@@ -911,6 +963,9 @@
     "Uninstall" : {
 
     },
+    "Unknown folder" : {
+
+    },
     "Unnamed" : {
 
     },
@@ -971,6 +1026,9 @@
     "Work" : {
 
     },
+    "Working" : {
+
+    },
     "Workspace" : {
 
     },
@@ -1025,6 +1083,9 @@
       }
     },
     "left of %@, break in less than 1 min" : {
+
+    },
+    "less than 1 min" : {
 
     },
     "macOS doesn't allow this shortcut." : {
