@@ -2,9 +2,11 @@ import DontBurnCore
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// The Sessions tab: the Claude Code profiles with their hook, and the other agents.
+/// The Sessions tab: the Claude Code profiles with their hook, the other
+/// agents, and the terminals Focus brings forward.
 struct SessionsPane: View {
     let setup: HookSetup
+    let terminalFocus: TerminalFocus
 
     @State private var isPicking = false
     @State private var sheet: SessionsSheet?
@@ -56,9 +58,10 @@ struct SessionsPane: View {
                     AgentIcon()
                     Text(verbatim: "Codex")
                     Spacer()
-                    Chip(text: "added later", isPositive: false)
+                    StatusChip(text: "added later", isPositive: false)
                 }
             }
+            TerminalsSection(terminalFocus: terminalFocus)
         }
         .formStyle(.grouped)
         .onAppear { setup.refresh() }
@@ -145,14 +148,14 @@ private struct ProfileRow: View {
             Spacer(minLength: 0)
             switch status {
             case .installed:
-                Chip(text: "hook installed", isPositive: true)
+                StatusChip(text: "hook installed", isPositive: true)
                 Button("Uninstall", action: uninstall)
             case .foundWithoutRecord:
-                Chip(text: "hook installed", isPositive: true)
+                StatusChip(text: "hook installed", isPositive: true)
             case .notInstalled:
                 Button("Install hook", action: install)
             case .outOfReach:
-                Chip(text: "scratch project only", isPositive: false)
+                StatusChip(text: "scratch project only", isPositive: false)
             case nil:
                 EmptyView()
             }
@@ -161,7 +164,7 @@ private struct ProfileRow: View {
 }
 
 /// The terminal tile in front of an agent's row.
-private struct AgentIcon: View {
+struct AgentIcon: View {
     var body: some View {
         // Decoration: the row's text says what it is.
         Image(systemName: "terminal")
@@ -171,7 +174,7 @@ private struct AgentIcon: View {
 }
 
 /// A small status label, such as "hook installed".
-private struct Chip: View {
+struct StatusChip: View {
     let text: LocalizedStringKey
     let isPositive: Bool
 
@@ -352,13 +355,16 @@ private func displayPath(_ path: String) -> String {
 }
 
 #Preview("Sample profiles") {
-    SessionsPane(setup: .sample)
+    SessionsPane(setup: .sample, terminalFocus: TerminalFocus(isSample: true))
         .frame(width: 760, height: 470)
 }
 
 #Preview("No profile") {
-    SessionsPane(setup: HookSetup(
-        isDev: true, home: nil, allowedFolder: nil, installer: .failure(.toolMissing), defaults: .standard,
-    ))
+    SessionsPane(
+        setup: HookSetup(
+            isDev: true, home: nil, allowedFolder: nil, installer: .failure(.toolMissing), defaults: .standard,
+        ),
+        terminalFocus: TerminalFocus(isSample: true),
+    )
     .frame(width: 760, height: 470)
 }

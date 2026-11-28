@@ -20,6 +20,8 @@ struct DontBurnApp: App {
     @State private var awaySettings: AwaySettings
     /// The command bar's shortcut, shared by the bar and Settings, or `nil` without a store.
     @State private var commandBarShortcut: CommandBarShortcut?
+    /// Focus for Terminal and iTerm2, shared by the sessions and Settings.
+    @State private var terminalFocus: TerminalFocus
 
     /// The open store, or `nil` when it could not be opened.
     private let container: ModelContainer?
@@ -62,8 +64,11 @@ struct DontBurnApp: App {
         let sessions = Self.startSessions(sample: sampleSessions, now: now)
         let hookSetup = HookSetup.current(standIn: Self.launchArgument("DontBurnStandInHome"))
         let settings = SettingsNavigation()
+        // The sample sessions' tabs are made up, so with them no Apple event is ever sent.
+        let terminalFocus = TerminalFocus(isSample: sampleData)
         let sessionColumn = SessionColumn(
-            monitor: sessions, container: container, localContainer: localContainer, fixedTime: Self.fixedTime,
+            monitor: sessions, focus: terminalFocus, container: container, localContainer: localContainer,
+            fixedTime: Self.fixedTime,
         ) {
             // With the sample data no profile is read, not even in a stand-in folder.
             sampleSessions?.hooks ?? hookSetup.currentStatuses()
@@ -76,6 +81,7 @@ struct DontBurnApp: App {
         ))
         _sessions = State(initialValue: sessions)
         _hookSetup = State(initialValue: hookSetup)
+        _terminalFocus = State(initialValue: terminalFocus)
         _settings = State(initialValue: settings)
         Self.applyAppearance()
     }
@@ -268,7 +274,8 @@ struct DontBurnApp: App {
         Settings {
             SettingsView(
                 container: container, localContainer: localContainer, hookSetup: hookSetup,
-                awaySettings: awaySettings, commandBarShortcut: commandBarShortcut, navigation: settings,
+                terminalFocus: terminalFocus, awaySettings: awaySettings, commandBarShortcut: commandBarShortcut,
+                navigation: settings,
             )
         }
     }

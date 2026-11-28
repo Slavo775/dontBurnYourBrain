@@ -51,6 +51,9 @@ targets:
         # Menu bar only, no Dock icon.
         INFOPLIST_KEY_LSUIElement: YES
         INFOPLIST_KEY_CFBundleDisplayName: $(APP_DISPLAY_NAME)
+        # The reason macOS shows when it asks for Automation, the first time
+        # Focus is used for Terminal or iTerm2.
+        INFOPLIST_KEY_NSAppleEventsUsageDescription: "Focus brings the tab that holds an agent session to the front."
         # The app reads other tools' session files and scripts terminals.
         ENABLE_APP_SANDBOX: NO
         # The compiler reports every interface string the code uses. Without

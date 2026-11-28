@@ -10,6 +10,12 @@
     "%@ block finished" : {
 
     },
+    "%@ could not be brought forward." : {
+
+    },
+    "%@ didn't answer. A dialog may be open." : {
+
+    },
     "%@, %@" : {
       "localizations" : {
         "en" : {
@@ -224,6 +230,9 @@
 
     },
     "All %lld" : {
+
+    },
+    "Allow" : {
 
     },
     "Allow notifications to hear when a block or break ends" : {
@@ -501,6 +510,9 @@
     "Its history and its folders stay. You can restore it from the Archived list." : {
 
     },
+    "Jumps to the exact tab" : {
+
+    },
     "Key %lld" : {
 
     },
@@ -630,10 +642,10 @@
     "Open Settings, Sessions" : {
 
     },
-    "Open the command bar with a shortcut" : {
+    "Open the command bar" : {
 
     },
-    "Open the command bar" : {
+    "Open the command bar with a shortcut" : {
 
     },
     "Open the window" : {
@@ -831,6 +843,9 @@
     "Teal" : {
 
     },
+    "Terminals" : {
+
+    },
     "The %@ block ends soon." : {
 
     },
@@ -927,6 +942,9 @@
     "This entry's block is still running. Only its note can change until the block ends." : {
 
     },
+    "This session's tab is gone." : {
+
+    },
     "This workspace has no projects." : {
 
     },
@@ -953,6 +971,16 @@
     },
     "Track time" : {
 
+    },
+    "Turn on %@ for %@ in System Settings → Privacy & Security → Automation." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn on %1$@ for %2$@ in System Settings → Privacy & Security → Automation."
+          }
+        }
+      }
     },
     "Type a workspace or a command" : {
 
@@ -1047,6 +1075,12 @@
     "after" : {
 
     },
+    "allowed" : {
+
+    },
+    "asked at the first Focus" : {
+
+    },
     "becomes a break" : {
 
     },
@@ -1095,6 +1129,9 @@
 
     },
     "min" : {
+
+    },
+    "not running" : {
 
     },
     "nothing changes" : {

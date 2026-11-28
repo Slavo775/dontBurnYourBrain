@@ -262,6 +262,12 @@ public struct SessionStore: Codable, Equatable, Sendable {
         sessions.removeAll { $0.state == .gone || !isAlive($0) }
     }
 
+    /// Drops the session `id`, as when Focus found its tab gone. Its next
+    /// event adds it again.
+    public mutating func forget(_ id: AgentSession.ID) {
+        sessions.removeAll { $0.id == id }
+    }
+
     /// The sessions saved in ``fileName`` inside `directory`, or none when
     /// the file is missing, larger than ``maximumFileSize`` or cannot be decoded.
     ///

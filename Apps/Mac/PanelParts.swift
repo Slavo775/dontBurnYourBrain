@@ -73,15 +73,29 @@ struct PanelBackButton: View {
     }
 }
 
-/// The prototype's small button (`m-btn`).
+/// The prototype's small button (`m-btn`), or its dark one (`m-btn go`).
 struct PanelButtonStyle: ButtonStyle {
+    /// The dark one, ink on the surface, such as Focus.
+    var isProminent = false
+
+    @Environment(\.isEnabled) private var isEnabled
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(isProminent ? Color.surface : Color.ink)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(configuration.isPressed ? Color.line : Color.sunken, in: .rect(cornerRadius: 8))
+            .background(background(isPressed: configuration.isPressed), in: .rect(cornerRadius: 8))
             .contentShape(.rect(cornerRadius: 8))
+            .opacity(isEnabled ? 1 : 0.45)
+    }
+
+    private func background(isPressed: Bool) -> Color {
+        if isProminent {
+            return Color.ink.opacity(isPressed ? 0.8 : 1)
+        }
+        return isPressed ? Color.line : Color.sunken
     }
 }
 
