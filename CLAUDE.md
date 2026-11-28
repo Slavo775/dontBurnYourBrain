@@ -36,7 +36,7 @@ Run from the repository root. Details in `docs/process/checks.md`.
 
 ## Rules that always apply
 
-1. **Tasks are Trello cards.** The board is https://trello.com/b/nTimgmK2/dont-burn-your-brain, its lists are the statuses, and every step leaves a comment on the card. One card, one branch, one pull request. Read the card's `Blocked by` line before starting. Without access to the board, take the task from the chat. See `docs/process/tasks.md`.
+1. **Tasks are Trello cards.** The board is https://trello.com/b/nTimgmK2/dont-burn-your-brain, and Trello tools take its ARI, `ari:cloud:trello::board/workspace/685d0a651bb8296970e319da/6afaca20d4af4e982eae89f1`, as `boardId`. Its lists are the statuses, and every step leaves a comment on the card. One card, one branch, one pull request. Read the card's `Blocked by` line before starting. Without access to the board, take the task from the chat. See `docs/process/tasks.md`.
 2. **Nothing is done without proof.** The check command passes on the exact commit, and the commit carries its `local/check` status. A skipped test is not a pass.
 3. **The owner merges by saying yes.** No agent merges, force-pushes or rewrites history on its own.
 4. **Nothing personal in the repository.** No real employer, client, project or account names, no email addresses, no absolute home paths. Sample data is always Acme, Globex and Personal. See `rules/safety-and-privacy.md`.

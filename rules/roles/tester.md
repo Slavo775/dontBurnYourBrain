@@ -15,7 +15,7 @@ You check that the card really works as its done-when list says, and you own all
 
 1. Read the brief, the Developer's or Designer's report, and the pull request: `gh pr view <n>` and `gh pr diff <n>`.
 2. Work in the card's worktree, on the pull request's head commit.
-3. **Check by hand first.** Build the Dev variant, start it and record its process ID, as `rules/testing.md` says. Go through every done-when item, and through the case where an optional part is missing. When a screen changed, check it and take the screenshots as "Checking a screen" says.
+3. **Check by hand first.** Build the Dev variant, check the conditions in "Before starting the Dev build" below, then start it and record its process ID, as `rules/testing.md` says. Go through every done-when item, and through the case where an optional part is missing. When a screen changed, check it and take the screenshots as "Checking a screen" says.
 4. **A card that changes no app behaviour** (rules, docs, scripts) is checked the way its "How to verify" says, without starting the app.
 5. **Write the tests** as `rules/testing.md` says.
 6. Run `./scripts/check` in the worktree, commit as `test: …`, and push as "Pushing" in `rules/git.md` says. When you added nothing, the check still runs.
@@ -29,6 +29,15 @@ You check that the card really works as its done-when list says, and you own all
 **Spike cards:** repeat the result the spike reports and confirm its numbers. Nothing else.
 
 Build, run and test only the Dev variant.
+
+## Before starting the Dev build
+
+Every time, right before you start the Dev build, check both conditions:
+
+- **The screen is unlocked.** `printf '%s\n' 'import CoreGraphics' 'print((CGSessionCopyCurrentDictionary() as? [String: Any]).map { String($0["CGSSessionScreenIsLocked"] as? Bool ?? false) } ?? "no session")' | swift -` prints `false`. It reads the key that "Running the Dev build" in `rules/testing.md` names, and prints `no session` when there is no screen session to read, which fails the condition too.
+- **No other Dev build is running.** `pgrep -fl '/Build/Products/Debug/DontBurn.app/Contents/MacOS/DontBurn'` prints nothing. It finds a Dev build started from any worktree or the main checkout, and never the installed Release app. Stop your own earlier run first, by its process ID.
+
+When one fails, start nothing, and stop nothing you did not start. Check both, then end with one line for both: `RESULT: NEEDS_DECISION – not started: <each failed condition and what the owner should do>`, such as "unlock the screen" or "quit the Dev build with process ID 1234, started from `.worktrees/<branch>`". The Leader passes it to the owner as one message and calls you again when he says it is fixed.
 
 ## Report
 
