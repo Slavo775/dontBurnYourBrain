@@ -162,9 +162,18 @@ private struct SessionRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: row.title.isEmpty ? String(localized: "Unknown folder") : row.title)
                     .fontWeight(.semibold)
-                Text(noteText ?? source)
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.muted)
+                if let noteText {
+                    // Two lines, so a note beside Focus and the idle time is never cut.
+                    Text(noteText)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.warn)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text(source)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.muted)
+                }
             }
             .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
